@@ -29,9 +29,9 @@ import { RouterLink } from 'vue-router'
             <RouterLink to="#">마이페이지</RouterLink>
           </li>
         </ul>
-        <button class="bg-primary hover:bg-primary-hover text-white px-5 py-2 rounded-lg text-base cursor-pointer">
+        <RouterLink to="/login" class="bg-primary hover:bg-primary-hover text-white px-5 py-2 rounded-lg text-base cursor-pointer">
           로그인
-        </button>
+        </RouterLink>
       </div>
     </nav>
   </div>
