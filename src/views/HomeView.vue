@@ -74,7 +74,7 @@ const products = [
         </div>
       </div>
     </div>
-    <div class="category py-12 bg-white">
+    <div class="category pt-12 pb-6 bg-white">
       <div class="category-container grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-5xl mx-auto px-6">
         <div
           class="category-card rounded-2xl flex p-4 md:p-8 flex-col gap-2 md:gap-4 items-center text-center md:items-start md:text-left border border-border shadow-sm hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.3)] transition-all cursor-pointer hover:-translate-y-2"
@@ -92,7 +92,7 @@ const products = [
       </div>
     </div>
 
-    <div class="py-16 bg-white">
+    <div class="pt-8 pb-16 bg-white">
       <div class="max-w-5xl mx-auto px-6">
         <div class="flex items-end justify-between mb-8">
           <div>
