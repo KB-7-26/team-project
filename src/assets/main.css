@@ -25,3 +25,24 @@
 body {
   font-family: var(--font-sans);
 }
+
+.bg-hero-gradient {
+  background: linear-gradient(
+    to bottom right,
+    #ffb800 0%,
+    #ffba0e 7%,
+    #ffbd17 14%,
+    #ffbf1e 21%,
+    #ffc224 29%,
+    #ffc42a 36%,
+    #ffc72f 43%,
+    #ffc933 50%,
+    #ffcb3c 57%,
+    #ffce45 64%,
+    #ffd04c 71%,
+    #ffd255 79%,
+    #ffd55e 86%,
+    #ffd862 93%,
+    #ffd966 100%
+  );
+}
