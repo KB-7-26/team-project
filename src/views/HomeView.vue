@@ -7,6 +7,13 @@ const categories = [
   { icon: ChatBubbleOvalLeftIcon, title: '채팅목록', desc: '실시간 대화' },
   { icon: UserIcon, title: '마이페이지', desc: '내 정보 관리' },
 ]
+
+const products = [
+  { category: '전자기기', name: 'MacBook Pro 2023', price: 1200000, emoji: '💻' },
+  { category: '전자기기', name: 'LG 모니터 27인치', price: 180000, emoji: '🖥️' },
+  { category: '도서', name: '자바의 정석', price: 15000, emoji: '📚' },
+  { category: '전자기기', name: '기계식 키보드', price: 120000, emoji: '⌨️' },
+]
 </script>
 
 <template>
@@ -44,7 +51,7 @@ const categories = [
         </div>
       </div>
     </div>
-    <div class="category py-15 bg-white">
+    <div class="category py-12 bg-white">
       <div class="category-container grid grid-cols-4 gap-6 max-w-5xl mx-auto px-6">
         <div
           class="category-card rounded-2xl flex p-8 flex-col gap-4 border border-border shadow-sm hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.3)] transition-all cursor-pointer hover:-translate-y-2"
@@ -59,7 +66,34 @@ const categories = [
         </div>
       </div>
     </div>
+
+    <div class="py-16 bg-white">
+      <div class="max-w-5xl mx-auto px-6">
+        <div class="flex items-end justify-between mb-8">
+          <div>
+            <h2 class="text-2xl font-extrabold text-text-main">인기 상품</h2>
+            <p class="text-sm text-text-sub mt-1">지금 가장 인기있는 거래 상품을 확인하세요</p>
+          </div>
+          <a href="#" class="text-sm font-medium text-primary hover:text-primary-hover transition-colors">전체보기 →</a>
+        </div>
+
+        <div class="grid grid-cols-4 gap-5">
+          <div
+            v-for="product in products"
+            :key="product.name"
+            class="border border-border rounded-2xl overflow-hidden hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.3)] transition-all cursor-pointer hover:-translate-y-2"
+          >
+            <div class="bg-amber-50 h-44 flex items-center justify-center text-6xl">
+              {{ product.emoji }}
+            </div>
+            <div class="p-4 flex flex-col gap-1">
+              <span class="text-xs font-medium text-primary">{{ product.category }}</span>
+              <p class="text-base font-bold text-text-main">{{ product.name }}</p>
+              <p class="text-lg font-extrabold text-text-main">{{ product.price.toLocaleString() }}원</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
-
-<style scoped></style>
