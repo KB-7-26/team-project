@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { ChatBubbleLeftRightIcon, CheckBadgeIcon, ShieldCheckIcon } from '@heroicons/vue/24/outline'
 
@@ -9,6 +9,15 @@ defineOptions({
 
 const userId = ref('')
 const password = ref('')
+const defaultFormMessage = '로그인하여 계속하세요'  // 기본 메세지
+const formErrorMessage = ref('')    // 에러 메세지 (에러 종류를 식별하는 용도 겸함)
+const invalidFields = ref({     // 각 필드의 유효성
+  userId: false,
+  password: false,
+})
+
+const formMessage = computed(() => formErrorMessage.value || defaultFormMessage)    // 실제로 표시되는 메세지 (에러가 있으면 에러 메세지, 없으면 기본 메세지)
+const isFormError = computed(() => Boolean(formErrorMessage.value))     // 에러 여부
 
 // 특징 설명의 추가 및 수정은 여기서!
 const features = [
@@ -29,8 +38,46 @@ const features = [
   },
 ]
 
+const clearError = (field) => {
+  if (field === 'userId') {
+    invalidFields.value.userId = false
+  }
+
+  if (field === 'password') {
+    invalidFields.value.password = false
+  }
+
+  if (!invalidFields.value.userId && !invalidFields.value.password) {
+    formErrorMessage.value = ''
+  }
+}
+
 const loginHandler = () => {
-  // TODO: 추후 서버 연동 시 인증 요청 로직으로 교체합니다.
+  const isUserIdEmpty = !userId.value.trim()
+  const isPasswordEmpty = !password.value.trim()
+
+  invalidFields.value = {
+    userId: isUserIdEmpty,
+    password: isPasswordEmpty,
+  }
+
+  if (isUserIdEmpty && isPasswordEmpty) {
+    formErrorMessage.value = '아이디와 비밀번호를 입력해주세요'
+    return
+  }
+
+  if (isUserIdEmpty) {
+    formErrorMessage.value = '아이디를 입력해주세요'
+    return
+  }
+
+  if (isPasswordEmpty) {
+    formErrorMessage.value = '비밀번호를 입력해주세요'
+    return
+  }
+
+  formErrorMessage.value = ''
+  // TODO: 추후 서버 연동 시 인증 요청 로직 추가
 }
 </script>
 
@@ -49,7 +96,8 @@ const loginHandler = () => {
         <ul class="mt-16 flex flex-col gap-8 sm:mt-20">
           <li v-for="feature in features" :key="feature.title" class="flex items-center gap-6">
             <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/90 sm:h-18 sm:w-18">
-              <component :is="feature.icon" class="h-8 w-8 text-primary" />     <!-- 컴포넌트를 동적으로 바인딩 -->
+              <component :is="feature.icon" class="h-8 w-8 text-primary" />
+              <!-- 컴포넌트를 동적으로 바인딩 -->
             </div>
             <div>
               <h2 class="text-xl font-extrabold text-text-main sm:text-2xl">{{ feature.title }}</h2>
@@ -61,16 +109,27 @@ const loginHandler = () => {
     </section>
 
     <section class="flex min-h-screen items-center justify-center px-6 py-12 sm:px-10 lg:px-16">
-      <div class="w-full max-w-xl rounded-[28px] bg-white px-7 py-10 shadow-[0_20px_50px_rgba(0,0,0,0.18)] sm:px-12 sm:py-14">
+      <div
+        class="w-full max-w-xl rounded-[28px] bg-white px-7 py-10 shadow-[0_20px_50px_rgba(0,0,0,0.18)] sm:px-12 sm:py-14"
+      >
         <!-- 추후 아이콘 및 서비스명 확정되면 수정 필요! (로그인 페이지는 TopNavBar를 사용하지 않으므로 직접 지정할 필요가 있음) -->
         <RouterLink to="/" class="inline-flex items-center gap-4">
-            <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-2xl font-extrabold text-white">
-                K
-            </div>
-            <strong class="text-3xl font-extrabold text-text-main">KB Swap</strong>
+          <div
+            class="flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-2xl font-extrabold text-white"
+          >
+            K
+          </div>
+          <strong class="text-3xl font-extrabold text-text-main">KB Swap</strong>
         </RouterLink>
 
-        <p class="mt-9 text-lg font-medium text-text-sub">로그인하여 계속하세요</p>
+        <p
+          id="login-form-message"
+          class="mt-9 text-lg font-medium"
+          :class="isFormError ? 'text-red-500' : 'text-text-sub'"
+          aria-live="polite"
+        >
+          {{ formMessage }}
+        </p>
 
         <form class="mt-10 flex flex-col gap-7" @submit.prevent="loginHandler">
           <label class="block">
@@ -80,7 +139,15 @@ const loginHandler = () => {
               type="text"
               autocomplete="username"
               placeholder="아이디를 입력하세요"
-              class="mt-4 h-17 w-full rounded-2xl border border-border bg-white px-6 text-lg font-medium text-text-main outline-none transition placeholder:text-text-sub focus:border-primary focus:ring-4 focus:ring-primary/15"
+              :aria-invalid="invalidFields.userId"
+              aria-describedby="login-form-message"
+              class="mt-4 h-17 w-full rounded-2xl border bg-white px-6 text-lg font-medium text-text-main outline-none transition focus:ring-4"
+              :class="
+                invalidFields.userId
+                  ? 'border-red-500 placeholder:text-red-500 focus:border-red-500 focus:ring-red-500/15'
+                  : 'border-border placeholder:text-text-sub focus:border-primary focus:ring-primary/15'
+              "
+              @input="clearError('userId')"
             />
           </label>
 
@@ -91,7 +158,15 @@ const loginHandler = () => {
               type="password"
               autocomplete="current-password"
               placeholder="비밀번호를 입력하세요"
-              class="mt-4 h-17 w-full rounded-2xl border border-border bg-white px-6 text-lg font-medium text-text-main outline-none transition placeholder:text-text-sub focus:border-primary focus:ring-4 focus:ring-primary/15"
+              :aria-invalid="invalidFields.password"
+              aria-describedby="login-form-message"
+              class="mt-4 h-17 w-full rounded-2xl border bg-white px-6 text-lg font-medium text-text-main outline-none transition focus:ring-4"
+              :class="
+                invalidFields.password
+                  ? 'border-red-500 placeholder:text-red-500 focus:border-red-500 focus:ring-red-500/15'
+                  : 'border-border placeholder:text-text-sub focus:border-primary focus:ring-primary/15'
+              "
+              @input="clearError('password')"
             />
           </label>
 
