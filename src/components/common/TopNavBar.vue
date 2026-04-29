@@ -17,7 +17,7 @@ import { RouterLink } from 'vue-router'
         <ul class="hidden md:flex gap-8 list-none">
           <!-- 각자 본인이 만든 주소만 채워주세요 -->
           <li class="text-base text-text-main hover:text-primary cursor-pointer">
-            <RouterLink to="#">중고거래</RouterLink>
+            <RouterLink to="/products">중고거래</RouterLink>
           </li>
           <li class="text-base text-text-main hover:text-primary cursor-pointer">
             <RouterLink to="#"> 게시판</RouterLink>
