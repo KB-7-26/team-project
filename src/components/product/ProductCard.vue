@@ -11,11 +11,11 @@ defineEmits(['toggle-like'])
 </script>
 
 <template>
-  <RouterLink :to="`/products/${product.id}`">
-    <div
-      class="max-w-xl my-2 rounded-2xl border border-border overflow-hidden shadow-sm cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-xl group"
-    >
-      <div class="relative overflow-hidden">
+  <div
+    class="relative max-w-xl my-2 rounded-2xl border border-border overflow-hidden shadow-sm cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-xl group"
+  >
+    <RouterLink :to="`/products/${product.id}`" class="block">
+      <div class="overflow-hidden">
         <img
           :src="product.image"
           :alt="product.title"
@@ -31,13 +31,6 @@ defineEmits(['toggle-like'])
         >
           {{ product.status }}
         </span>
-        <button
-          @click.stop="$emit('toggle-like', product.id)"
-          class="absolute top-3 right-3 px-1.5 py-1.5 bg-white rounded-full flex items-center justify-center shadow transition-transform duration-200 hover:scale-125"
-        >
-          <HeartSolidIcon v-if="liked" class="w-5 h-5 text-red-500" />
-          <HeartIcon v-else class="w-5 h-5 text-red-500" />
-        </button>
       </div>
 
       <div class="p-4 flex flex-col gap-2">
@@ -49,6 +42,14 @@ defineEmits(['toggle-like'])
           <span class="flex items-center gap-1"><ClockIcon class="w-4 h-4" /> {{ product.views }}</span>
         </div>
       </div>
-    </div>
-  </RouterLink>
+    </RouterLink>
+
+    <button
+      @click="$emit('toggle-like', product.id)"
+      class="absolute top-3 right-3 px-1.5 py-1.5 bg-white rounded-full flex items-center justify-center shadow transition-transform duration-200 hover:scale-125"
+    >
+      <HeartSolidIcon v-if="liked" class="w-5 h-5 text-red-500" />
+      <HeartIcon v-else class="w-5 h-5 text-red-500" />
+    </button>
+  </div>
 </template>

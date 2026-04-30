@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import ProductCard from '@/components/product/ProductCard.vue'
 
 const likedIds = ref(new Set())
@@ -16,22 +16,18 @@ const toggleLike = (id) => {
   likedIds.value = new Set(likedIds.value)
 }
 
-const categories = [
-  '전체',
-  '전자기기',
-  '의류',
-  '도서',
-  '가구/생활',
-  '뷰티',
-  '취미',
-  '기타',
-]
+const filteredProducts = computed(() => {
+  if (selectedCategory.value === '전체') return products
+  return products.filter((p) => p.category === selectedCategory.value)
+})
+
+const categories = ['전체', '전자기기', '의류', '도서', '가구/생활', '뷰티', '취미', '기타']
 
 const products = [
   {
     id: 1,
     title: '로지텍 무선 마우스',
-    category: '기타전자제품',
+    category: '전자기기',
     price: 45000,
     status: '판매중',
     image: 'https://picsum.photos/id/10/400/300',
@@ -42,7 +38,7 @@ const products = [
   {
     id: 2,
     title: '삼성 노트북 2020년형',
-    category: '노트북',
+    category: '전자기기',
     price: 1300000,
     status: '판매중',
     image: 'https://picsum.photos/id/20/400/300',
@@ -53,7 +49,7 @@ const products = [
   {
     id: 3,
     title: 'LG 모니터 27인치 4K',
-    category: '기타전자제품',
+    category: '전자기기',
     price: 180000,
     status: '거래중',
     image: 'https://picsum.photos/id/30/400/300',
@@ -64,7 +60,7 @@ const products = [
   {
     id: 4,
     title: '애플 에어팟 프로 2세대',
-    category: '기타전자제품',
+    category: '전자기기',
     price: 45000,
     status: '판매중',
     image: 'https://picsum.photos/id/40/400/300',
@@ -75,7 +71,7 @@ const products = [
   {
     id: 5,
     title: '아이폰 14 프로 256GB',
-    category: '기타전자제품',
+    category: '전자기기',
     price: 18000,
     status: '거래완료',
     image: 'https://picsum.photos/id/50/400/300',
@@ -86,7 +82,7 @@ const products = [
   {
     id: 6,
     title: '로지텍 기계식 키보드',
-    category: '기타전자제품',
+    category: '전자기기',
     price: 79000,
     status: '판매중',
     image: 'https://picsum.photos/id/60/400/300',
@@ -97,7 +93,7 @@ const products = [
   {
     id: 7,
     title: '소니 노이즈캔슬링 헤드폰',
-    category: '기타전자제품',
+    category: '전자기기',
     price: 220000,
     status: '판매중',
     image: 'https://picsum.photos/id/70/400/300',
@@ -108,7 +104,7 @@ const products = [
   {
     id: 8,
     title: '애플 워치 SE 2세대',
-    category: '기타전자제품',
+    category: '전자기기',
     price: 120000,
     status: '거래중',
     image: 'https://picsum.photos/id/80/400/300',
@@ -119,7 +115,7 @@ const products = [
   {
     id: 9,
     title: 'MacBook Pro 2023 16인치',
-    category: '노트북',
+    category: '전자기기',
     price: 680000,
     status: '판매중',
     image: 'https://picsum.photos/id/90/400/300',
@@ -130,7 +126,7 @@ const products = [
   {
     id: 10,
     title: '아이폰 15 Pro Max 256GB',
-    category: '기타전자제품',
+    category: '전자기기',
     price: 800000,
     status: '판매중',
     image: 'https://picsum.photos/id/100/400/300',
@@ -146,7 +142,7 @@ const products = [
     <div class="bg-primary/10 px-6 py-12">
       <div>
         <p class="text-4xl font-extrabold text-text-main pb-3">중고 거래</p>
-        <p class="text-base text-text-sub pt-3">학생들 간의 거래</p>
+        <p class="text-base text-text-sub pt-3">믿을 수 있는 학생들 간의 거래</p>
       </div>
     </div>
   </div>
@@ -168,7 +164,7 @@ const products = [
     <div class="flex-1 flex flex-col px-4">
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <ProductCard
-          v-for="product in products"
+          v-for="product in filteredProducts"
           :key="product.id"
           :product="product"
           :liked="likedIds.has(product.id)"
@@ -180,7 +176,9 @@ const products = [
           v-for="page in totalPages"
           :key="page"
           @click="currentPage = page"
-          :class="currentPage === page ? 'bg-primary text-white' : 'border border-border text-text-main hover:bg-primary/10'"
+          :class="
+            currentPage === page ? 'bg-primary text-white' : 'border border-border text-text-main hover:bg-primary/10'
+          "
           class="w-10 h-10 rounded-xl font-semibold text-sm transition-colors duration-200"
         >
           {{ page }}
