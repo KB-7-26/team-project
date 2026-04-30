@@ -12,6 +12,14 @@ const router = createRouter({
       component: () => import('@/views/auth/Login.vue'),
       meta: { hideNav: true },
     },
+    {
+      path: '/products',
+      component: () => import('@/views/product/ProductListView.vue'),
+    },
+    {
+      path: '/products/:id',
+      component: () => import('@/views/product/ProductDetailView.vue'),
+    },
   ],
 })
 

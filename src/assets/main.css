@@ -24,6 +24,11 @@
 
 body {
   font-family: var(--font-sans);
+  scrollbar-gutter: stable;
+}
+
+html {
+  scrollbar-width: none;
 }
 
 .no-scrollbar::-webkit-scrollbar {

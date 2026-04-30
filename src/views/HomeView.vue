@@ -9,7 +9,7 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const categories = [
-  { icon: ShoppingBagIcon, title: '중고거래', desc: '안전한 학생 간 거래' },
+  { icon: ShoppingBagIcon, title: '중고거래', desc: '안전한 학생 간 거래', to: 'products' },
   { icon: ChatBubbleLeftRightIcon, title: '익명게시판', desc: '자유로운 소통 공간' },
   { icon: ChatBubbleOvalLeftIcon, title: '채팅목록', desc: '실시간 대화' },
   { icon: UserIcon, title: '마이페이지', desc: '내 정보 관리' },
@@ -76,10 +76,11 @@ const products = [
     </div>
     <div class="category pt-12 pb-6 bg-white">
       <div class="category-container grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-5xl mx-auto px-6">
-        <div
+        <RouterLink
           class="category-card rounded-2xl flex p-4 md:p-8 flex-col gap-2 md:gap-4 items-center text-center md:items-start md:text-left border border-border shadow-sm hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.3)] transition-all cursor-pointer hover:-translate-y-2"
           v-for="item in categories"
           :key="item.title"
+          :to="item.to"
         >
           <div
             class="w-10 h-10 md:w-14 md:h-14 bg-[#ff9102] rounded-xl md:rounded-2xl flex items-center justify-center"
@@ -88,7 +89,7 @@ const products = [
           </div>
           <p class="text-base md:text-xl font-bold text-text-main">{{ item.title }}</p>
           <p class="text-xs md:text-sm text-text-sub">{{ item.desc }}</p>
-        </div>
+        </RouterLink>
       </div>
     </div>
 
