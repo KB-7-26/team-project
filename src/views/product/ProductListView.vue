@@ -3,6 +3,9 @@ import { ref } from 'vue'
 import ProductCard from '@/components/product/ProductCard.vue'
 
 const likedIds = ref(new Set())
+const selectedCategory = ref('전체')
+const currentPage = ref(1)
+const totalPages = 5
 
 const toggleLike = (id) => {
   if (likedIds.value.has(id)) {
@@ -13,14 +16,36 @@ const toggleLike = (id) => {
   likedIds.value = new Set(likedIds.value)
 }
 
+const categories = [
+  '전체',
+  '전자기기',
+  '의류',
+  '도서',
+  '가구/생활',
+  '뷰티',
+  '취미',
+  '기타',
+]
+
 const products = [
-  { id: 1, title: '로지텍 무선 마우스', price: 45000, status: '판매중', image: '', likes: 6, comments: 2, views: 98 },
+  {
+    id: 1,
+    title: '로지텍 무선 마우스',
+    category: '기타전자제품',
+    price: 45000,
+    status: '판매중',
+    image: 'https://picsum.photos/id/10/400/300',
+    likes: 6,
+    comments: 2,
+    views: 98,
+  },
   {
     id: 2,
     title: '삼성 노트북 2020년형',
+    category: '노트북',
     price: 1300000,
     status: '판매중',
-    image: '',
+    image: 'https://picsum.photos/id/20/400/300',
     likes: 12,
     comments: 5,
     views: 234,
@@ -28,9 +53,10 @@ const products = [
   {
     id: 3,
     title: 'LG 모니터 27인치 4K',
+    category: '기타전자제품',
     price: 180000,
     status: '거래중',
-    image: '',
+    image: 'https://picsum.photos/id/30/400/300',
     likes: 8,
     comments: 3,
     views: 187,
@@ -38,9 +64,10 @@ const products = [
   {
     id: 4,
     title: '애플 에어팟 프로 2세대',
+    category: '기타전자제품',
     price: 45000,
     status: '판매중',
-    image: '',
+    image: 'https://picsum.photos/id/40/400/300',
     likes: 23,
     comments: 7,
     views: 412,
@@ -48,9 +75,10 @@ const products = [
   {
     id: 5,
     title: '아이폰 14 프로 256GB',
+    category: '기타전자제품',
     price: 18000,
     status: '거래완료',
-    image: '',
+    image: 'https://picsum.photos/id/50/400/300',
     likes: 31,
     comments: 10,
     views: 560,
@@ -58,9 +86,10 @@ const products = [
   {
     id: 6,
     title: '로지텍 기계식 키보드',
+    category: '기타전자제품',
     price: 79000,
     status: '판매중',
-    image: '',
+    image: 'https://picsum.photos/id/60/400/300',
     likes: 15,
     comments: 4,
     views: 203,
@@ -68,9 +97,10 @@ const products = [
   {
     id: 7,
     title: '소니 노이즈캔슬링 헤드폰',
+    category: '기타전자제품',
     price: 220000,
     status: '판매중',
-    image: '',
+    image: 'https://picsum.photos/id/70/400/300',
     likes: 9,
     comments: 2,
     views: 145,
@@ -78,9 +108,10 @@ const products = [
   {
     id: 8,
     title: '애플 워치 SE 2세대',
+    category: '기타전자제품',
     price: 120000,
     status: '거래중',
-    image: '',
+    image: 'https://picsum.photos/id/80/400/300',
     likes: 17,
     comments: 6,
     views: 298,
@@ -88,9 +119,10 @@ const products = [
   {
     id: 9,
     title: 'MacBook Pro 2023 16인치',
+    category: '노트북',
     price: 680000,
     status: '판매중',
-    image: '',
+    image: 'https://picsum.photos/id/90/400/300',
     likes: 42,
     comments: 13,
     views: 731,
@@ -98,9 +130,10 @@ const products = [
   {
     id: 10,
     title: '아이폰 15 Pro Max 256GB',
+    category: '기타전자제품',
     price: 800000,
     status: '판매중',
-    image: '',
+    image: 'https://picsum.photos/id/100/400/300',
     likes: 56,
     comments: 18,
     views: 924,
@@ -117,31 +150,42 @@ const products = [
       </div>
     </div>
   </div>
-  <div class="flex mx-auto items-start">
-    <div class="side border border-red-400 w-64 shrink-0">
-      <ul>
-        <li>전체</li>
-        <li>가구/인테리어</li>
-        <li>생활/주방</li>
-        <li>도서</li>
-        <li>여성 의류</li>
-        <li>남성 의류</li>
-        <li>뷰티</li>
-        <li>취미</li>
-        <li>E-쿠폰</li>
-        <li>가공식품</li>
-        <li>식물</li>
-        <li>기타 중고물품</li>
+  <div class="flex mx-auto items-start px-6 py-8 gap-6">
+    <div class="side border border-border rounded-2xl p-4 w-54 shrink-0 sticky top-20 self-start">
+      <p class="text-lg font-bold text-text-main px-4 py-4">카테고리</p>
+      <ul class="flex flex-col">
+        <li
+          v-for="category in categories"
+          :key="category"
+          @click="selectedCategory = category"
+          :class="selectedCategory === category ? 'bg-primary text-white' : 'hover:bg-primary/20 text-text-main'"
+          class="mx-2 my-2 px-4 py-2 cursor-pointer rounded-lg text-text-main"
+        >
+          {{ category }}
+        </li>
       </ul>
     </div>
-    <div class="list flex-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-4">
-      <ProductCard
-        v-for="product in products"
-        :key="product.id"
-        :product="product"
-        :liked="likedIds.has(product.id)"
-        @toggle-like="toggleLike"
-      />
+    <div class="flex-1 flex flex-col px-4">
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <ProductCard
+          v-for="product in products"
+          :key="product.id"
+          :product="product"
+          :liked="likedIds.has(product.id)"
+          @toggle-like="toggleLike"
+        />
+      </div>
+      <div class="flex justify-center items-center gap-2 mt-8 mb-4">
+        <button
+          v-for="page in totalPages"
+          :key="page"
+          @click="currentPage = page"
+          :class="currentPage === page ? 'bg-primary text-white' : 'border border-border text-text-main hover:bg-primary/10'"
+          class="w-10 h-10 rounded-xl font-semibold text-sm transition-colors duration-200"
+        >
+          {{ page }}
+        </button>
+      </div>
     </div>
   </div>
 </template>

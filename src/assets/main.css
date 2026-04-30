@@ -27,6 +27,10 @@ body {
   scrollbar-gutter: stable;
 }
 
+html {
+  scrollbar-width: none;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
