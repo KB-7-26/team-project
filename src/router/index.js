@@ -7,6 +7,7 @@ const router = createRouter({
       path: '/',
       component: () => import('@/views/HomeView.vue'),
     },
+    { path: '/product/create', component: () => import('@/views/product/ProductCreateView.vue') },
     {
       path: '/login',
       component: () => import('@/views/auth/Login.vue'),
@@ -26,5 +27,3 @@ const router = createRouter({
     },
   ],
 })
-
-export default router
