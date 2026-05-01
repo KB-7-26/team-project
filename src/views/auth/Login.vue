@@ -180,8 +180,7 @@ const loginHandler = () => {
 
         <p class="mt-10 text-center text-base font-medium text-text-sub sm:text-lg">
           계정이 없으신가요?
-          <!-- TODO: 회원가입 페이지 구현 후 라우터링크 to 설정 필요 -->
-          <RouterLink to="#" class="ml-2 font-extrabold text-primary hover:text-primary-hover">회원가입</RouterLink>
+          <RouterLink to="/signup" class="ml-2 font-extrabold text-primary hover:text-primary-hover">회원가입</RouterLink>
         </p>
 
         <div class="mt-10 border-t border-border pt-9 text-center text-base font-medium text-text-sub">

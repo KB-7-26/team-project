@@ -14,7 +14,12 @@ const router = createRouter({
       meta: { hideNav: true },
     },
     {
-      path: '/products',
+      path: '/signup',
+      component: () => import('@/views/auth/Signup.vue'),
+      meta: { hideNav: true },
+    },
+    {
+    path: '/products',
       component: () => import('@/views/product/ProductListView.vue'),
     },
     {
