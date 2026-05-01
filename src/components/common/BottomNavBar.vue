@@ -10,10 +10,10 @@ import { ShoppingBagIcon, ChatBubbleLeftRightIcon, ChatBubbleOvalLeftIcon, UserI
           <ShoppingBagIcon class="w-6 h-6" />
           <span class="text-xs">중고거래</span>
         </li>
-        <li class="flex-1 flex flex-col items-center py-3 gap-1 cursor-pointer">
+        <RouterLink to="/board" class="flex-1 flex flex-col items-center py-3 gap-1 cursor-pointer">
           <ChatBubbleLeftRightIcon class="w-6 h-6 text-black" />
           <span class="text-xs">게시판</span>
-        </li>
+        </RouterLink>
         <li class="flex-1 flex flex-col items-center py-3 gap-1 cursor-pointer">
           <ChatBubbleOvalLeftIcon class="w-6 h-6" />
           <span class="text-xs">채팅</span>

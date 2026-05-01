@@ -22,7 +22,7 @@ import { RouterLink } from 'vue-router'
             <RouterLink to="/products">중고거래</RouterLink>
           </li>
           <li class="text-base text-text-main hover:text-primary cursor-pointer">
-            <RouterLink to="#"> 게시판</RouterLink>
+            <RouterLink to="/board">게시판</RouterLink>
           </li>
           <li class="text-base text-text-main hover:text-primary cursor-pointer">
             <RouterLink to="#">채팅</RouterLink>
