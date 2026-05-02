@@ -9,6 +9,13 @@ const router = createRouter({
     },
     { path: '/product/create', component: () => import('@/views/product/ProductCreateView.vue') },
     {
+      path: '/chats',
+      component: () => import('@/views/chat/ChatLayout.vue'),
+      children: [
+        { path: ':chatRoomId', component: () => import('@/views/chat/ChatRoomView.vue') },
+      ],
+    },
+    {
       path: '/login',
       component: () => import('@/views/auth/Login.vue'),
       meta: { hideNav: true },
