@@ -31,6 +31,10 @@ const router = createRouter({
       component: () => import('@/views/board/BoardListView.vue'),
     },
     {
+      path: '/board/write',
+      component: () => import('@/views/board/BoardWriteView.vue'),
+    },
+    {
       path: '/board/:id',
       component: () => import('@/views/board/BoardDetailView.vue'),
     },
