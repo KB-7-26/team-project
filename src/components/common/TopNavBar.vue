@@ -25,7 +25,7 @@ import { RouterLink } from 'vue-router'
             <RouterLink to="/board">게시판</RouterLink>
           </li>
           <li class="text-base text-text-main hover:text-primary cursor-pointer">
-            <RouterLink to="#">채팅</RouterLink>
+            <RouterLink to="/chats">채팅</RouterLink>
           </li>
           <li class="text-base text-text-main hover:text-primary cursor-pointer">
             <RouterLink to="#">마이페이지</RouterLink>
