@@ -21,6 +21,11 @@ const router = createRouter({
       meta: { hideNav: true },
     },
     {
+      path: '/signup',
+      component: () => import('@/views/auth/Signup.vue'),
+      meta: { hideNav: true },
+    },
+    {
       path: '/products',
       component: () => import('@/views/product/ProductListView.vue'),
     },
@@ -31,6 +36,18 @@ const router = createRouter({
     {
       path: '/board',
       component: () => import('@/views/board/BoardListView.vue'),
+    },
+    {
+      path: '/board/write',
+      component: () => import('@/views/board/BoardWriteView.vue'),
+    },
+    {
+      path: '/board/:id',
+      component: () => import('@/views/board/BoardDetailView.vue'),
+    },
+    {
+      path: '/mypage',
+      component: () => import('@/views/user/MyPageView.vue'),
     },
   ],
 })
