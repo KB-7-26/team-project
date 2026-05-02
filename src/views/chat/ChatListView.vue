@@ -7,7 +7,7 @@ const chatRooms = ref([
   {
     chatRoomId: 1,
     productTitle: '맥북 프로 M1',
-    productImage: '',
+    productImage: 'https://picsum.photos/seed/mac/56/56',
     opponentName: '김철수',
     lastMessage: '네, 내일 2시에 만나요!',
     lastMessageTime: '오전 11:30',
@@ -16,13 +16,14 @@ const chatRooms = ref([
   {
     chatRoomId: 2,
     productTitle: '아이패드 Air',
-    productImage: '',
+    productImage: 'https://picsum.photos/seed/ipad/56/56',
     opponentName: '이영희',
     lastMessage: '가격 조정 가능한가요?',
     lastMessageTime: '어제',
     unreadCount: 0,
   },
 ])
+
 </script>
 
 <template>
