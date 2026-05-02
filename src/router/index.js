@@ -30,6 +30,10 @@ const router = createRouter({
       path: '/board',
       component: () => import('@/views/board/BoardListView.vue'),
     },
+    {
+      path: '/board/:id',
+      component: () => import('@/views/board/BoardDetailView.vue'),
+    },
   ],
 })
 export default router
