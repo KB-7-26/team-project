@@ -25,7 +25,8 @@ defineEmits(['toggle-like'])
           :class="{
             'bg-primary': product.status === '판매중',
             'bg-[#4CAF50]': product.status === '거래중',
-            'bg-gray-400': product.status === '거래완료',
+            'bg-gray-400': product.status === '거래완료' || product.status === '판매완료',
+            'bg-gray-500': product.status === '숨김',
           }"
           class="absolute top-3 left-3 h-9 flex items-center text-white text-xs font-semibold rounded-full px-3 py-1.5"
         >

@@ -19,7 +19,7 @@ const router = createRouter({
       meta: { hideNav: true },
     },
     {
-    path: '/products',
+      path: '/products',
       component: () => import('@/views/product/ProductListView.vue'),
     },
     {
@@ -37,6 +37,10 @@ const router = createRouter({
     {
       path: '/board/:id',
       component: () => import('@/views/board/BoardDetailView.vue'),
+    },
+    {
+      path: '/mypage',
+      component: () => import('@/views/user/MyPageView.vue'),
     },
   ],
 })
