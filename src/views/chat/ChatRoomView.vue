@@ -1,11 +1,14 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
 
 const route = useRoute()
+const router = useRouter()
 
 const chatRoomData = {
   1: {
+    opponentName: '김철수',
     productInfo: {
       productTitle: '맥북 프로 M1',
       productImage: 'https://picsum.photos/seed/mac/56/56',
@@ -18,6 +21,7 @@ const chatRoomData = {
     ],
   },
   2: {
+    opponentName: '이영희',
     productInfo: {
       productTitle: '아이패드 Air',
       productImage: 'https://picsum.photos/seed/ipad/56/56',
@@ -30,7 +34,9 @@ const chatRoomData = {
   },
 }
 
-const productInfo = computed(() => chatRoomData[Number(route.params.chatRoomId)]?.productInfo || {})
+const currentRoom = computed(() => chatRoomData[Number(route.params.chatRoomId)])
+const productInfo = computed(() => currentRoom.value?.productInfo || {})
+const opponentName = computed(() => currentRoom.value?.opponentName || '')
 const messages = ref([])
 
 watch(
@@ -56,187 +62,72 @@ function sendMessage() {
 </script>
 
 <template>
-  <div class="chat-room">
-    <div class="product-bar">
-      <img :src="productInfo.productImage" class="product-img" />
-      <div class="product-info">
-        <div class="product-title">{{ productInfo.productTitle }}</div>
-        <div class="product-price">{{ productInfo.price.toLocaleString() }}원</div>
-      </div>
-      <button class="complete-btn">거래완료</button>
+  <div class="flex flex-col h-full">
+    <!-- 모바일 헤더 -->
+    <div class="flex items-center px-4 py-3 border-b border-border bg-white shrink-0 md:hidden">
+      <button class="mr-3 cursor-pointer" @click="router.push('/chats')">
+        <ArrowLeftIcon class="w-5 h-5 text-text-main" />
+      </button>
+      <span class="flex-1 text-center font-semibold text-text-main">{{ opponentName }}</span>
+      <div class="w-5"></div>
     </div>
 
-    <div class="message-list">
+    <!-- 상품 정보 바 -->
+    <div class="flex items-center gap-3 px-4 py-3 border-b border-border bg-white shrink-0">
+      <img :src="productInfo.productImage" class="w-12 h-12 rounded-lg object-cover" />
+      <div class="flex-1">
+        <div class="text-sm font-semibold text-text-main">{{ productInfo.productTitle }}</div>
+        <div class="text-[13px] text-text-sub mt-0.5">{{ productInfo.price?.toLocaleString() }}원</div>
+      </div>
+      <button
+        class="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg text-[13px] font-semibold cursor-pointer transition-colors"
+      >
+        거래완료
+      </button>
+    </div>
+
+    <!-- 메시지 목록 -->
+    <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
       <div
         v-for="message in messages"
         :key="message.messageId"
-        :class="['message-row', message.senderType === 'me' ? 'me' : 'other']"
+        :class="['flex items-end gap-2', message.senderType === 'me' ? 'justify-end' : 'justify-start']"
       >
-        <div class="bubble">
-          <p>{{ message.content }}</p>
-          <span class="time">{{ message.createdAt }}</span>
+        <div v-if="message.senderType === 'other'" class="w-8 h-8 rounded-full bg-border shrink-0 overflow-hidden">
+          <img src="https://picsum.photos/seed/user/32/32" class="w-full h-full object-cover" />
+        </div>
+
+        <div :class="['max-w-[60%] flex flex-col', message.senderType === 'me' ? 'items-end' : 'items-start']">
+          <p
+            :class="[
+              'px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed m-0',
+              message.senderType === 'me'
+                ? 'bg-primary text-white rounded-br-[4px]'
+                : 'bg-white text-text-main border border-border rounded-bl-[4px]',
+            ]"
+          >
+            {{ message.content }}
+          </p>
+          <span class="text-[11px] text-text-sub mt-1">{{ message.createdAt }}</span>
         </div>
       </div>
     </div>
 
-    <div class="input-area">
-      <input v-model="newMessage" type="text" placeholder="메시지를 입력하세요" @keyup.enter="sendMessage" />
-      <button class="send-btn" @click="sendMessage">전송</button>
+    <!-- 입력창 -->
+    <div class="flex gap-2 px-4 py-3 border-t border-border bg-white shrink-0">
+      <input
+        v-model="newMessage"
+        type="text"
+        placeholder="메시지를 입력하세요"
+        class="flex-1 px-3.5 py-2.5 border border-border rounded-3xl text-sm outline-none focus:border-primary"
+        @keyup.enter="sendMessage"
+      />
+      <button
+        class="px-5 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-3xl text-sm font-semibold cursor-pointer transition-colors"
+        @click="sendMessage"
+      >
+        전송
+      </button>
     </div>
   </div>
 </template>
-
-<style scoped>
-.chat-room {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.product-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e0e0e0;
-  background: #ffffff;
-  flex-shrink: 0;
-}
-
-.product-img {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  object-fit: cover;
-}
-
-.product-info {
-  flex: 1;
-}
-
-.product-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-
-.product-price {
-  font-size: 13px;
-  color: #999999;
-  margin-top: 2px;
-}
-
-.complete-btn {
-  padding: 8px 16px;
-  background: #ffb800;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.complete-btn:hover {
-  background: #e5a600;
-}
-
-.message-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.message-row {
-  display: flex;
-}
-
-.message-row.me {
-  justify-content: flex-end;
-}
-
-.message-row.other {
-  justify-content: flex-start;
-}
-
-.bubble {
-  max-width: 60%;
-  display: flex;
-  flex-direction: column;
-}
-
-.message-row.me .bubble {
-  align-items: flex-end;
-}
-
-.message-row.other .bubble {
-  align-items: flex-start;
-}
-
-.bubble p {
-  padding: 10px 14px;
-  border-radius: 16px;
-  font-size: 14px;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.message-row.me .bubble p {
-  background: #ffb800;
-  color: white;
-  border-bottom-right-radius: 4px;
-}
-
-.message-row.other .bubble p {
-  background: #ffffff;
-  color: #1a1a1a;
-  border: 1px solid #e0e0e0;
-  border-bottom-left-radius: 4px;
-}
-
-.time {
-  font-size: 11px;
-  color: #999999;
-  margin-top: 4px;
-}
-
-.input-area {
-  display: flex;
-  gap: 8px;
-  padding: 12px 16px;
-  border-top: 1px solid #e0e0e0;
-  background: #ffffff;
-  flex-shrink: 0;
-}
-
-.input-area input {
-  flex: 1;
-  padding: 10px 14px;
-  border: 1px solid #e0e0e0;
-  border-radius: 24px;
-  font-size: 14px;
-  outline: none;
-}
-
-.input-area input:focus {
-  border-color: #ffb800;
-}
-
-.send-btn {
-  padding: 10px 20px;
-  background: #ffb800;
-  color: white;
-  border: none;
-  border-radius: 24px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.send-btn:hover {
-  background: #e5a600;
-}
-</style>

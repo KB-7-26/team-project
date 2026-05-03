@@ -1,35 +1,29 @@
 <script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import ChatListView from './ChatListView.vue'
+
+const route = useRoute()
+const hasChatRoom = computed(() => !!route.params.chatRoomId)
 </script>
 
 <template>
-  <div class="chat-layout">
-    <div class="chat-sidebar">
+  <div class="flex h-[calc(100vh-64px)] border-t border-border">
+    <div
+      :class="[
+        'w-full md:w-[360px] md:shrink-0 border-r border-border overflow-y-auto',
+        hasChatRoom ? 'hidden md:block' : 'block',
+      ]"
+    >
       <ChatListView />
     </div>
-    <div class="chat-main">
+    <div
+      :class="[
+        'flex-1 overflow-hidden bg-sub-bg',
+        hasChatRoom ? 'flex flex-col' : 'hidden md:flex md:flex-col',
+      ]"
+    >
       <RouterView />
     </div>
   </div>
 </template>
-
-<style scoped>
-.chat-layout {
-  display: flex;
-  height: calc(100vh - 64px);
-  border-top: 1px solid #e0e0e0;
-}
-
-.chat-sidebar {
-  width: 360px;
-  border-right: 1px solid #e0e0e0;
-  overflow-y: auto;
-  flex-shrink: 0;
-}
-
-.chat-main {
-  flex: 1;
-  overflow-y: auto;
-  background: #fafafa;
-}
-</style>
