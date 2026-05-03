@@ -7,7 +7,7 @@ const chatRooms = ref([
   {
     chatRoomId: 1,
     productTitle: '맥북 프로 M1',
-    productImage: '',
+    productImage: 'https://picsum.photos/seed/mac/56/56',
     opponentName: '김철수',
     lastMessage: '네, 내일 2시에 만나요!',
     lastMessageTime: '오전 11:30',
@@ -16,7 +16,7 @@ const chatRooms = ref([
   {
     chatRoomId: 2,
     productTitle: '아이패드 Air',
-    productImage: '',
+    productImage: 'https://picsum.photos/seed/ipad/56/56',
     opponentName: '이영희',
     lastMessage: '가격 조정 가능한가요?',
     lastMessageTime: '어제',
@@ -26,155 +26,44 @@ const chatRooms = ref([
 </script>
 
 <template>
-  <div class="chat-list">
-    <h1>채팅</h1>
+  <div class="p-4">
+    <h1 class="text-xl font-bold text-text-main mb-4">채팅</h1>
 
-    <div class="search-bar">
-      <span class="search-icon">🔍</span>
-      <input v-model="searchQuery" type="text" placeholder="채팅 검색" />
+    <div class="flex items-center gap-2 bg-gray-100 border border-border rounded-xl px-3.5 py-2.5 mb-4">
+      <span class="text-base">🔍</span>
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="채팅 검색"
+        class="flex-1 bg-transparent border-none outline-none text-sm text-text-main"
+      />
     </div>
 
     <div
       v-for="room in chatRooms"
       :key="room.chatRoomId"
-      class="chat-card"
+      class="flex items-center gap-3 px-2 py-4 border-b border-border cursor-pointer hover:bg-primary/5"
       @click="$router.push(`/chats/${room.chatRoomId}`)"
     >
-      <img v-if="room.productImage" :src="room.productImage" class="product-img" />
-      <div v-else class="product-img-empty"></div>
+      <img v-if="room.productImage" :src="room.productImage" class="w-14 h-14 rounded-lg object-cover shrink-0" />
+      <div v-else class="w-14 h-14 rounded-lg bg-border shrink-0"></div>
 
-      <div class="chat-info">
-        <div class="top-row">
-          <span class="opponent-name">{{ room.opponentName }}</span>
-          <span class="time">{{ room.lastMessageTime }}</span>
+      <div class="flex-1 min-w-0">
+        <div class="flex justify-between items-center mb-1">
+          <span class="text-[15px] font-semibold text-text-main">{{ room.opponentName }}</span>
+          <span class="text-xs text-text-sub shrink-0">{{ room.lastMessageTime }}</span>
         </div>
-        <div class="product-title">{{ room.productTitle }}</div>
-        <div class="bottom-row">
-          <span class="last-message">{{ room.lastMessage }}</span>
-          <span v-if="room.unreadCount > 0" class="unread">{{ room.unreadCount }}</span>
+        <div class="text-xs text-primary font-medium mb-1">{{ room.productTitle }}</div>
+        <div class="flex justify-between items-center">
+          <span class="text-[13px] text-text-sub truncate">{{ room.lastMessage }}</span>
+          <span
+            v-if="room.unreadCount > 0"
+            class="bg-primary text-white text-[11px] font-bold min-w-5 h-5 rounded-full flex items-center justify-center shrink-0 ml-2"
+          >
+            {{ room.unreadCount }}
+          </span>
         </div>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.chat-list {
-  padding: 20px 16px;
-}
-
-h1 {
-  font-size: 20px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 16px;
-}
-
-.search-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #f5f5f5;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 10px 14px;
-  margin-bottom: 16px;
-}
-
-.search-bar input {
-  border: none;
-  background: transparent;
-  outline: none;
-  font-size: 14px;
-  color: #1a1a1a;
-  width: 100%;
-}
-
-.chat-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 8px;
-  border-bottom: 1px solid #e0e0e0;
-  cursor: pointer;
-}
-
-.chat-card:hover {
-  background: rgb(255 184 0 / 5%);
-}
-
-.product-img {
-  width: 56px;
-  height: 56px;
-  border-radius: 8px;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.product-img-empty {
-  width: 56px;
-  height: 56px;
-  border-radius: 8px;
-  background: #e0e0e0;
-  flex-shrink: 0;
-}
-
-.chat-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.top-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
-}
-
-.opponent-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-
-.time {
-  font-size: 12px;
-  color: #999999;
-  flex-shrink: 0;
-}
-
-.product-title {
-  font-size: 12px;
-  color: #ffb800;
-  font-weight: 500;
-  margin-bottom: 4px;
-}
-
-.bottom-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.last-message {
-  font-size: 13px;
-  color: #999999;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.unread {
-  background: #ffb800;
-  color: white;
-  font-size: 11px;
-  font-weight: 700;
-  min-width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-</style>

@@ -11,8 +11,8 @@ import {
 const categories = [
   { icon: ShoppingBagIcon, title: '중고거래', desc: '안전한 학생 간 거래', to: 'products' },
   { icon: ChatBubbleLeftRightIcon, title: '익명게시판', desc: '자유로운 소통 공간', to: '/board' },
-  { icon: ChatBubbleOvalLeftIcon, title: '채팅목록', desc: '실시간 대화' },
-  { icon: UserIcon, title: '마이페이지', desc: '내 정보 관리' },
+  { icon: ChatBubbleOvalLeftIcon, title: '채팅목록', desc: '실시간 대화', to: '/chats' },
+  { icon: UserIcon, title: '마이페이지', desc: '내 정보 관리', to: '/mypage' },
 ]
 
 const products = [
