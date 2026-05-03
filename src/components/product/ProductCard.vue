@@ -1,5 +1,5 @@
 <script setup>
-import { HeartIcon, ChatBubbleOvalLeftIcon, ClockIcon } from '@heroicons/vue/24/outline'
+import { HeartIcon } from '@heroicons/vue/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 
 defineProps({
@@ -11,46 +11,42 @@ defineEmits(['toggle-like'])
 </script>
 
 <template>
-  <div
-    class="relative max-w-xl my-2 rounded-2xl border border-border overflow-hidden shadow-sm cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-xl group"
-  >
+  <div class="relative cursor-pointer group">
     <RouterLink :to="`/products/${product.id}`" class="block">
-      <div class="overflow-hidden">
+      <!-- 이미지 -->
+      <div class="overflow-hidden rounded-2xl">
         <img
           :src="product.image"
           :alt="product.title"
-          class="w-full h-48 object-cover bg-amber-500 transition-transform duration-300 group-hover:scale-105"
+          class="w-full h-36 md:h-48 object-cover transition-transform duration-300 group-hover:scale-105"
         />
-        <span
-          :class="{
-            'bg-primary': product.status === '판매중',
-            'bg-[#4CAF50]': product.status === '거래중',
-            'bg-gray-400': product.status === '거래완료' || product.status === '판매완료',
-            'bg-gray-500': product.status === '숨김',
-          }"
-          class="absolute top-3 left-3 h-9 flex items-center text-white text-xs font-semibold rounded-full px-3 py-1.5"
-        >
-          {{ product.status }}
-        </span>
       </div>
 
-      <div class="p-4 flex flex-col gap-2">
-        <p class="text-lg font-bold text-text-main truncate">{{ product.title }}</p>
-        <p class="text-xl font-extrabold text-text-main">{{ product.price.toLocaleString() }}원</p>
-        <div class="flex items-center gap-4 text-text-sub text-sm">
-          <span class="flex items-center gap-1"><HeartIcon class="w-4 h-4" /> {{ product.likes }}</span>
-          <span class="flex items-center gap-1"><ChatBubbleOvalLeftIcon class="w-4 h-4" /> {{ product.comments }}</span>
-          <span class="flex items-center gap-1"><ClockIcon class="w-4 h-4" /> {{ product.views }}</span>
-        </div>
+      <!-- 텍스트 -->
+      <div class="pt-2 pb-1 px-1 flex flex-col gap-0.5">
+        <p class="text-sm md:text-base font-semibold text-text-main line-clamp-2 leading-snug">{{ product.title }}</p>
+        <p class="text-sm md:text-base font-bold text-text-main">{{ product.price.toLocaleString() }}원</p>
+        <p class="text-xs text-text-sub mt-0.5">
+          <span
+            :class="{
+              'text-primary': product.status === '판매중',
+              'text-[#4CAF50]': product.status === '거래중',
+              'text-gray-400': product.status === '거래완료' || product.status === '판매완료',
+            }"
+          >{{ product.status }}</span>
+          <span class="mx-1">·</span>
+          <span>조회 {{ product.views }}</span>
+        </p>
       </div>
     </RouterLink>
 
+    <!-- 하트 버튼 -->
     <button
       @click="$emit('toggle-like', product.id)"
-      class="absolute top-3 right-3 px-1.5 py-1.5 bg-white rounded-full flex items-center justify-center shadow transition-transform duration-200 hover:scale-125"
+      class="absolute top-2 right-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow transition-transform duration-200 hover:scale-125"
     >
-      <HeartSolidIcon v-if="liked" class="w-5 h-5 text-red-500" />
-      <HeartIcon v-else class="w-5 h-5 text-red-500" />
+      <HeartSolidIcon v-if="liked" class="w-4 h-4 text-red-500" />
+      <HeartIcon v-else class="w-4 h-4 text-gray-400" />
     </button>
   </div>
 </template>
