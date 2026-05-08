@@ -2,6 +2,9 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
+import ProductInfoBar from '@/components/chat/ProductInfoBar.vue'
+import MessageBubble from '@/components/chat/MessageBubble.vue'
+import MessageInput from '@/components/chat/MessageInput.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -47,17 +50,13 @@ watch(
   { immediate: true },
 )
 
-const newMessage = ref('')
-
-function sendMessage() {
-  if (!newMessage.value.trim()) return
+function handleSend(content) {
   messages.value.push({
     messageId: Date.now(),
     senderType: 'me',
-    content: newMessage.value,
+    content,
     createdAt: '방금',
   })
-  newMessage.value = ''
 }
 </script>
 
@@ -73,61 +72,24 @@ function sendMessage() {
     </div>
 
     <!-- 상품 정보 바 -->
-    <div class="flex items-center gap-3 px-4 py-3 border-b border-border bg-white shrink-0">
-      <img :src="productInfo.productImage" class="w-12 h-12 rounded-lg object-cover" />
-      <div class="flex-1">
-        <div class="text-sm font-semibold text-text-main">{{ productInfo.productTitle }}</div>
-        <div class="text-[13px] text-text-sub mt-0.5">{{ productInfo.price?.toLocaleString() }}원</div>
-      </div>
-      <button
-        class="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg text-[13px] font-semibold cursor-pointer transition-colors"
-      >
-        거래완료
-      </button>
-    </div>
+    <ProductInfoBar
+      :productImage="productInfo.productImage"
+      :productTitle="productInfo.productTitle"
+      :price="productInfo.price"
+    />
 
     <!-- 메시지 목록 -->
     <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-      <div
+      <MessageBubble
         v-for="message in messages"
         :key="message.messageId"
-        :class="['flex items-end gap-2', message.senderType === 'me' ? 'justify-end' : 'justify-start']"
-      >
-        <div v-if="message.senderType === 'other'" class="w-8 h-8 rounded-full bg-border shrink-0 overflow-hidden">
-          <img src="https://picsum.photos/seed/user/32/32" class="w-full h-full object-cover" />
-        </div>
-
-        <div :class="['max-w-[60%] flex flex-col', message.senderType === 'me' ? 'items-end' : 'items-start']">
-          <p
-            :class="[
-              'px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed m-0',
-              message.senderType === 'me'
-                ? 'bg-primary text-white rounded-br-[4px]'
-                : 'bg-white text-text-main border border-border rounded-bl-[4px]',
-            ]"
-          >
-            {{ message.content }}
-          </p>
-          <span class="text-[11px] text-text-sub mt-1">{{ message.createdAt }}</span>
-        </div>
-      </div>
+        :senderType="message.senderType"
+        :content="message.content"
+        :createdAt="message.createdAt"
+      />
     </div>
 
     <!-- 입력창 -->
-    <div class="flex gap-2 px-4 py-3 border-t border-border bg-white shrink-0">
-      <input
-        v-model="newMessage"
-        type="text"
-        placeholder="메시지를 입력하세요"
-        class="flex-1 px-3.5 py-2.5 border border-border rounded-3xl text-sm outline-none focus:border-primary"
-        @keyup.enter="sendMessage"
-      />
-      <button
-        class="px-5 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-3xl text-sm font-semibold cursor-pointer transition-colors"
-        @click="sendMessage"
-      >
-        전송
-      </button>
-    </div>
+    <MessageInput @send="handleSend" />
   </div>
 </template>
