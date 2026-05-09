@@ -18,7 +18,7 @@ defineProps({
       <span>{{ post.createdAt }}</span>
       <span class="flex items-center gap-1 ml-auto">
         <ChatBubbleOvalLeftIcon class="w-3.5 h-3.5" />
-        {{ post.comments }}
+        {{ post.commentCount }}
       </span>
     </div>
   </RouterLink>

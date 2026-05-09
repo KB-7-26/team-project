@@ -3,40 +3,15 @@ import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { TrashIcon, PencilSquareIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline'
 import BoardCommentItem from '@/components/board/BoardCommentItem.vue'
+import postDetailsData from '@/mocks/postDetails.json'
+import commentsData from '@/mocks/comments.json'
 
 const route = useRoute()
 const router = useRouter()
 
-const post = {
-  id: Number(route.params.id),
-  title: '오늘 실습 과제 너무 어렵지 않나요?',
-  content: 'Vue 라우터 과제인데 도대체 뭘 잘못한 건지 에러가 안 잡혀요... 다들 어떻게 했어요?\n특히 동적 라우팅 부분에서 계속 막히는데 힌트라도 주시면 감사합니다.',
-  createdAt: '15분 전',
-  isOwner: true,
-}
-
-const comments = ref([
-  {
-    id: 1,
-    content: 'router/index.js에서 :id 파라미터 설정 확인해보세요!',
-    createdAt: '10분 전',
-    replies: [
-      { id: 1, content: '저도 같은 문제였어요. 감사합니다!', createdAt: '8분 전' },
-    ],
-  },
-  {
-    id: 2,
-    content: 'useRoute() 훅으로 params 꺼내면 돼요.',
-    createdAt: '8분 전',
-    replies: [],
-  },
-  {
-    id: 3,
-    content: '저도 같은 문제였는데 import 경로가 잘못됐더라고요.',
-    createdAt: '5분 전',
-    replies: [],
-  },
-])
+const postId = Number(route.params.id)
+const post = postDetailsData.data.find((p) => p.id === postId)
+const comments = ref(commentsData[postId]?.data ?? [])
 
 const newComment = ref('')
 const replyingToId = ref(null)
