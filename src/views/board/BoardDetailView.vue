@@ -3,7 +3,6 @@ import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { TrashIcon, PencilSquareIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline'
 import BoardCommentItem from '@/components/board/BoardCommentItem.vue'
-import BoardReplyModal from '@/components/board/BoardReplyModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -40,18 +39,8 @@ const comments = ref([
 ])
 
 const newComment = ref('')
-const showReplyModal = ref(false)
-const selectedComment = ref(null)
-
-const openReplyModal = (comment) => {
-  selectedComment.value = comment
-  showReplyModal.value = true
-}
-
-const closeReplyModal = () => {
-  showReplyModal.value = false
-  selectedComment.value = null
-}
+const replyingToId = ref(null)
+const newReply = ref('')
 
 const submitComment = () => {
   if (!newComment.value.trim()) return
@@ -64,14 +53,27 @@ const submitComment = () => {
   newComment.value = ''
 }
 
-const submitReply = ({ commentId, content }) => {
+const toggleReplyInput = (comment) => {
+  if (replyingToId.value === comment.id) {
+    replyingToId.value = null
+    newReply.value = ''
+  } else {
+    replyingToId.value = comment.id
+    newReply.value = ''
+  }
+}
+
+const submitReply = (commentId) => {
+  if (!newReply.value.trim()) return
   const comment = comments.value.find((c) => c.id === commentId)
   if (!comment) return
   comment.replies.push({
     id: comment.replies.length + 1,
-    content,
+    content: newReply.value.trim(),
     createdAt: '방금 전',
   })
+  newReply.value = ''
+  replyingToId.value = null
 }
 </script>
 
@@ -121,7 +123,41 @@ const submitReply = ({ commentId, content }) => {
           첫 번째 댓글을 남겨보세요
         </li>
         <li v-for="comment in comments" :key="comment.id">
-          <BoardCommentItem :comment="comment" @open-reply="openReplyModal" />
+          <!-- 댓글 -->
+          <BoardCommentItem :comment="comment" @reply-click="toggleReplyInput" />
+
+          <!-- 대댓글 목록 -->
+          <ul v-if="comment.replies.length > 0">
+            <li v-for="reply in comment.replies" :key="reply.id">
+              <BoardCommentItem :comment="reply" :is-reply="true" />
+            </li>
+          </ul>
+
+          <!-- 인라인 대댓글 입력창 -->
+          <div v-if="replyingToId === comment.id" class="ml-6 pl-4 border-l-2 border-primary/30 py-3">
+            <div class="flex gap-2">
+              <input
+                v-model="newReply"
+                @keyup.enter="submitReply(comment.id)"
+                type="text"
+                placeholder="답글을 입력하세요"
+                class="flex-1 px-4 py-2 border border-border rounded-xl text-sm text-text-main outline-none focus:border-primary transition-colors"
+                autofocus
+              />
+              <button
+                @click="submitReply(comment.id)"
+                class="bg-primary hover:bg-primary-hover text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors shrink-0 cursor-pointer"
+              >
+                등록
+              </button>
+              <button
+                @click="toggleReplyInput(comment)"
+                class="text-sm text-text-sub hover:text-text-main px-3 py-2 rounded-xl border border-border transition-colors cursor-pointer"
+              >
+                취소
+              </button>
+            </div>
+          </div>
         </li>
       </ul>
 
@@ -143,12 +179,4 @@ const submitReply = ({ commentId, content }) => {
       </div>
     </div>
   </div>
-
-  <!-- 대댓글 모달 -->
-  <BoardReplyModal
-    v-if="showReplyModal && selectedComment"
-    :comment="selectedComment"
-    @close="closeReplyModal"
-    @submit-reply="submitReply"
-  />
 </template>

@@ -3,25 +3,31 @@ import { ChatBubbleOvalLeftIcon } from '@heroicons/vue/24/outline'
 
 defineProps({
   comment: Object,
+  isReply: {
+    type: Boolean,
+    default: false,
+  },
 })
 
-defineEmits(['open-reply'])
+defineEmits(['reply-click'])
 </script>
 
 <template>
   <div
-    class="py-4 cursor-pointer hover:bg-primary/5 rounded-xl px-2 transition-colors duration-150"
-    @click="$emit('open-reply', comment)"
+    class="py-4 px-2"
+    :class="isReply ? 'ml-6 pl-4 border-l-2 border-border' : ''"
   >
     <div class="flex items-center gap-2 mb-1.5">
+      <span v-if="isReply" class="text-xs text-text-sub">↳</span>
       <span class="text-xs font-medium text-primary">익명</span>
       <span class="text-xs text-text-sub">{{ comment.createdAt }}</span>
     </div>
     <div class="flex items-center justify-between gap-4">
       <p class="text-sm text-text-main leading-relaxed flex-1">{{ comment.content }}</p>
       <button
-        @click.stop="$emit('open-reply', comment)"
-        class="flex items-center gap-1 text-xs text-text-sub hover:text-primary transition-colors shrink-0"
+        v-if="!isReply"
+        @click="$emit('reply-click', comment)"
+        class="flex items-center gap-1 text-xs text-text-sub hover:text-primary transition-colors shrink-0 cursor-pointer"
       >
         <ChatBubbleOvalLeftIcon class="w-4 h-4" />
         {{ comment.replies?.length ?? 0 }}
