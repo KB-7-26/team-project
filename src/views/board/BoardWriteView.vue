@@ -2,21 +2,35 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
+import { boardApi } from '@/api/boardApi'
 
 const router = useRouter()
 
 const title = ref('')
 const content = ref('')
+const isAnonymous = ref(false)
 const titleError = ref(false)
 const contentError = ref(false)
+const isSubmitting = ref(false)
 
-const submit = () => {
+const submit = async () => {
   titleError.value = !title.value.trim()
   contentError.value = !content.value.trim()
   if (titleError.value || contentError.value) return
 
-  // 백엔드 연결 시 POST /api/board 호출
-  router.push('/board')
+  try {
+    isSubmitting.value = true
+    const response = await boardApi.createPost(title.value.trim(), content.value.trim(), isAnonymous.value)
+    router.push(`/board/${response.data.id}`)
+  } catch (e) {
+    if (e.response?.status === 401) {
+      router.push('/login')
+    } else {
+      alert('게시글 등록에 실패했습니다. 다시 시도해주세요.')
+    }
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 
@@ -59,6 +73,16 @@ const submit = () => {
         <p v-if="contentError" class="text-xs text-red-400">내용을 입력해주세요</p>
       </div>
 
+      <div class="flex items-center gap-2">
+        <input
+          id="isAnonymous"
+          v-model="isAnonymous"
+          type="checkbox"
+          class="w-4 h-4 accent-primary cursor-pointer"
+        />
+        <label for="isAnonymous" class="text-sm text-text-main cursor-pointer">익명으로 작성</label>
+      </div>
+
       <div class="flex justify-end gap-3">
         <button
           @click="router.back()"
@@ -68,9 +92,10 @@ const submit = () => {
         </button>
         <button
           @click="submit"
-          class="px-5 py-2.5 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer"
+          :disabled="isSubmitting"
+          class="px-5 py-2.5 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          등록
+          {{ isSubmitting ? '등록 중...' : '등록' }}
         </button>
       </div>
     </div>
