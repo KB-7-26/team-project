@@ -1,20 +1,25 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { AcademicCapIcon, CheckBadgeIcon, ShieldCheckIcon } from '@heroicons/vue/24/outline'
+import { authApi } from '@/api/authApi'
 
 defineOptions({
   name: 'SignupView',
 })
 
+const router = useRouter()
 const defaultFormMessage = '회원 정보를 입력해주세요'
 const formErrorMessage = ref('')
+const isSubmitting = ref(false)
 const signupForm = ref({
   userId: '',
   password: '',
   passwordConfirm: '',
   name: '',
   nickname: '',
+  email: '',
+  phoneNumber: '',
   gender: '',
   cohort: '',
 })
@@ -24,23 +29,39 @@ const invalidFields = ref({
   passwordConfirm: false,
   name: false,
   nickname: false,
+  email: false,
+  phoneNumber: false,
   gender: false,
   cohort: false,
 })
 
-const requiredFields = ['userId', 'password', 'passwordConfirm', 'name', 'nickname', 'gender', 'cohort']
+const requiredFields = [
+  'userId',
+  'password',
+  'passwordConfirm',
+  'name',
+  'nickname',
+  'email',
+  'phoneNumber',
+  'gender',
+  'cohort',
+]
 const emptyMessages = {
   userId: '아이디를 입력해주세요',
   password: '비밀번호를 입력해주세요',
   passwordConfirm: '비밀번호 확인을 입력해주세요',
   name: '이름을 입력해주세요',
   nickname: '닉네임을 입력해주세요',
+  email: '이메일을 입력해주세요',
+  phoneNumber: '전화번호를 입력해주세요',
   gender: '성별을 선택해주세요',
   cohort: '회차를 선택해주세요',
 }
 
 const formMessage = computed(() => formErrorMessage.value || defaultFormMessage)
 const isFormError = computed(() => Boolean(formErrorMessage.value))
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const phoneNumberPattern = /^[0-9]{2,3}-?[0-9]{3,4}-?[0-9]{4}$/
 
 const benefits = [
   {
@@ -81,7 +102,11 @@ const clearError = (field) => {
   }
 }
 
-const signupHandler = () => {
+const signupHandler = async () => {
+  if (isSubmitting.value) {
+    return
+  }
+
   const nextInvalidFields = requiredFields.reduce((result, field) => {
     result[field] = !String(signupForm.value[field]).trim()
     return result
@@ -100,6 +125,15 @@ const signupHandler = () => {
     return
   }
 
+  if (signupForm.value.password.length < 8) {
+    invalidFields.value = {
+      ...nextInvalidFields,
+      password: true,
+    }
+    formErrorMessage.value = '비밀번호는 8자 이상 입력해주세요'
+    return
+  }
+
   if (signupForm.value.password !== signupForm.value.passwordConfirm) {
     invalidFields.value = {
       ...nextInvalidFields,
@@ -110,8 +144,45 @@ const signupHandler = () => {
     return
   }
 
+  if (!emailPattern.test(signupForm.value.email.trim())) {
+    invalidFields.value = {
+      ...nextInvalidFields,
+      email: true,
+    }
+    formErrorMessage.value = '올바른 이메일 형식이 아닙니다'
+    return
+  }
+
+  if (!phoneNumberPattern.test(signupForm.value.phoneNumber.trim())) {
+    invalidFields.value = {
+      ...nextInvalidFields,
+      phoneNumber: true,
+    }
+    formErrorMessage.value = '전화번호 형식이 올바르지 않습니다'
+    return
+  }
+
   formErrorMessage.value = ''
-  // TODO: 추후 서버 연동 시 회원가입 요청 로직 추가
+  isSubmitting.value = true
+
+  try {
+    await authApi.signup({
+      loginId: signupForm.value.userId.trim(),
+      password: signupForm.value.password,
+      name: signupForm.value.name.trim(),
+      nickname: signupForm.value.nickname.trim(),
+      email: signupForm.value.email.trim(),
+      phoneNumber: signupForm.value.phoneNumber.trim(),
+      gender: signupForm.value.gender,
+      cohort: signupForm.value.cohort,
+    })
+
+    router.push('/login')
+  } catch (error) {
+    formErrorMessage.value = error.response?.data?.message || '회원가입에 실패했습니다'
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 
@@ -260,6 +331,45 @@ const signupHandler = () => {
           </label>
 
           <label class="block">
+            <span class="text-base font-extrabold text-text-main">이메일</span>
+            <input
+              v-model="signupForm.email"
+              type="email"
+              autocomplete="email"
+              placeholder="이메일을 입력하세요"
+              :aria-invalid="invalidFields.email"
+              aria-describedby="signup-form-message"
+              class="mt-3 h-14 w-full rounded-2xl border bg-white px-5 text-base font-medium text-text-main outline-none transition focus:ring-4"
+              :class="
+                invalidFields.email
+                  ? 'border-red-500 placeholder:text-red-500 focus:border-red-500 focus:ring-red-500/15'
+                  : 'border-border placeholder:text-text-sub focus:border-primary focus:ring-primary/15'
+              "
+              @input="clearError('email')"
+            />
+          </label>
+
+          <label class="block">
+            <span class="text-base font-extrabold text-text-main">전화번호</span>
+            <input
+              v-model="signupForm.phoneNumber"
+              type="tel"
+              autocomplete="tel"
+              inputmode="tel"
+              placeholder="010-1234-5678"
+              :aria-invalid="invalidFields.phoneNumber"
+              aria-describedby="signup-form-message"
+              class="mt-3 h-14 w-full rounded-2xl border bg-white px-5 text-base font-medium text-text-main outline-none transition focus:ring-4"
+              :class="
+                invalidFields.phoneNumber
+                  ? 'border-red-500 placeholder:text-red-500 focus:border-red-500 focus:ring-red-500/15'
+                  : 'border-border placeholder:text-text-sub focus:border-primary focus:ring-primary/15'
+              "
+              @input="clearError('phoneNumber')"
+            />
+          </label>
+
+          <label class="block">
             <span class="text-base font-extrabold text-text-main">성별</span>
             <select
               v-model="signupForm.gender"
@@ -276,8 +386,8 @@ const signupHandler = () => {
               @change="clearError('gender')"
             >
               <option value="" disabled>성별을 선택하세요</option>
-              <option value="male">남성</option>
-              <option value="female">여성</option>
+              <option value="M">남성</option>
+              <option value="F">여성</option>
             </select>
           </label>
 
@@ -306,9 +416,10 @@ const signupHandler = () => {
 
           <button
             type="submit"
-            class="mt-5 h-16 rounded-2xl bg-primary text-xl font-extrabold text-white transition hover:bg-primary-hover active:bg-primary-active"
+            :disabled="isSubmitting"
+            class="mt-5 h-16 rounded-2xl bg-primary text-xl font-extrabold text-white transition hover:bg-primary-hover active:bg-primary-active disabled:cursor-not-allowed disabled:bg-primary/60"
           >
-            가입
+            {{ isSubmitting ? '가입 중...' : '가입' }}
           </button>
         </form>
 
