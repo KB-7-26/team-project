@@ -32,6 +32,12 @@ import { RouterLink } from 'vue-router'
           </li>
         </ul>
         <RouterLink
+          to="/product/create"
+          class="border border-primary text-primary hover:bg-primary/10 px-5 py-2 rounded-lg text-base cursor-pointer"
+        >
+          상품등록
+        </RouterLink>
+        <RouterLink
           to="/login"
           class="bg-primary hover:bg-primary-hover text-white px-5 py-2 rounded-lg text-base cursor-pointer"
         >
