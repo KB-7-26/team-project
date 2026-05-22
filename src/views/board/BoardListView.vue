@@ -1,13 +1,21 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { PencilSquareIcon } from '@heroicons/vue/24/outline'
 import BoardPostCard from '@/components/board/BoardPostCard.vue'
-import postsData from '@/mocks/posts.json'
+import { boardApi } from '@/api/boardApi'
 
-const posts = postsData.data
+const posts = ref([])
+const currentPage = ref(0)
+const totalPages = ref(0)
 
-const currentPage = ref(1)
-const totalPages = 3
+async function fetchPosts(page = 0) {
+  const res = await boardApi.getPosts(page, 10)
+  posts.value = res.data.content
+  totalPages.value = res.data.totalPages
+  currentPage.value = page
+}
+
+onMounted(() => fetchPosts(0))
 </script>
 
 <template>
@@ -28,19 +36,21 @@ const totalPages = 3
         </RouterLink>
       </div>
 
-      <ul class="flex flex-col divide-y divide-border">
+      <ul v-if="posts.length > 0" class="flex flex-col divide-y divide-border">
         <li v-for="post in posts" :key="post.id">
           <BoardPostCard :post="post" />
         </li>
       </ul>
 
-      <div class="flex justify-center items-center gap-2 mt-8 mb-4">
+      <p v-else class="text-center text-text-sub py-16">아직 게시글이 없습니다.</p>
+
+      <div v-if="totalPages > 1" class="flex justify-center items-center gap-2 mt-8 mb-4">
         <button
           v-for="page in totalPages"
           :key="page"
-          @click="currentPage = page"
+          @click="fetchPosts(page - 1)"
           :class="
-            currentPage === page
+            currentPage === page - 1
               ? 'bg-primary text-white'
               : 'border border-border text-text-main hover:bg-primary/10'
           "
