@@ -6,6 +6,9 @@ export const boardApi = {
   getPosts(page = 0, size = 10) {
     return api.get(BASE_URL, { params: { page, size } })
   },
+  getPostById(id) {
+    return api.get(`${BASE_URL}/${id}`)
+  },
   createPost(title, content, isAnonymous) {
     return api.post(BASE_URL, { title, content, isAnonymous })
   },
