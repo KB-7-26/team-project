@@ -1,11 +1,12 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon } from '@heroicons/vue/24/outline'
 import ProductCard from '@/components/product/ProductCard.vue'
 import { productApi } from '@/api/productApi'
 import { categoryApi } from '@/api/categoryApi'
+import { useAuthStore } from '@/stores/auth'
 
-const likedIds = ref(new Set())
+const likedIds = ref([])
 const currentPage = ref(1)
 const searchQuery = ref('')
 const sortBy = ref('최신순')
@@ -16,6 +17,14 @@ const products = ref([])
 const categories = ref([])
 const isLoading = ref(false)
 const showAvailableOnly = ref(false)
+const authStore = useAuthStore()
+const dropdownRef = ref(null)
+const sortParamMap = {
+  최신순: null,
+  가격낮은순: 'price,asc',
+  가격높은순: 'price,desc',
+  추천순: 'favoriteCount,desc',
+}
 
 const sortOptions = ['최신순', '가격낮은순', '가격높은순', '추천순']
 const saleStatusMap = { available: '판매중', reserved: '거래중', sold: '거래완료' }
@@ -23,7 +32,19 @@ const saleStatusMap = { available: '판매중', reserved: '거래중', sold: '�
 onMounted(() => {
   fetchCategories()
   fetchProducts()
+  if (authStore.isLoggedIn && authStore.user?.id) fetchFavorites()
+  document.addEventListener('click', handleOutsideClick)
 })
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleOutsideClick)
+})
+
+const handleOutsideClick = (e) => {
+  if (dropdownRef.value && !dropdownRef.value.contains(e.target)) {
+    showSortDropdown.value = false
+  }
+}
 
 const fetchCategories = async () => {
   const { data } = await categoryApi.getCategories()
@@ -41,6 +62,7 @@ const fetchProducts = async () => {
     if (showAvailableOnly.value) {
       params.saleStatus = 'available'
     }
+    if (sortParamMap[sortBy.value]) params.sort = sortParamMap[sortBy.value]
 
     const { data } = await productApi.getProducts(params)
     products.value = data.content.map((p) => ({
@@ -49,7 +71,7 @@ const fetchProducts = async () => {
       price: p.price,
       image: p.thumbnailUrl ?? 'https://placehold.co/400x300?text=No+Image',
       status: saleStatusMap[p.saleStatus] ?? p.saleStatus,
-      views: 0,
+      views: p.views ?? 0,
       favoriteCount: p.favoriteCount,
     }))
     totalPages.value = data.totalPages
@@ -65,14 +87,31 @@ const selectSort = (option) => {
   showSortDropdown.value = false
 }
 
-const toggleLike = (id) => {
-  if (likedIds.value.has(id)) {
-    likedIds.value.delete(id)
-  } else {
-    likedIds.value.add(id)
+const toggleLike = async (id) => {
+  if (!authStore.isLoggedIn) return
+  const isLiked = likedIds.value.includes(id)
+  likedIds.value = isLiked ? likedIds.value.filter((i) => i !== id) : [...likedIds.value, id]
+  try {
+    isLiked ? await productApi.removeFavorite(id) : await productApi.addFavorite(id)
+  } catch (e) {
+    likedIds.value = isLiked ? [...likedIds.value, id] : likedIds.value.filter((i) => i !== id)
+    console.error('찜 변경 실패', e)
   }
-  likedIds.value = new Set(likedIds.value)
 }
+const fetchFavorites = async () => {
+  try {
+    const { data } = await productApi.getFavorites(authStore.user.id)
+    const items = Array.isArray(data) ? data : (data.content ?? [])
+    likedIds.value = items.map((p) => p.id)
+  } catch (e) {
+    console.error('찜 목록 조회 실패', e)
+  }
+}
+
+watch(sortBy, () => {
+  currentPage.value = 1
+  fetchProducts()
+})
 
 watch(selectedCategoryId, () => {
   currentPage.value = 1
@@ -88,15 +127,9 @@ watch(showAvailableOnly, () => {
 watch(currentPage, fetchProducts)
 
 const filteredProducts = computed(() => {
-  let result = [...products.value]
-  if (searchQuery.value.trim()) {
-    const q = searchQuery.value.toLowerCase()
-    result = result.filter((p) => p.title.toLowerCase().includes(q))
-  }
-  if (sortBy.value === '가격낮은순') return [...result].sort((a, b) => a.price - b.price)
-  if (sortBy.value === '가격높은순') return [...result].sort((a, b) => b.price - a.price)
-  if (sortBy.value === '추천순') return [...result].sort((a, b) => b.favoriteCount - a.favoriteCount)
-  return result
+  if (!searchQuery.value.trim()) return products.value
+  const q = searchQuery.value.toLowerCase()
+  return products.value.filter((p) => p.title.toLowerCase().includes(q))
 })
 </script>
 
@@ -118,7 +151,7 @@ const filteredProducts = computed(() => {
             />
           </div>
           <!-- 정렬 필터 -->
-          <div class="relative">
+          <div ref="dropdownRef" class="relative">
             <button
               @click="showSortDropdown = !showSortDropdown"
               class="h-full px-4 bg-white rounded-xl border border-border text-sm font-semibold flex items-center gap-1.5 shadow-sm whitespace-nowrap"
@@ -162,7 +195,7 @@ const filteredProducts = computed(() => {
     <!-- 본문 -->
     <div class="flex w-full mx-auto items-start px-6 py-8 gap-6">
       <!-- PC 사이드바 -->
-      <div class="side hidden md:block border border-border rounded-2xl p-4 w-54 shrink-0 sticky top-20 self-start">
+      <div class="side hidden md:block border border-border rounded-2xl p-4 w-56 shrink-0 sticky top-20 self-start">
         <p class="text-lg font-bold text-text-main px-4 pt-4 pb-2">카테고리</p>
         <!-- 거래 가능만 보기 토글 -->
         <div class="flex items-center justify-between px-4 py-2">
@@ -205,7 +238,7 @@ const filteredProducts = computed(() => {
             v-for="product in filteredProducts"
             :key="product.id"
             :product="product"
-            :liked="likedIds.has(product.id)"
+            :liked="likedIds.includes(product.id)"
             @toggle-like="toggleLike"
           />
         </div>
