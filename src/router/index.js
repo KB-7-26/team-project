@@ -11,9 +11,7 @@ const router = createRouter({
     {
       path: '/chats',
       component: () => import('@/views/chat/ChatLayout.vue'),
-      children: [
-        { path: ':chatRoomId', component: () => import('@/views/chat/ChatRoomView.vue') },
-      ],
+      children: [{ path: ':chatRoomId', component: () => import('@/views/chat/ChatRoomView.vue') }],
     },
     {
       path: '/login',
@@ -40,6 +38,10 @@ const router = createRouter({
     {
       path: '/board/write',
       component: () => import('@/views/board/BoardWriteView.vue'),
+    },
+    {
+      path: '/board/:id/edit',
+      component: () => import('@/views/board/BoardEditView.vue'),
     },
     {
       path: '/board/:id',

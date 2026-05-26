@@ -12,6 +12,7 @@ const router = useRouter()
 const postId = Number(route.params.id)
 const post = ref(null)
 const loading = ref(true)
+const isDeleting = ref(false)
 const comments = ref(commentsData[postId]?.data ?? [])
 
 const newComment = ref('')
@@ -20,8 +21,7 @@ const newReply = ref('')
 
 onMounted(async () => {
   try {
-    const res = await boardApi.getPostById(postId)
-    post.value = res.data
+    post.value = await boardApi.getPostById(postId)
   } catch (e) {
     if (e.response?.status === 404) {
       router.replace('/board')
@@ -30,6 +30,27 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+const deletePost = async () => {
+  if (isDeleting.value) return
+  if (!confirm('게시글을 삭제하시겠습니까?')) return
+
+  try {
+    isDeleting.value = true
+    await boardApi.deletePost(postId)
+    router.replace('/board')
+  } catch (e) {
+    if (e.response?.status === 401) {
+      router.push('/login')
+    } else if (e.response?.status === 403) {
+      alert('게시글 삭제 권한이 없습니다.')
+    } else {
+      alert('게시글 삭제에 실패했습니다. 다시 시도해주세요.')
+    }
+  } finally {
+    isDeleting.value = false
+  }
+}
 
 const submitComment = () => {
   if (!newComment.value.trim()) return
@@ -92,10 +113,12 @@ const submitReply = (commentId) => {
               수정
             </RouterLink>
             <button
+              @click="deletePost"
+              :disabled="isDeleting"
               class="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
             >
               <TrashIcon class="w-3.5 h-3.5" />
-              삭제
+              {{ isDeleting ? '삭제 중' : '삭제' }}
             </button>
           </div>
         </div>
@@ -112,9 +135,7 @@ const submitReply = (commentId) => {
         <p class="text-base font-bold text-text-main mb-4">댓글 {{ comments.length }}</p>
 
         <ul class="flex flex-col divide-y divide-border mb-6">
-          <li v-if="comments.length === 0" class="py-8 text-center text-sm text-text-sub">
-            첫 번째 댓글을 남겨보세요
-          </li>
+          <li v-if="comments.length === 0" class="py-8 text-center text-sm text-text-sub">첫 번째 댓글을 남겨보세요</li>
           <li v-for="comment in comments" :key="comment.id">
             <!-- 댓글 -->
             <BoardCommentItem :comment="comment" @reply-click="toggleReplyInput" />

@@ -2,14 +2,27 @@ import api from './axios'
 
 const BASE_URL = '/posts'
 
+const unwrapData = (response) => response.data.data
+
 export const boardApi = {
-  getPosts(page = 0, size = 10) {
-    return api.get(BASE_URL, { params: { page, size } })
+  async getPosts(page = 0, size = 10) {
+    const response = await api.get(BASE_URL, { params: { page, size } })
+    return unwrapData(response)
   },
-  getPostById(id) {
-    return api.get(`${BASE_URL}/${id}`)
+  async getPostById(id) {
+    const response = await api.get(`${BASE_URL}/${id}`)
+    return unwrapData(response)
   },
-  createPost(title, content, isAnonymous) {
-    return api.post(BASE_URL, { title, content, isAnonymous })
+  async createPost(title, content, isAnonymous) {
+    const response = await api.post(BASE_URL, { title, content, isAnonymous })
+    return unwrapData(response)
+  },
+  async updatePost(id, title, content, isAnonymous) {
+    const response = await api.put(`${BASE_URL}/${id}`, { title, content, isAnonymous })
+    return unwrapData(response)
+  },
+  async deletePost(id) {
+    const response = await api.delete(`${BASE_URL}/${id}`)
+    return unwrapData(response)
   },
 }

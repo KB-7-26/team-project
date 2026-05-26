@@ -20,8 +20,8 @@ const submit = async () => {
 
   try {
     isSubmitting.value = true
-    const response = await boardApi.createPost(title.value.trim(), content.value.trim(), isAnonymous.value)
-    router.push(`/board/${response.data.id}`)
+    const post = await boardApi.createPost(title.value.trim(), content.value.trim(), isAnonymous.value)
+    router.push(`/board/${post.id}`)
   } catch (e) {
     if (e.response?.status === 401) {
       router.push('/login')
@@ -74,12 +74,7 @@ const submit = async () => {
       </div>
 
       <div class="flex items-center gap-2">
-        <input
-          id="isAnonymous"
-          v-model="isAnonymous"
-          type="checkbox"
-          class="w-4 h-4 accent-primary cursor-pointer"
-        />
+        <input id="isAnonymous" v-model="isAnonymous" type="checkbox" class="w-4 h-4 accent-primary cursor-pointer" />
         <label for="isAnonymous" class="text-sm text-text-main cursor-pointer">익명으로 작성</label>
       </div>
 
