@@ -9,9 +9,9 @@ const currentPage = ref(0)
 const totalPages = ref(0)
 
 async function fetchPosts(page = 0) {
-  const res = await boardApi.getPosts(page, 10)
-  posts.value = res.data.content
-  totalPages.value = res.data.totalPages
+  const pageData = await boardApi.getPosts(page, 10)
+  posts.value = pageData.content
+  totalPages.value = pageData.totalPages
   currentPage.value = page
 }
 
