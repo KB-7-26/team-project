@@ -29,6 +29,10 @@ export const productApi = {
     return api.patch(`/products/${id}/status`, { status })
   },
 
+  getFavorites(userId) {
+    return api.get(`/users/${userId}/favorites`)
+  },
+
   addFavorite(id) {
     return api.post(`/products/${id}/favorites`)
   },
