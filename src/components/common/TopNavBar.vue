@@ -1,5 +1,14 @@
 <script setup>
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+const logout = async () => {
+  await authStore.logout()
+  router.push('/login')
+}
 </script>
 
 <template>
@@ -38,11 +47,27 @@ import { RouterLink } from 'vue-router'
           상품등록
         </RouterLink>
         <RouterLink
+          v-if="!authStore.isLoggedIn && !authStore.needsProfile"
           to="/login"
           class="bg-primary hover:bg-primary-hover text-white px-5 py-2 rounded-lg text-base cursor-pointer"
         >
           로그인
         </RouterLink>
+        <RouterLink
+          v-else-if="authStore.needsProfile"
+          to="/signup/profile"
+          class="bg-primary hover:bg-primary-hover text-white px-5 py-2 rounded-lg text-base cursor-pointer"
+        >
+          프로필 입력
+        </RouterLink>
+        <button
+          v-else
+          type="button"
+          class="bg-primary hover:bg-primary-hover text-white px-5 py-2 rounded-lg text-base cursor-pointer"
+          @click="logout"
+        >
+          로그아웃
+        </button>
       </div>
     </nav>
   </div>

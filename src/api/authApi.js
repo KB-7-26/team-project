@@ -1,15 +1,11 @@
 import api from './axios'
 
 export const authApi = {
-  signup(body) {
-    return api.post('/auth/signup', body)
+  me() {
+    return api.get('/auth/me')
   },
 
-  login(body) {
-    return api.post('/auth/login', body)
-  },
-
-  logout() {
-    return api.post('/auth/logout')
+  createProfile(body) {
+    return api.post('/auth/profile', body)
   },
 }
