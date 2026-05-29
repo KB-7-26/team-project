@@ -7,33 +7,49 @@ import {
   CubeIcon,
   HeartIcon,
   ShoppingBagIcon,
-  StarIcon,
+  UserCircleIcon,
   UserIcon,
 } from '@heroicons/vue/24/outline'
 import { ArrowTrendingUpIcon } from '@heroicons/vue/24/solid'
 import ProductCard from '@/components/product/ProductCard.vue'
+import { useAuthStore } from '@/stores/auth'
 
 defineOptions({
   name: 'MyPageView',
 })
 
-const selectedMenu = ref('sales')
+const authStore = useAuthStore()
+const selectedMenu = ref('profile')
 const selectedSaleStatus = ref('판매중')
 const likedIds = ref(new Set([1, 3, 5]))
 
-const profile = {
-  name: '김철수',
-  nickname: '철수마켓',
-  cohort: '25회차 전공',
-  image: 'https://picsum.photos/id/1005/240/240',
-  trustScore: 98,
-  stats: [
-    { label: '판매', value: 6, icon: ShoppingBagIcon },
-    { label: '구매', value: 12, icon: CubeIcon },
-    { label: '찜', value: 34, icon: HeartIcon },
-    { label: '후기', value: 28, icon: StarIcon },
-  ],
-}
+const currentUser = computed(() => authStore.user)
+const firebaseUser = computed(() => authStore.firebaseUser)
+const profileImageUrl = computed(() => currentUser.value?.profileImageUrl || firebaseUser.value?.photoURL || '')
+const profile = computed(() => ({
+  name: currentUser.value?.name || '프로필 없음',
+  nickname: currentUser.value?.nickname || '프로필 없음',
+  cohort: currentUser.value?.cohort || '회차 정보 없음',
+  trustScore: currentUser.value?.trustScore ?? 0,
+}))
+const accountRows = computed(() => [
+  { label: '이름', value: currentUser.value?.name },
+  { label: '닉네임', value: currentUser.value?.nickname },
+  { label: '이메일', value: currentUser.value?.email },
+  { label: 'Firebase 이메일', value: firebaseUser.value?.email },
+  { label: '전화번호', value: currentUser.value?.phoneNumber },
+  {
+    label: '성별',
+    value:
+      currentUser.value?.gender === 'M'
+        ? '남성'
+        : currentUser.value?.gender === 'F'
+          ? '여성'
+          : currentUser.value?.gender,
+  },
+  { label: '회차', value: currentUser.value?.cohort },
+  { label: '신뢰도', value: currentUser.value?.trustScore != null ? `${currentUser.value.trustScore}%` : '' },
+])
 
 const menuItems = [
   { id: 'profile', label: '내 프로필', icon: UserIcon },
@@ -206,10 +222,17 @@ const toggleLike = (id) => {
         <section class="rounded-2xl border border-border bg-white p-7 shadow-sm">
           <div class="flex flex-col items-center text-center">
             <img
-              :src="profile.image"
+              v-if="profileImageUrl"
+              :src="profileImageUrl"
               :alt="`${profile.nickname} 프로필 이미지`"
               class="h-28 w-28 rounded-full border-4 border-primary/20 object-cover"
             />
+            <div
+              v-else
+              class="flex h-28 w-28 items-center justify-center rounded-full border-4 border-primary/20 bg-primary/10"
+            >
+              <UserCircleIcon class="h-16 w-16 text-primary" />
+            </div>
             <h2 class="mt-5 text-2xl font-extrabold text-text-main">{{ profile.nickname }}</h2>
             <p class="mt-2 text-sm font-bold text-primary">{{ profile.cohort }}</p>
             <p class="mt-2 flex items-center gap-1 text-sm font-medium text-text-sub">
@@ -217,25 +240,6 @@ const toggleLike = (id) => {
               신뢰도 {{ profile.trustScore }}%
             </p>
           </div>
-
-          <dl class="mt-7 grid grid-cols-2 gap-3">
-            <div
-              v-for="stat in profile.stats"
-              :key="stat.label"
-              class="rounded-2xl bg-sub-bg px-4 py-4 text-center"
-            >
-              <component :is="stat.icon" class="mx-auto h-6 w-6 text-primary" />
-              <dt class="mt-2 text-2xl font-extrabold text-text-main">{{ stat.value }}</dt>
-              <dd class="mt-1 text-xs font-medium text-text-sub">{{ stat.label }}</dd>
-            </div>
-          </dl>
-
-          <button
-            type="button"
-            class="mt-7 h-14 w-full rounded-2xl bg-primary text-base font-extrabold text-white transition hover:bg-primary-hover active:bg-primary-active"
-          >
-            프로필 수정
-          </button>
         </section>
 
         <nav class="rounded-2xl border border-border bg-white p-4 shadow-sm">
@@ -258,32 +262,50 @@ const toggleLike = (id) => {
       </aside>
 
       <section class="min-w-0 flex-1">
-        <div v-if="selectedMenu === 'sales'" class="rounded-2xl border border-border bg-white p-6 shadow-sm md:p-8">
-          <div class="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 class="text-2xl font-extrabold text-text-main">내 판매목록</h2>
-              <p class="mt-2 text-sm font-medium text-text-sub">판매 상태별로 내 상품을 확인하세요</p>
+        <div v-if="selectedMenu === 'profile'" class="rounded-2xl border border-border bg-white p-6 shadow-sm md:p-8">
+          <h2 class="text-2xl font-extrabold text-text-main">내 프로필</h2>
+          <p class="mt-2 text-sm font-medium text-text-sub">현재 로그인된 계정 정보입니다</p>
+
+          <dl class="mt-6 grid gap-4 md:grid-cols-2">
+            <div
+              v-for="row in accountRows"
+              :key="row.label"
+              class="rounded-2xl bg-sub-bg px-5 py-4"
+            >
+              <dt class="text-sm font-bold text-text-sub">{{ row.label }}</dt>
+              <dd class="mt-2 break-words text-base font-extrabold text-text-main">
+                {{ row.value || '-' }}
+              </dd>
             </div>
-            <div class="flex flex-wrap gap-3">
-              <button
-                v-for="status in saleStatusTabs"
-                :key="status"
-                type="button"
-                class="h-12 rounded-full px-6 text-sm font-extrabold transition"
-                :class="
-                  selectedSaleStatus === status
-                    ? 'bg-primary text-white shadow-[0_8px_18px_rgba(255,184,0,0.35)]'
-                    : 'bg-sub-bg text-text-main hover:bg-primary/10 hover:text-primary'
-                "
-                @click="selectedSaleStatus = status"
-              >
-                {{ status }}
-              </button>
-            </div>
-          </div>
+          </dl>
         </div>
 
-        <template v-if="selectedMenu === 'sales'">
+        <template v-else-if="selectedMenu === 'sales'">
+          <div class="rounded-2xl border border-border bg-white p-6 shadow-sm md:p-8">
+            <div class="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h2 class="text-2xl font-extrabold text-text-main">내 판매목록</h2>
+                <p class="mt-2 text-sm font-medium text-text-sub">판매 상태별로 내 상품을 확인하세요</p>
+              </div>
+              <div class="flex flex-wrap gap-3">
+                <button
+                  v-for="status in saleStatusTabs"
+                  :key="status"
+                  type="button"
+                  class="h-12 rounded-full px-6 text-sm font-extrabold transition"
+                  :class="
+                    selectedSaleStatus === status
+                      ? 'bg-primary text-white shadow-[0_8px_18px_rgba(255,184,0,0.35)]'
+                      : 'bg-sub-bg text-text-main hover:bg-primary/10 hover:text-primary'
+                  "
+                  @click="selectedSaleStatus = status"
+                >
+                  {{ status }}
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div v-if="filteredSaleProducts.length" class="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             <ProductCard
               v-for="product in filteredSaleProducts"

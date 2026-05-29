@@ -1,25 +1,39 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
+import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
 import { ChatBubbleLeftRightIcon, CheckBadgeIcon, ShieldCheckIcon } from '@heroicons/vue/24/outline'
+import { auth, googleProvider } from '@/firebase'
+import { useAuthStore } from '@/stores/auth'
 
 defineOptions({
   name: 'LoginView',
 })
 
-const userId = ref('')
+const router = useRouter()
+const authStore = useAuthStore()
+const email = ref('')
 const password = ref('')
-const defaultFormMessage = '로그인하여 계속하세요'  // 기본 메세지
-const formErrorMessage = ref('')    // 에러 메세지 (에러 종류를 식별하는 용도 겸함)
-const invalidFields = ref({     // 각 필드의 유효성
-  userId: false,
+const defaultFormMessage = '로그인하여 계속하세요'
+const formErrorMessage = ref('')
+const invalidFields = ref({
+  email: false,
   password: false,
 })
+const isSubmitting = ref(false)
+const isGoogleSubmitting = ref(false)
 
-const formMessage = computed(() => formErrorMessage.value || defaultFormMessage)    // 실제로 표시되는 메세지 (에러가 있으면 에러 메세지, 없으면 기본 메세지)
-const isFormError = computed(() => Boolean(formErrorMessage.value))     // 에러 여부
+const formMessage = computed(() => formErrorMessage.value || defaultFormMessage)
+const isFormError = computed(() => Boolean(formErrorMessage.value))
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const firebaseErrorMessages = {
+  'auth/invalid-credential': '이메일 또는 비밀번호가 올바르지 않습니다',
+  'auth/invalid-email': '올바른 이메일 형식이 아닙니다',
+  'auth/user-disabled': '비활성화된 계정입니다',
+  'auth/popup-closed-by-user': 'Google 로그인이 취소되었습니다',
+  'auth/network-request-failed': '네트워크 연결을 확인해주세요',
+}
 
-// 특징 설명의 추가 및 수정은 여기서!
 const features = [
   {
     icon: ShieldCheckIcon,
@@ -39,35 +53,47 @@ const features = [
 ]
 
 const clearError = (field) => {
-  if (field === 'userId') {
-    invalidFields.value.userId = false
+  if (field === 'email') {
+    invalidFields.value.email = false
   }
 
   if (field === 'password') {
     invalidFields.value.password = false
   }
 
-  if (!invalidFields.value.userId && !invalidFields.value.password) {
+  if (!invalidFields.value.email && !invalidFields.value.password) {
     formErrorMessage.value = ''
   }
 }
 
-const loginHandler = () => {
-  const isUserIdEmpty = !userId.value.trim()
-  const isPasswordEmpty = !password.value.trim()
-
-  invalidFields.value = {
-    userId: isUserIdEmpty,
-    password: isPasswordEmpty,
+const routeAfterLogin = () => {
+  if (authStore.needsProfile) {
+    router.push('/signup/profile')
+    return
   }
+  router.push('/')
+}
 
-  if (isUserIdEmpty && isPasswordEmpty) {
-    formErrorMessage.value = '아이디와 비밀번호를 입력해주세요'
+const loginHandler = async () => {
+  if (isSubmitting.value) {
     return
   }
 
-  if (isUserIdEmpty) {
-    formErrorMessage.value = '아이디를 입력해주세요'
+  const isEmailEmpty = !email.value.trim()
+  const isPasswordEmpty = !password.value.trim()
+
+  invalidFields.value = {
+    email: isEmailEmpty,
+    password: isPasswordEmpty,
+  }
+
+  if (isEmailEmpty && isPasswordEmpty) {
+    formErrorMessage.value = '이메일과 비밀번호를 입력해주세요'
+    return
+  }
+
+  if (isEmailEmpty) {
+    formErrorMessage.value = '이메일을 입력해주세요'
     return
   }
 
@@ -76,8 +102,45 @@ const loginHandler = () => {
     return
   }
 
+  if (!emailPattern.test(email.value.trim())) {
+    invalidFields.value.email = true
+    formErrorMessage.value = '올바른 이메일 형식이 아닙니다'
+    return
+  }
+
   formErrorMessage.value = ''
-  // TODO: 추후 서버 연동 시 인증 요청 로직 추가
+  isSubmitting.value = true
+
+  try {
+    const credential = await signInWithEmailAndPassword(auth, email.value.trim(), password.value)
+    await credential.user.getIdToken(true)
+    await authStore.refreshMe()
+    routeAfterLogin()
+  } catch (error) {
+    formErrorMessage.value = firebaseErrorMessages[error.code] || '로그인에 실패했습니다'
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+const googleLoginHandler = async () => {
+  if (isGoogleSubmitting.value) {
+    return
+  }
+
+  formErrorMessage.value = ''
+  isGoogleSubmitting.value = true
+
+  try {
+    const credential = await signInWithPopup(auth, googleProvider)
+    await credential.user.getIdToken(true)
+    await authStore.refreshMe()
+    routeAfterLogin()
+  } catch (error) {
+    formErrorMessage.value = firebaseErrorMessages[error.code] || 'Google 로그인에 실패했습니다'
+  } finally {
+    isGoogleSubmitting.value = false
+  }
 }
 </script>
 
@@ -133,21 +196,21 @@ const loginHandler = () => {
 
         <form class="mt-10 flex flex-col gap-7" @submit.prevent="loginHandler">
           <label class="block">
-            <span class="text-lg font-extrabold text-text-main">아이디</span>
+            <span class="text-lg font-extrabold text-text-main">이메일</span>
             <input
-              v-model="userId"
-              type="text"
-              autocomplete="username"
-              placeholder="아이디를 입력하세요"
-              :aria-invalid="invalidFields.userId"
+              v-model="email"
+              type="email"
+              autocomplete="email"
+              placeholder="이메일을 입력하세요"
+              :aria-invalid="invalidFields.email"
               aria-describedby="login-form-message"
               class="mt-4 h-17 w-full rounded-2xl border bg-white px-6 text-lg font-medium text-text-main outline-none transition focus:ring-4"
               :class="
-                invalidFields.userId
+                invalidFields.email
                   ? 'border-red-500 placeholder:text-red-500 focus:border-red-500 focus:ring-red-500/15'
                   : 'border-border placeholder:text-text-sub focus:border-primary focus:ring-primary/15'
               "
-              @input="clearError('userId')"
+              @input="clearError('email')"
             />
           </label>
 
@@ -172,11 +235,22 @@ const loginHandler = () => {
 
           <button
             type="submit"
-            class="mt-6 h-17 rounded-2xl bg-primary text-xl font-extrabold text-white transition hover:bg-primary-hover active:bg-primary-active"
+            :disabled="isSubmitting || isGoogleSubmitting"
+            class="mt-6 h-17 rounded-2xl bg-primary text-xl font-extrabold text-white transition hover:bg-primary-hover active:bg-primary-active disabled:cursor-not-allowed disabled:bg-primary/60"
           >
-            로그인
+            {{ isSubmitting ? '로그인 중...' : '로그인' }}
           </button>
         </form>
+
+        <button
+          type="button"
+          :disabled="isSubmitting || isGoogleSubmitting"
+          class="mt-5 flex h-16 w-full items-center justify-center gap-3 rounded-2xl border border-border bg-white text-lg font-extrabold text-text-main transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+          @click="googleLoginHandler"
+        >
+          <span class="text-xl font-extrabold text-primary">G</span>
+          {{ isGoogleSubmitting ? 'Google 로그인 중...' : 'Google로 계속하기' }}
+        </button>
 
         <p class="mt-10 text-center text-base font-medium text-text-sub sm:text-lg">
           계정이 없으신가요?

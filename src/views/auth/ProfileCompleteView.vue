@@ -1,34 +1,26 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { AcademicCapIcon, CheckBadgeIcon, ShieldCheckIcon } from '@heroicons/vue/24/outline'
-import { auth } from '@/firebase'
+import { useRouter } from 'vue-router'
+import { CheckBadgeIcon, UserCircleIcon } from '@heroicons/vue/24/outline'
 import { useAuthStore } from '@/stores/auth'
 
 defineOptions({
-  name: 'SignupView',
+  name: 'ProfileCompleteView',
 })
 
 const router = useRouter()
 const authStore = useAuthStore()
-const defaultFormMessage = '회원 정보를 입력해주세요'
+const defaultFormMessage = '서비스 이용에 필요한 정보를 입력해주세요'
 const formErrorMessage = ref('')
 const isSubmitting = ref(false)
-const signupForm = ref({
-  email: '',
-  password: '',
-  passwordConfirm: '',
-  name: '',
+const profileForm = ref({
+  name: authStore.pendingUser?.name || '',
   nickname: '',
   phoneNumber: '',
   gender: '',
   cohort: '',
 })
 const invalidFields = ref({
-  email: false,
-  password: false,
-  passwordConfirm: false,
   name: false,
   nickname: false,
   phoneNumber: false,
@@ -36,57 +28,14 @@ const invalidFields = ref({
   cohort: false,
 })
 
-const requiredFields = [
-  'email',
-  'password',
-  'passwordConfirm',
-  'name',
-  'nickname',
-  'phoneNumber',
-  'gender',
-  'cohort',
-]
+const requiredFields = ['name', 'nickname', 'phoneNumber', 'gender', 'cohort']
 const emptyMessages = {
-  email: '이메일을 입력해주세요',
-  password: '비밀번호를 입력해주세요',
-  passwordConfirm: '비밀번호 확인을 입력해주세요',
   name: '이름을 입력해주세요',
   nickname: '닉네임을 입력해주세요',
   phoneNumber: '전화번호를 입력해주세요',
   gender: '성별을 선택해주세요',
   cohort: '회차를 선택해주세요',
 }
-
-const firebaseErrorMessages = {
-  'auth/email-already-in-use': '이미 가입된 이메일입니다',
-  'auth/invalid-email': '올바른 이메일 형식이 아닙니다',
-  'auth/weak-password': '비밀번호는 6자 이상 입력해주세요',
-  'auth/network-request-failed': '네트워크 연결을 확인해주세요',
-}
-
-const formMessage = computed(() => formErrorMessage.value || defaultFormMessage)
-const isFormError = computed(() => Boolean(formErrorMessage.value))
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const phoneNumberPattern = /^[0-9]{2,3}-?[0-9]{3,4}-?[0-9]{4}$/
-
-const benefits = [
-  {
-    icon: ShieldCheckIcon,
-    title: '인증된 거래',
-    description: '학생 정보 기반으로 신뢰도를 높여요',
-  },
-  {
-    icon: AcademicCapIcon,
-    title: '회차별 커뮤니티',
-    description: '같은 과정의 동료들과 빠르게 연결돼요',
-  },
-  {
-    icon: CheckBadgeIcon,
-    title: '간편한 시작',
-    description: '필수 정보만 입력하고 바로 이용하세요',
-  },
-]
-
 const cohortOptions = [
   '21회차 전공',
   '22회차 전공',
@@ -99,6 +48,11 @@ const cohortOptions = [
   '29회차 전공',
   '30회차 비전공',
 ]
+const phoneNumberPattern = /^[0-9]{2,3}-?[0-9]{3,4}-?[0-9]{4}$/
+
+const formMessage = computed(() => formErrorMessage.value || defaultFormMessage)
+const isFormError = computed(() => Boolean(formErrorMessage.value))
+const pendingEmail = computed(() => authStore.pendingUser?.email || '')
 
 const clearError = (field) => {
   invalidFields.value[field] = false
@@ -108,13 +62,13 @@ const clearError = (field) => {
   }
 }
 
-const signupHandler = async () => {
+const submitProfile = async () => {
   if (isSubmitting.value) {
     return
   }
 
   const nextInvalidFields = requiredFields.reduce((result, field) => {
-    result[field] = !String(signupForm.value[field]).trim()
+    result[field] = !String(profileForm.value[field]).trim()
     return result
   }, {})
   const emptyFields = requiredFields.filter((field) => nextInvalidFields[field])
@@ -131,35 +85,7 @@ const signupHandler = async () => {
     return
   }
 
-  if (!emailPattern.test(signupForm.value.email.trim())) {
-    invalidFields.value = {
-      ...nextInvalidFields,
-      email: true,
-    }
-    formErrorMessage.value = '올바른 이메일 형식이 아닙니다'
-    return
-  }
-
-  if (signupForm.value.password.length < 8) {
-    invalidFields.value = {
-      ...nextInvalidFields,
-      password: true,
-    }
-    formErrorMessage.value = '비밀번호는 8자 이상 입력해주세요'
-    return
-  }
-
-  if (signupForm.value.password !== signupForm.value.passwordConfirm) {
-    invalidFields.value = {
-      ...nextInvalidFields,
-      password: true,
-      passwordConfirm: true,
-    }
-    formErrorMessage.value = '비밀번호가 일치하지 않습니다'
-    return
-  }
-
-  if (!phoneNumberPattern.test(signupForm.value.phoneNumber.trim())) {
+  if (!phoneNumberPattern.test(profileForm.value.phoneNumber.trim())) {
     invalidFields.value = {
       ...nextInvalidFields,
       phoneNumber: true,
@@ -172,27 +98,25 @@ const signupHandler = async () => {
   isSubmitting.value = true
 
   try {
-    const credential = await createUserWithEmailAndPassword(
-      auth,
-      signupForm.value.email.trim(),
-      signupForm.value.password,
-    )
-    await credential.user.getIdToken(true)
     await authStore.completeProfile({
-      name: signupForm.value.name.trim(),
-      nickname: signupForm.value.nickname.trim(),
-      phoneNumber: signupForm.value.phoneNumber.trim(),
-      gender: signupForm.value.gender,
-      cohort: signupForm.value.cohort,
+      name: profileForm.value.name.trim(),
+      nickname: profileForm.value.nickname.trim(),
+      phoneNumber: profileForm.value.phoneNumber.trim(),
+      gender: profileForm.value.gender,
+      cohort: profileForm.value.cohort,
+      profileImageUrl: authStore.pendingUser?.profileImageUrl || '',
     })
-
     router.push('/')
   } catch (error) {
-    formErrorMessage.value =
-      firebaseErrorMessages[error.code] || error.response?.data?.message || '회원가입에 실패했습니다'
+    formErrorMessage.value = error.response?.data?.message || '프로필 저장에 실패했습니다'
   } finally {
     isSubmitting.value = false
   }
+}
+
+const logout = async () => {
+  await authStore.logout()
+  router.push('/login')
 }
 </script>
 
@@ -202,20 +126,29 @@ const signupHandler = async () => {
       <div class="mx-auto w-full max-w-2xl">
         <div class="max-w-xl">
           <h1 class="text-4xl font-extrabold leading-tight text-text-main sm:text-5xl lg:text-6xl">
-            KB Swap에<br />
-            가입하세요
+            프로필을<br />
+            완성하세요
           </h1>
-          <p class="mt-8 text-xl font-medium text-text-hover sm:text-2xl">인증된 학생들과 안전하게 거래를 시작하세요</p>
+          <p class="mt-8 text-xl font-medium text-text-hover sm:text-2xl">회차 정보가 있어야 거래와 커뮤니티를 이용할 수 있어요</p>
         </div>
 
         <ul class="mt-16 flex flex-col gap-8 sm:mt-20">
-          <li v-for="benefit in benefits" :key="benefit.title" class="flex items-center gap-6">
+          <li class="flex items-center gap-6">
             <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/90 sm:h-18 sm:w-18">
-              <component :is="benefit.icon" class="h-8 w-8 text-primary" />
+              <UserCircleIcon class="h-8 w-8 text-primary" />
             </div>
             <div>
-              <h2 class="text-xl font-extrabold text-text-main sm:text-2xl">{{ benefit.title }}</h2>
-              <p class="mt-2 text-base font-medium text-text-hover sm:text-lg">{{ benefit.description }}</p>
+              <h2 class="text-xl font-extrabold text-text-main sm:text-2xl">가입 정보 연결</h2>
+              <p class="mt-2 text-base font-medium text-text-hover sm:text-lg">{{ pendingEmail }}</p>
+            </div>
+          </li>
+          <li class="flex items-center gap-6">
+            <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/90 sm:h-18 sm:w-18">
+              <CheckBadgeIcon class="h-8 w-8 text-primary" />
+            </div>
+            <div>
+              <h2 class="text-xl font-extrabold text-text-main sm:text-2xl">추가정보 확인</h2>
+              <p class="mt-2 text-base font-medium text-text-hover sm:text-lg">닉네임과 회차를 입력하면 가입이 완료돼요</p>
             </div>
           </li>
         </ul>
@@ -224,93 +157,44 @@ const signupHandler = async () => {
 
     <section class="flex min-h-screen items-center justify-center px-6 py-12 sm:px-10 lg:px-16">
       <div
-        class="w-full max-w-2xl rounded-[28px] bg-white px-7 py-10 shadow-[0_20px_50px_rgba(0,0,0,0.18)] sm:px-12 sm:py-14"
+        class="w-full max-w-xl rounded-[28px] bg-white px-7 py-10 shadow-[0_20px_50px_rgba(0,0,0,0.18)] sm:px-12 sm:py-14"
       >
-        <RouterLink to="/" class="inline-flex items-center gap-4">
-          <div
-            class="flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-2xl font-extrabold text-white"
-          >
+        <div class="inline-flex items-center gap-4">
+          <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-2xl font-extrabold text-white">
             K
           </div>
           <strong class="text-3xl font-extrabold text-text-main">KB Swap</strong>
-        </RouterLink>
+        </div>
 
         <p
-          id="signup-form-message"
-          class="mt-8 text-lg font-medium"
+          id="profile-form-message"
+          class="mt-9 text-lg font-medium"
           :class="isFormError ? 'text-red-500' : 'text-text-sub'"
           aria-live="polite"
         >
           {{ formMessage }}
         </p>
 
-        <form class="mt-9 flex flex-col gap-5" @submit.prevent="signupHandler">
+        <form class="mt-9 flex flex-col gap-5" @submit.prevent="submitProfile">
           <label class="block">
             <span class="text-base font-extrabold text-text-main">이메일</span>
             <input
-              v-model="signupForm.email"
+              :value="pendingEmail"
               type="email"
-              autocomplete="email"
-              placeholder="이메일을 입력하세요"
-              :aria-invalid="invalidFields.email"
-              aria-describedby="signup-form-message"
-              class="mt-3 h-14 w-full rounded-2xl border bg-white px-5 text-base font-medium text-text-main outline-none transition focus:ring-4"
-              :class="
-                invalidFields.email
-                  ? 'border-red-500 placeholder:text-red-500 focus:border-red-500 focus:ring-red-500/15'
-                  : 'border-border placeholder:text-text-sub focus:border-primary focus:ring-primary/15'
-              "
-              @input="clearError('email')"
-            />
-          </label>
-
-          <label class="block">
-            <span class="text-base font-extrabold text-text-main">비밀번호</span>
-            <input
-              v-model="signupForm.password"
-              type="password"
-              autocomplete="new-password"
-              placeholder="비밀번호를 입력하세요"
-              :aria-invalid="invalidFields.password"
-              aria-describedby="signup-form-message"
-              class="mt-3 h-14 w-full rounded-2xl border bg-white px-5 text-base font-medium text-text-main outline-none transition focus:ring-4"
-              :class="
-                invalidFields.password
-                  ? 'border-red-500 placeholder:text-red-500 focus:border-red-500 focus:ring-red-500/15'
-                  : 'border-border placeholder:text-text-sub focus:border-primary focus:ring-primary/15'
-              "
-              @input="clearError('password')"
-            />
-          </label>
-
-          <label class="block">
-            <span class="text-base font-extrabold text-text-main">비밀번호 확인</span>
-            <input
-              v-model="signupForm.passwordConfirm"
-              type="password"
-              autocomplete="new-password"
-              placeholder="비밀번호를 한 번 더 입력하세요"
-              :aria-invalid="invalidFields.passwordConfirm"
-              aria-describedby="signup-form-message"
-              class="mt-3 h-14 w-full rounded-2xl border bg-white px-5 text-base font-medium text-text-main outline-none transition focus:ring-4"
-              :class="
-                invalidFields.passwordConfirm
-                  ? 'border-red-500 placeholder:text-red-500 focus:border-red-500 focus:ring-red-500/15'
-                  : 'border-border placeholder:text-text-sub focus:border-primary focus:ring-primary/15'
-              "
-              @input="clearError('passwordConfirm')"
+              disabled
+              class="mt-3 h-14 w-full rounded-2xl border border-border bg-gray-50 px-5 text-base font-medium text-text-sub outline-none"
             />
           </label>
 
           <label class="block">
             <span class="text-base font-extrabold text-text-main">이름</span>
             <input
-              v-model="signupForm.name"
+              v-model="profileForm.name"
               type="text"
               autocomplete="name"
               placeholder="이름을 입력하세요"
               :aria-invalid="invalidFields.name"
-              aria-describedby="signup-form-message"
+              aria-describedby="profile-form-message"
               class="mt-3 h-14 w-full rounded-2xl border bg-white px-5 text-base font-medium text-text-main outline-none transition focus:ring-4"
               :class="
                 invalidFields.name
@@ -324,12 +208,12 @@ const signupHandler = async () => {
           <label class="block">
             <span class="text-base font-extrabold text-text-main">닉네임</span>
             <input
-              v-model="signupForm.nickname"
+              v-model="profileForm.nickname"
               type="text"
               autocomplete="nickname"
               placeholder="닉네임을 입력하세요"
               :aria-invalid="invalidFields.nickname"
-              aria-describedby="signup-form-message"
+              aria-describedby="profile-form-message"
               class="mt-3 h-14 w-full rounded-2xl border bg-white px-5 text-base font-medium text-text-main outline-none transition focus:ring-4"
               :class="
                 invalidFields.nickname
@@ -343,13 +227,13 @@ const signupHandler = async () => {
           <label class="block">
             <span class="text-base font-extrabold text-text-main">전화번호</span>
             <input
-              v-model="signupForm.phoneNumber"
+              v-model="profileForm.phoneNumber"
               type="tel"
               autocomplete="tel"
               inputmode="tel"
               placeholder="010-1234-5678"
               :aria-invalid="invalidFields.phoneNumber"
-              aria-describedby="signup-form-message"
+              aria-describedby="profile-form-message"
               class="mt-3 h-14 w-full rounded-2xl border bg-white px-5 text-base font-medium text-text-main outline-none transition focus:ring-4"
               :class="
                 invalidFields.phoneNumber
@@ -363,14 +247,14 @@ const signupHandler = async () => {
           <label class="block">
             <span class="text-base font-extrabold text-text-main">성별</span>
             <select
-              v-model="signupForm.gender"
+              v-model="profileForm.gender"
               :aria-invalid="invalidFields.gender"
-              aria-describedby="signup-form-message"
+              aria-describedby="profile-form-message"
               class="mt-3 h-14 w-full rounded-2xl border bg-white px-5 text-base font-medium outline-none transition focus:ring-4"
               :class="
                 invalidFields.gender
                   ? 'border-red-500 text-red-500 focus:border-red-500 focus:ring-red-500/15'
-                  : signupForm.gender
+                  : profileForm.gender
                     ? 'border-border text-text-main focus:border-primary focus:ring-primary/15'
                     : 'border-border text-text-sub focus:border-primary focus:ring-primary/15'
               "
@@ -385,14 +269,14 @@ const signupHandler = async () => {
           <label class="block">
             <span class="text-base font-extrabold text-text-main">회차</span>
             <select
-              v-model="signupForm.cohort"
+              v-model="profileForm.cohort"
               :aria-invalid="invalidFields.cohort"
-              aria-describedby="signup-form-message"
+              aria-describedby="profile-form-message"
               class="mt-3 h-14 w-full rounded-2xl border bg-white px-5 text-base font-medium outline-none transition focus:ring-4"
               :class="
                 invalidFields.cohort
                   ? 'border-red-500 text-red-500 focus:border-red-500 focus:ring-red-500/15'
-                  : signupForm.cohort
+                  : profileForm.cohort
                     ? 'border-border text-text-main focus:border-primary focus:ring-primary/15'
                     : 'border-border text-text-sub focus:border-primary focus:ring-primary/15'
               "
@@ -410,18 +294,17 @@ const signupHandler = async () => {
             :disabled="isSubmitting"
             class="mt-5 h-16 rounded-2xl bg-primary text-xl font-extrabold text-white transition hover:bg-primary-hover active:bg-primary-active disabled:cursor-not-allowed disabled:bg-primary/60"
           >
-            {{ isSubmitting ? '가입 중...' : '가입' }}
+            {{ isSubmitting ? '저장 중...' : '가입 완료' }}
           </button>
         </form>
 
-        <p class="mt-8 text-center text-base font-medium text-text-sub sm:text-lg">
-          이미 계정이 있으신가요?
-          <RouterLink to="/login" class="ml-2 font-extrabold text-primary hover:text-primary-hover">로그인</RouterLink>
-        </p>
-
-        <div class="mt-8 border-t border-border pt-8 text-center text-base font-medium text-text-sub">
-          KB 인증 기반 안전 거래 서비스
-        </div>
+        <button
+          type="button"
+          class="mt-6 w-full text-center text-base font-extrabold text-text-sub hover:text-text-main"
+          @click="logout"
+        >
+          다른 계정으로 로그인
+        </button>
       </div>
     </section>
   </main>

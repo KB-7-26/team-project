@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -7,10 +8,15 @@ const router = createRouter({
       path: '/',
       component: () => import('@/views/HomeView.vue'),
     },
-    { path: '/product/create', component: () => import('@/views/product/ProductCreateView.vue') },
+    {
+      path: '/product/create',
+      component: () => import('@/views/product/ProductCreateView.vue'),
+      meta: { requiresAuth: true },
+    },
     {
       path: '/chats',
       component: () => import('@/views/chat/ChatLayout.vue'),
+      meta: { requiresAuth: true },
       children: [{ path: ':chatRoomId', component: () => import('@/views/chat/ChatRoomView.vue') }],
     },
     {
@@ -21,6 +27,11 @@ const router = createRouter({
     {
       path: '/signup',
       component: () => import('@/views/auth/Signup.vue'),
+      meta: { hideNav: true },
+    },
+    {
+      path: '/signup/profile',
+      component: () => import('@/views/auth/ProfileCompleteView.vue'),
       meta: { hideNav: true },
     },
     {
@@ -38,10 +49,12 @@ const router = createRouter({
     {
       path: '/board/write',
       component: () => import('@/views/board/BoardWriteView.vue'),
+      meta: { requiresAuth: true },
     },
     {
       path: '/board/:id/edit',
       component: () => import('@/views/board/BoardEditView.vue'),
+      meta: { requiresAuth: true },
     },
     {
       path: '/board/:id',
@@ -50,7 +63,30 @@ const router = createRouter({
     {
       path: '/mypage',
       component: () => import('@/views/user/MyPageView.vue'),
+      meta: { requiresAuth: true },
     },
   ],
 })
+
+router.beforeEach(async (to) => {
+  const authStore = useAuthStore()
+  await authStore.initializeAuth()
+
+  if (authStore.needsProfile && to.path !== '/signup/profile') {
+    return '/signup/profile'
+  }
+
+  if (to.path === '/signup/profile' && !authStore.needsProfile) {
+    return authStore.isLoggedIn ? '/' : '/login'
+  }
+
+  if (to.meta.requiresAuth && !authStore.isLoggedIn) {
+    return '/login'
+  }
+
+  if ((to.path === '/login' || to.path === '/signup') && authStore.isLoggedIn) {
+    return '/'
+  }
+})
+
 export default router
