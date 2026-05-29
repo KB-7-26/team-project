@@ -123,7 +123,7 @@ const submitReply = (commentId) => {
           </div>
         </div>
         <div class="flex items-center gap-3 text-xs text-text-sub mb-6">
-          <span class="font-medium text-primary">{{ post.nickname }}</span>
+          <span class="font-medium text-primary">{{ post.displayName }}</span>
           <span>{{ post.createdAt }}</span>
           <span>조회 {{ post.viewCount }}</span>
         </div>

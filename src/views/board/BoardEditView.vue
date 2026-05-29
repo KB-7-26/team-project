@@ -10,7 +10,6 @@ const router = useRouter()
 const postId = Number(route.params.id)
 const title = ref('')
 const content = ref('')
-const isAnonymous = ref(false)
 const titleError = ref(false)
 const contentError = ref(false)
 const loading = ref(true)
@@ -27,7 +26,6 @@ onMounted(async () => {
 
     title.value = post.title
     content.value = post.content
-    isAnonymous.value = post.isAnonymous
   } catch (e) {
     if (e.response?.status === 404) {
       router.replace('/board')
@@ -47,7 +45,7 @@ const submit = async () => {
 
   try {
     isSubmitting.value = true
-    await boardApi.updatePost(postId, title.value.trim(), content.value.trim(), isAnonymous.value)
+    await boardApi.updatePost(postId, title.value.trim(), content.value.trim())
     router.push(`/board/${postId}`)
   } catch (e) {
     if (e.response?.status === 401) {
@@ -104,11 +102,6 @@ const submit = async () => {
             :class="contentError ? 'border-red-400 focus:border-red-400' : 'border-border focus:border-primary'"
           />
           <p v-if="contentError" class="text-xs text-red-400">내용을 입력해주세요</p>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <input id="isAnonymous" v-model="isAnonymous" type="checkbox" class="w-4 h-4 accent-primary cursor-pointer" />
-          <label for="isAnonymous" class="text-sm text-text-main cursor-pointer">익명으로 작성</label>
         </div>
 
         <div class="flex justify-end gap-3">
