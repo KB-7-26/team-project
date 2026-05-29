@@ -25,4 +25,20 @@ export const boardApi = {
     const response = await api.delete(`${BASE_URL}/${id}`)
     return unwrapData(response)
   },
+  async getComments(postId) {
+    const response = await api.get(`${BASE_URL}/${postId}/comments`)
+    return unwrapData(response)
+  },
+  async createComment(postId, content, parentCommentId = null) {
+    const response = await api.post(`${BASE_URL}/${postId}/comments`, { content, parentCommentId })
+    return unwrapData(response)
+  },
+  async updateComment(postId, commentId, content) {
+    const response = await api.put(`${BASE_URL}/${postId}/comments/${commentId}`, { content })
+    return unwrapData(response)
+  },
+  async deleteComment(postId, commentId) {
+    const response = await api.delete(`${BASE_URL}/${postId}/comments/${commentId}`)
+    return unwrapData(response)
+  },
 }
