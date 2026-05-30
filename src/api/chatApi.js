@@ -1,21 +1,25 @@
-import axios from 'axios'
+import api from './axios'
 
-const BASE_URL = '/api/chats'
+const BASE_URL = '/chat/rooms'
 
 export const chatApi = {
+  createChatRoom(productId) {
+    return api.post(BASE_URL, { productId })
+  },
+
   getChatRooms() {
-    return axios.get(BASE_URL)
+    return api.get(BASE_URL)
   },
 
   getChatRoom(chatRoomId) {
-    return axios.get(`${BASE_URL}/${chatRoomId}`)
+    return api.get(`${BASE_URL}/${chatRoomId}`)
   },
 
   sendMessage(chatRoomId, content) {
-    return axios.post(`${BASE_URL}/${chatRoomId}/messages`, { content })
+    return api.post(`${BASE_URL}/${chatRoomId}/messages`, { content })
   },
 
   completeTrade(chatRoomId) {
-    return axios.patch(`${BASE_URL}/${chatRoomId}/complete`)
+    return api.patch(`${BASE_URL}/${chatRoomId}/complete`)
   },
 }

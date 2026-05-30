@@ -1,7 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import ProductCard from '@/components/product/ProductCard.vue'
+import { chatApi } from '@/api/chatApi'
 import {
   HeartIcon,
   ShareIcon,
@@ -16,8 +17,14 @@ import {
 import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 
 const route = useRoute()
+const router = useRouter()
 const liked = ref(false)
 const currentIndex = ref(0)
+
+async function startChat() {
+  const { data } = await chatApi.createChatRoom(product.id)
+  router.push(`/chats/${data.chatRoomId}`)
+}
 
 const product = {
   id: route.params.id,
@@ -161,7 +168,7 @@ onMounted(() => {
               <p class="text-xs text-text-sub">후기</p>
             </div>
           </div>
-          <button class="flex items-center justify-center gap-2 bg-primary text-white font-semibold py-3 rounded-xl text-sm hover:bg-primary/90 transition">
+          <button @click="startChat" class="flex items-center justify-center gap-2 bg-primary text-white font-semibold py-3 rounded-xl text-sm hover:bg-primary/90 transition">
             <ChatBubbleOvalLeftEllipsisIcon class="w-5 h-5" />
             채팅하기
           </button>
