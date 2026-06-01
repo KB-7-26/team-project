@@ -32,7 +32,8 @@ const saleStatusMap = { available: '판매중', reserved: '거래중', sold: '�
 onMounted(() => {
   fetchCategories()
   fetchProducts()
-  if (authStore.isLoggedIn && authStore.user?.id) fetchFavorites()
+  // TODO: favorites API 구현 후 주석 해제
+  // if (authStore.isLoggedIn && authStore.user?.id) fetchFavorites()
   document.addEventListener('click', handleOutsideClick)
 })
 

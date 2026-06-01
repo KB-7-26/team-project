@@ -1,37 +1,58 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { CameraIcon, XMarkIcon } from '@heroicons/vue/24/outline'
-import { productApi } from '@/api/productApi'
+import { productApi, categoryApi } from '@/api/productApi'
 
 const router = useRouter()
 
-// { file: File, url: string } 형태로 관리
 const images = ref([])
 const fileInput = ref(null)
 const isSubmitting = ref(false)
 const errorMessage = ref('')
+const categories = ref([])
 
 const productForm = ref({
   title: '',
-  category: '',
-  condition: '',
+  categoryId: null,
+  productCondition: '',
   price: '',
-  description: ''
+  isFree: false,
+  location: '',
+  description: '',
 })
 
-const categories = ['노트북', '모니터', '키보드', '마우스', '헤드폰', '태블릿', '스마트폰', '기타전자제품', '도서', '의류', '생활용품', '기타']
-const conditions = ['새상품', '중고']
+const conditions = [
+  { label: '새상품', value: 'NEW' },
+  { label: '중고', value: 'USED' },
+]
+
+onMounted(async () => {
+  try {
+    const res = await categoryApi.getCategories()
+    console.log('카테고리 전체응답:', res)
+    console.log('카테고리 data:', res.data)
+    categories.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
+  } catch (e) {
+    console.error('카테고리 로드 실패:', e)
+  }
+})
 
 const priceDisplay = computed({
   get() {
+    if (productForm.value.isFree) return '0'
     if (!productForm.value.price) return ''
     return Number(productForm.value.price).toLocaleString('ko-KR')
   },
   set(val) {
     productForm.value.price = val.replace(/[^0-9]/g, '')
-  }
+  },
 })
+
+function toggleFree() {
+  productForm.value.isFree = !productForm.value.isFree
+  if (productForm.value.isFree) productForm.value.price = '0'
+}
 
 function handleFileChange(event) {
   const files = Array.from(event.target.files)
@@ -48,6 +69,7 @@ function removeImage(index) {
 }
 
 function addPrice(amount) {
+  if (productForm.value.isFree) return
   const current = Number(productForm.value.price) || 0
   productForm.value.price = String(current + amount)
 }
@@ -57,15 +79,15 @@ async function submitForm() {
     errorMessage.value = '제목을 입력해주세요'
     return
   }
-  if (!productForm.value.category) {
+  if (!productForm.value.categoryId) {
     errorMessage.value = '카테고리를 선택해주세요'
     return
   }
-  if (!productForm.value.condition) {
+  if (!productForm.value.productCondition) {
     errorMessage.value = '상태를 선택해주세요'
     return
   }
-  if (!productForm.value.price) {
+  if (!productForm.value.isFree && !productForm.value.price) {
     errorMessage.value = '가격을 입력해주세요'
     return
   }
@@ -74,18 +96,18 @@ async function submitForm() {
   errorMessage.value = ''
 
   try {
-    // 1단계: 상품 기본 정보 등록
     const { data: createRes } = await productApi.createProduct({
       title: productForm.value.title,
-      category: productForm.value.category,
-      condition: productForm.value.condition,
-      price: Number(productForm.value.price),
+      categoryId: productForm.value.categoryId,
+      productCondition: productForm.value.productCondition,
+      price: productForm.value.isFree ? 0 : Number(productForm.value.price),
+      isFree: productForm.value.isFree,
+      location: productForm.value.location,
       description: productForm.value.description,
     })
 
-    const productId = createRes.data.id
+    const productId = createRes.id
 
-    // 2단계: 이미지 업로드 (이미지가 있을 경우)
     if (images.value.length > 0) {
       const formData = new FormData()
       images.value.forEach(({ file }) => {
@@ -96,6 +118,9 @@ async function submitForm() {
 
     router.push(`/products/${productId}`)
   } catch (err) {
+    console.error('등록 실패 상세:', err)
+    console.error('응답 데이터:', err.response?.data)
+    console.error('상태 코드:', err.response?.status)
     errorMessage.value = err.response?.data?.message || '상품 등록에 실패했습니다'
   } finally {
     isSubmitting.value = false
@@ -162,16 +187,16 @@ async function submitForm() {
               <div class="flex flex-wrap gap-2">
                 <button
                   v-for="cat in categories"
-                  :key="cat"
-                  @click="productForm.category = cat"
+                  :key="cat.id"
+                  @click="productForm.categoryId = cat.id"
                   :class="[
                     'px-3 py-1.5 rounded-lg text-sm border transition-colors',
-                    productForm.category === cat
+                    productForm.categoryId === cat.id
                       ? 'bg-primary text-white border-primary'
                       : 'bg-white text-text-main border-border hover:border-primary'
                   ]"
                 >
-                  {{ cat }}
+                  {{ cat.name }}
                 </button>
               </div>
             </div>
@@ -180,16 +205,16 @@ async function submitForm() {
               <div class="flex gap-2">
                 <button
                   v-for="cond in conditions"
-                  :key="cond"
-                  @click="productForm.condition = cond"
+                  :key="cond.value"
+                  @click="productForm.productCondition = cond.value"
                   :class="[
                     'px-4 py-1.5 rounded-lg text-sm border transition-colors',
-                    productForm.condition === cond
+                    productForm.productCondition === cond.value
                       ? 'bg-primary text-white border-primary'
                       : 'bg-white text-text-main border-border hover:border-primary'
                   ]"
                 >
-                  {{ cond }}
+                  {{ cond.label }}
                 </button>
               </div>
             </div>
@@ -198,14 +223,28 @@ async function submitForm() {
 
         <!-- 섹션 4: 가격 -->
         <div class="bg-white border border-border rounded-2xl p-6">
-          <h2 class="text-base font-semibold text-text-main mb-4">가격</h2>
-          <div class="flex items-center border border-border rounded-xl px-4 py-3 focus-within:border-primary">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-base font-semibold text-text-main">가격</h2>
+            <button
+              type="button"
+              @click="toggleFree"
+              :class="[
+                'px-3 py-1 rounded-lg text-xs border transition-colors',
+                productForm.isFree
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-white text-text-main border-border hover:border-primary'
+              ]"
+            >무료나눔</button>
+          </div>
+          <div class="flex items-center border border-border rounded-xl px-4 py-3 focus-within:border-primary"
+            :class="productForm.isFree ? 'bg-gray-50' : ''">
             <input
               v-model="priceDisplay"
               type="text"
               inputmode="numeric"
               placeholder="가격을 입력해주세요"
-              class="flex-1 text-sm text-text-main placeholder:text-text-sub focus:outline-none"
+              :disabled="productForm.isFree"
+              class="flex-1 text-sm text-text-main placeholder:text-text-sub focus:outline-none disabled:text-text-sub bg-transparent"
             />
             <span class="text-sm text-text-sub ml-2">원</span>
           </div>
@@ -214,11 +253,23 @@ async function submitForm() {
               v-for="amount in [1000, 5000, 100000, 500000]"
               :key="amount"
               @click="addPrice(amount)"
-              class="flex-1 py-1.5 text-xs border border-border rounded-lg text-text-main hover:border-primary hover:text-primary"
+              :disabled="productForm.isFree"
+              class="flex-1 py-1.5 text-xs border border-border rounded-lg text-text-main hover:border-primary hover:text-primary disabled:opacity-40"
             >
               +{{ amount.toLocaleString('ko-KR') }}
             </button>
           </div>
+        </div>
+
+        <!-- 섹션 4-1: 거래 위치 -->
+        <div class="bg-white border border-border rounded-2xl p-6">
+          <h2 class="text-base font-semibold text-text-main mb-4">거래 위치</h2>
+          <input
+            v-model="productForm.location"
+            type="text"
+            placeholder="예) 서울 강남구, 학교 정문 앞"
+            class="w-full border border-border rounded-xl px-4 py-3 text-sm text-text-main placeholder:text-text-sub focus:outline-none focus:border-primary"
+          />
         </div>
 
         <!-- 섹션 5: 설명 -->
