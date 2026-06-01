@@ -1,5 +1,11 @@
 import api from './axios'
 
+export const categoryApi = {
+  getCategories() {
+    return api.get('/categories')
+  },
+}
+
 export const productApi = {
   getProducts(params) {
     return api.get('/products', { params })

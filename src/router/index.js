@@ -7,6 +7,7 @@ const router = createRouter({
     {
       path: '/',
       component: () => import('@/views/HomeView.vue'),
+      meta: { hideNav: true },
     },
     {
       path: '/product/create',
@@ -72,19 +73,25 @@ router.beforeEach(async (to) => {
   const authStore = useAuthStore()
   await authStore.initializeAuth()
 
+  console.log('[Router]', to.path, '| isLoggedIn:', authStore.isLoggedIn, '| needsProfile:', authStore.needsProfile)
+
   if (authStore.needsProfile && to.path !== '/signup/profile') {
+    console.log('[Router] → /signup/profile')
     return '/signup/profile'
   }
 
   if (to.path === '/signup/profile' && !authStore.needsProfile) {
+    console.log('[Router] → /', authStore.isLoggedIn ? '(로그인됨)' : '/login')
     return authStore.isLoggedIn ? '/' : '/login'
   }
 
   if (to.meta.requiresAuth && !authStore.isLoggedIn) {
+    console.log('[Router] → /login (인증필요)')
     return '/login'
   }
 
   if ((to.path === '/login' || to.path === '/signup') && authStore.isLoggedIn) {
+    console.log('[Router] → / (이미 로그인)')
     return '/'
   }
 })
