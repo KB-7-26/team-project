@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
 import { boardApi } from '@/api/boardApi'
+import { useApiRequest } from '@/composables/useApiRequest'
 
 const router = useRouter()
 
@@ -10,33 +11,26 @@ const title = ref('')
 const content = ref('')
 const titleError = ref(false)
 const contentError = ref(false)
-const isSubmitting = ref(false)
+
+const { isLoading: isSubmitting, error: submitError, request } = useApiRequest()
 
 const submit = async () => {
   titleError.value = !title.value.trim()
   contentError.value = !content.value.trim()
-  if (titleError.value || contentError.value) return
+  if (titleError.value || contentError.value || isSubmitting.value) return
 
-  try {
-    isSubmitting.value = true
-    const post = await boardApi.createPost(title.value.trim(), content.value.trim())
-    router.push(`/board/${post.id}`)
-  } catch (e) {
-    if (e.response?.status === 401) {
-      router.push('/login')
-    } else {
-      alert('게시글 등록에 실패했습니다. 다시 시도해주세요.')
-    }
-  } finally {
-    isSubmitting.value = false
-  }
+  const { ok, data } = await request(
+    () => boardApi.createPost(title.value.trim(), content.value.trim()),
+    { errorMessage: '게시글 등록에 실패했습니다. 다시 시도해주세요.' },
+  )
+  if (ok) router.push(`/board/${data.id}`)
 }
 </script>
 
 <template>
   <div class="max-w-4xl mx-auto px-6 py-8">
     <button
-      @click="router.back()"
+      @click="router.push('/board')"
       class="flex items-center gap-1.5 text-sm text-text-sub hover:text-text-main mb-6 transition-colors cursor-pointer"
     >
       <ArrowLeftIcon class="w-4 h-4" />
@@ -72,9 +66,11 @@ const submit = async () => {
         <p v-if="contentError" class="text-xs text-red-400">내용을 입력해주세요</p>
       </div>
 
+      <p v-if="submitError" class="text-sm text-red-400">{{ submitError }}</p>
+
       <div class="flex justify-end gap-3">
         <button
-          @click="router.back()"
+          @click="router.push('/board')"
           class="px-5 py-2.5 border border-border text-sm font-semibold text-text-main rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
         >
           취소

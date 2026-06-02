@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
 import { boardApi } from '@/api/boardApi'
+import { useApiRequest } from '@/composables/useApiRequest'
 
 const route = useRoute()
 const router = useRouter()
@@ -13,26 +14,20 @@ const content = ref('')
 const titleError = ref(false)
 const contentError = ref(false)
 const loading = ref(true)
-const isSubmitting = ref(false)
+
+const { isLoading: isSubmitting, error: submitError, request } = useApiRequest()
 
 onMounted(async () => {
   try {
     const post = await boardApi.getPostById(postId)
     if (!post.isOwner) {
-      alert('게시글 수정 권한이 없습니다.')
       router.replace(`/board/${postId}`)
       return
     }
-
     title.value = post.title
     content.value = post.content
-  } catch (e) {
-    if (e.response?.status === 404) {
-      router.replace('/board')
-    } else {
-      alert('게시글을 불러오지 못했습니다.')
-      router.replace(`/board/${postId}`)
-    }
+  } catch {
+    router.replace('/board')
   } finally {
     loading.value = false
   }
@@ -43,29 +38,21 @@ const submit = async () => {
   contentError.value = !content.value.trim()
   if (titleError.value || contentError.value || isSubmitting.value) return
 
-  try {
-    isSubmitting.value = true
-    await boardApi.updatePost(postId, title.value.trim(), content.value.trim())
-    router.push(`/board/${postId}`)
-  } catch (e) {
-    if (e.response?.status === 401) {
-      router.push('/login')
-    } else if (e.response?.status === 403) {
-      alert('게시글 수정 권한이 없습니다.')
-      router.replace(`/board/${postId}`)
-    } else {
-      alert('게시글 수정에 실패했습니다. 다시 시도해주세요.')
-    }
-  } finally {
-    isSubmitting.value = false
-  }
+  const { ok } = await request(
+    () => boardApi.updatePost(postId, title.value.trim(), content.value.trim()),
+    {
+      errorMessage: '게시글 수정에 실패했습니다. 다시 시도해주세요.',
+      on403: () => router.replace(`/board/${postId}`),
+    },
+  )
+  if (ok) router.push(`/board/${postId}`)
 }
 </script>
 
 <template>
   <div class="max-w-4xl mx-auto px-6 py-8">
     <button
-      @click="router.back()"
+      @click="router.push(`/board/${postId}`)"
       class="flex items-center gap-1.5 text-sm text-text-sub hover:text-text-main mb-6 transition-colors cursor-pointer"
     >
       <ArrowLeftIcon class="w-4 h-4" />
@@ -104,9 +91,11 @@ const submit = async () => {
           <p v-if="contentError" class="text-xs text-red-400">내용을 입력해주세요</p>
         </div>
 
+        <p v-if="submitError" class="text-sm text-red-400">{{ submitError }}</p>
+
         <div class="flex justify-end gap-3">
           <button
-            @click="router.back()"
+            @click="router.push(`/board/${postId}`)"
             class="px-5 py-2.5 border border-border text-sm font-semibold text-text-main rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
           >
             취소
