@@ -25,7 +25,7 @@ defineEmits(['toggle-like'])
       <!-- 텍스트 -->
       <div class="pt-2 pb-1 px-1 flex flex-col gap-0.5">
         <p class="text-sm md:text-base font-semibold text-text-main line-clamp-2 leading-snug">{{ product.title }}</p>
-        <p class="text-sm md:text-base font-bold text-text-main">{{ product.price.toLocaleString() }}원</p>
+        <p :class="['text-sm md:text-base font-bold', product.isFree ? 'text-primary' : 'text-text-main']">{{ product.isFree ? '무료나눔' : `${product.price.toLocaleString()}원` }}</p>
         <p class="text-xs text-text-sub mt-0.5">
           <span
             :class="{

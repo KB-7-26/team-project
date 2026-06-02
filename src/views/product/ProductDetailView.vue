@@ -78,7 +78,8 @@ const toggleLike = async () => {
 async function loadProduct() {
   try {
     const { data } = await productApi.getProduct(route.params.id)
-    if (!data.imageUrls || data.imageUrls.length === 0) {
+    data.imageUrls = (data.images || []).map((img) => img.imageUrl)
+    if (data.imageUrls.length === 0) {
       data.imageUrls = ['https://placehold.co/600x450?text=No+Image']
     }
     product.value = data
@@ -89,6 +90,7 @@ async function loadProduct() {
       id: data.id,
       title: data.title,
       price: data.price,
+      isFree: data.isFree,
       image: data.imageUrls[0],
       viewedAt: Date.now(),
     }
@@ -183,7 +185,7 @@ watch(() => route.params.id, () => {
             </div>
             <button
               v-if="authStore.user?.id === product.sellerId"
-              @click="router.push(`/product/edit/${product.id}`)"
+              @click="router.replace(`/product/edit/${product.id}`)"
               class="flex items-center justify-center gap-2 bg-primary text-white font-semibold py-3 rounded-xl text-sm hover:bg-primary/90 active:scale-95 transition-all duration-150 cursor-pointer shadow-md hover:shadow-lg"
             >
               <PencilSquareIcon class="w-5 h-5" />
@@ -211,7 +213,7 @@ watch(() => route.params.id, () => {
                   <img :src="item.image" class="w-10 h-10 rounded-lg object-cover shrink-0" />
                   <div class="flex-1 min-w-0">
                     <p class="text-xs text-text-main line-clamp-2 leading-snug">{{ item.title }}</p>
-                    <p class="text-xs font-semibold text-text-main mt-0.5">{{ item.price.toLocaleString() }}원</p>
+                    <p :class="['text-xs font-semibold mt-0.5', item.isFree ? 'text-primary' : 'text-text-main']">{{ item.isFree ? '무료나눔' : `${item.price.toLocaleString()}원` }}</p>
                   </div>
                 </RouterLink>
               </div>
@@ -283,7 +285,7 @@ watch(() => route.params.id, () => {
         </div>
         <button
           v-if="authStore.user?.id === product.sellerId"
-          @click="router.push(`/product/edit/${product.id}`)"
+          @click="router.replace(`/product/edit/${product.id}`)"
           class="flex items-center justify-center gap-2 bg-primary text-white font-semibold py-3 rounded-xl text-sm hover:bg-primary/90 active:scale-95 transition-all duration-150 cursor-pointer shadow-md hover:shadow-lg"
         >
           <PencilSquareIcon class="w-5 h-5" />

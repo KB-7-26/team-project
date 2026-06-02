@@ -70,6 +70,7 @@ const fetchProducts = async () => {
       id: p.id,
       title: p.title,
       price: p.price,
+      isFree: p.isFree,
       image: p.thumbnailUrl ?? 'https://placehold.co/400x300?text=No+Image',
       status: saleStatusMap[p.saleStatus] ?? p.saleStatus,
       views: p.views ?? 0,
