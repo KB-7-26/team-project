@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import BoardCommentItem from '@/components/board/BoardCommentItem.vue'
 import { boardApi } from '@/api/boardApi'
+import { useApiRequest } from '@/composables/useApiRequest'
 
 const props = defineProps({
   postId: {
@@ -18,15 +19,27 @@ const newComment = ref('')
 const replyingToId = ref(null)
 const newReply = ref('')
 
+const { isLoading: isSubmitting, error: submitError, request } = useApiRequest()
+const { isLoading: isSubmittingReply, request: requestReply } = useApiRequest()
+
 onMounted(async () => {
-  comments.value = await boardApi.getComments(props.postId)
+  const { ok, data } = await request(
+    () => boardApi.getComments(props.postId),
+    { errorMessage: '댓글을 불러오지 못했습니다.' },
+  )
+  if (ok) comments.value = data
 })
 
 const submitComment = async () => {
-  if (!newComment.value.trim()) return
-  const created = await boardApi.createComment(props.postId, newComment.value.trim())
-  comments.value.push({ ...created, replies: [] })
-  newComment.value = ''
+  if (!newComment.value.trim() || isSubmitting.value) return
+  const { ok, data } = await request(
+    () => boardApi.createComment(props.postId, newComment.value.trim()),
+    { errorMessage: '댓글 등록에 실패했습니다. 다시 시도해주세요.' },
+  )
+  if (ok) {
+    comments.value.push({ ...data, replies: [] })
+    newComment.value = ''
+  }
 }
 
 const toggleReplyInput = (comment) => {
@@ -40,25 +53,37 @@ const toggleReplyInput = (comment) => {
 }
 
 const submitReply = async (parentCommentId) => {
-  if (!newReply.value.trim()) return
-  const created = await boardApi.createComment(props.postId, newReply.value.trim(), parentCommentId)
-  const parent = comments.value.find((c) => c.id === parentCommentId)
-  if (parent) parent.replies.push(created)
-  newReply.value = ''
-  replyingToId.value = null
+  if (!newReply.value.trim() || isSubmittingReply.value) return
+  const { ok, data } = await requestReply(
+    () => boardApi.createComment(props.postId, newReply.value.trim(), parentCommentId),
+    { errorMessage: '답글 등록에 실패했습니다. 다시 시도해주세요.' },
+  )
+  if (ok) {
+    const parent = comments.value.find((c) => c.id === parentCommentId)
+    if (parent) parent.replies.push(data)
+    newReply.value = ''
+    replyingToId.value = null
+  }
 }
 
 const updateComment = async (commentId, content) => {
-  const updated = await boardApi.updateComment(props.postId, commentId, content)
+  const { ok, data } = await request(
+    () => boardApi.updateComment(props.postId, commentId, content),
+    {
+      errorMessage: '댓글 수정에 실패했습니다. 다시 시도해주세요.',
+      on403: () => { submitError.value = '댓글 수정 권한이 없습니다.' },
+    },
+  )
+  if (!ok) return
   const comment = comments.value.find((c) => c.id === commentId)
   if (comment) {
-    comment.content = updated.content
+    comment.content = data.content
     return
   }
   for (const c of comments.value) {
     const reply = c.replies?.find((r) => r.id === commentId)
     if (reply) {
-      reply.content = updated.content
+      reply.content = data.content
       return
     }
   }
@@ -66,7 +91,14 @@ const updateComment = async (commentId, content) => {
 
 const deleteComment = async (commentId) => {
   if (!confirm('댓글을 삭제하시겠습니까?')) return
-  await boardApi.deleteComment(props.postId, commentId)
+  const { ok } = await request(
+    () => boardApi.deleteComment(props.postId, commentId),
+    {
+      errorMessage: '댓글 삭제에 실패했습니다. 다시 시도해주세요.',
+      on403: () => { submitError.value = '댓글 삭제 권한이 없습니다.' },
+    },
+  )
+  if (!ok) return
   const idx = comments.value.findIndex((c) => c.id === commentId)
   if (idx !== -1) {
     comments.value.splice(idx, 1)
@@ -116,14 +148,16 @@ const deleteComment = async (commentId) => {
               @keyup.enter="submitReply(comment.id)"
               type="text"
               placeholder="답글을 입력하세요"
-              class="flex-1 px-4 py-2 border border-border rounded-xl text-sm text-text-main outline-none focus:border-primary transition-colors"
+              :disabled="isSubmittingReply"
+              class="flex-1 px-4 py-2 border border-border rounded-xl text-sm text-text-main outline-none focus:border-primary transition-colors disabled:opacity-50"
               autofocus
             />
             <button
               @click="submitReply(comment.id)"
-              class="bg-primary hover:bg-primary-hover text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors shrink-0 cursor-pointer"
+              :disabled="isSubmittingReply"
+              class="bg-primary hover:bg-primary-hover text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              등록
+              {{ isSubmittingReply ? '등록 중...' : '등록' }}
             </button>
             <button
               @click="toggleReplyInput(comment)"
@@ -136,19 +170,23 @@ const deleteComment = async (commentId) => {
       </li>
     </ul>
 
+    <p v-if="submitError" class="text-sm text-red-400 mb-3">{{ submitError }}</p>
+
     <div class="flex gap-2">
       <input
         v-model="newComment"
         @keyup.enter="submitComment"
         type="text"
         placeholder="댓글을 입력하세요"
-        class="flex-1 px-4 py-2.5 border border-border rounded-xl text-sm text-text-main outline-none focus:border-primary transition-colors"
+        :disabled="isSubmitting"
+        class="flex-1 px-4 py-2.5 border border-border rounded-xl text-sm text-text-main outline-none focus:border-primary transition-colors disabled:opacity-50"
       />
       <button
         @click="submitComment"
-        class="bg-primary hover:bg-primary-hover text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors duration-200 shrink-0 cursor-pointer"
+        :disabled="isSubmitting"
+        class="bg-primary hover:bg-primary-hover text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors duration-200 shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        등록
+        {{ isSubmitting ? '등록 중...' : '등록' }}
       </button>
     </div>
   </div>
