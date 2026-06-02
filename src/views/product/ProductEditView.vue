@@ -1,12 +1,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { CameraIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { productApi, categoryApi } from '@/api/productApi'
 
+const route = useRoute()
 const router = useRouter()
 
 const images = ref([])
+const deletedImageIds = ref([])
 const fileInput = ref(null)
 const isSubmitting = ref(false)
 const errorMessage = ref('')
@@ -28,14 +30,22 @@ const conditions = [
 ]
 
 onMounted(async () => {
-  try {
-    const res = await categoryApi.getCategories()
-    console.log('카테고리 전체응답:', res)
-    console.log('카테고리 data:', res.data)
-    categories.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
-  } catch (e) {
-    console.error('카테고리 로드 실패:', e)
+  const catRes = await categoryApi.getCategories()
+  categories.value = Array.isArray(catRes.data) ? catRes.data : []
+
+  const { data } = await productApi.getProduct(route.params.id)
+  productForm.value = {
+    title: data.title,
+    categoryId: data.categoryId,
+    productCondition: data.productCondition,
+    price: data.price,
+    isFree: data.isFree,
+    location: data.location,
+    description: data.description,
   }
+  images.value = (data.images || [])
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((img) => ({ id: img.id, url: img.imageUrl, isExisting: true }))
 })
 
 const priceDisplay = computed({
@@ -54,6 +64,12 @@ function toggleFree() {
   if (productForm.value.isFree) productForm.value.price = '0'
 }
 
+function selectCondition(value) {
+  productForm.value.productCondition = value
+  productForm.value.isFree = false
+  if (productForm.value.price === '0') productForm.value.price = ''
+}
+
 function handleFileChange(event) {
   const files = Array.from(event.target.files)
   files.forEach((file) => {
@@ -64,7 +80,12 @@ function handleFileChange(event) {
 }
 
 function removeImage(index) {
-  URL.revokeObjectURL(images.value[index].url)
+  const img = images.value[index]
+  if (img.isExisting) {
+    deletedImageIds.value.push(img.id)
+  } else {
+    URL.revokeObjectURL(img.url)
+  }
   images.value.splice(index, 1)
 }
 
@@ -74,29 +95,25 @@ function addPrice(amount) {
   productForm.value.price = String(current + amount)
 }
 
-async function submitForm() {
+const submitForm = async () => {
+  errorMessage.value = ''
   if (!productForm.value.title.trim()) {
-    errorMessage.value = '제목을 입력해주세요'
+    errorMessage.value = '제목을 입력해주세요.'
     return
   }
   if (!productForm.value.categoryId) {
-    errorMessage.value = '카테고리를 선택해주세요'
-    return
-  }
-  if (!productForm.value.productCondition) {
-    errorMessage.value = '상태를 선택해주세요'
+    errorMessage.value = '카테고리를 선택해주세요.'
     return
   }
   if (!productForm.value.isFree && !productForm.value.price) {
-    errorMessage.value = '가격을 입력해주세요'
+    errorMessage.value = '가격을 입력해주세요.'
     return
   }
-
   isSubmitting.value = true
-  errorMessage.value = ''
-
   try {
-    const { data: createRes } = await productApi.createProduct({
+    const id = route.params.id
+
+    await productApi.updateProduct(id, {
       title: productForm.value.title,
       categoryId: productForm.value.categoryId,
       productCondition: productForm.value.productCondition,
@@ -106,22 +123,20 @@ async function submitForm() {
       description: productForm.value.description,
     })
 
-    const productId = createRes.id
+    await Promise.all(
+      deletedImageIds.value.map((imageId) => productApi.deleteImage(id, imageId))
+    )
 
-    if (images.value.length > 0) {
+    const newFiles = images.value.filter((img) => !img.isExisting).map((img) => img.file)
+    if (newFiles.length > 0) {
       const formData = new FormData()
-      images.value.forEach(({ file }) => {
-        formData.append('images', file)
-      })
-      await productApi.uploadImages(productId, formData)
+      newFiles.forEach((file) => formData.append('images', file))
+      await productApi.uploadImages(id, formData)
     }
 
-    router.push(`/products/${productId}`)
-  } catch (err) {
-    console.error('등록 실패 상세:', err)
-    console.error('응답 데이터:', err.response?.data)
-    console.error('상태 코드:', err.response?.status)
-    errorMessage.value = err.response?.data?.message || '상품 등록에 실패했습니다'
+    router.replace(`/products/${id}`)
+  } catch (e) {
+    errorMessage.value = '수정에 실패했습니다. 다시 시도해주세요.'
   } finally {
     isSubmitting.value = false
   }
@@ -133,8 +148,8 @@ async function submitForm() {
     <!-- 페이지 헤더 -->
     <div class="bg-yellow-50 px-4 py-10">
       <div class="max-w-2xl mx-auto">
-        <h1 class="text-2xl font-bold text-text-main">상품 등록</h1>
-        <p class="text-sm text-text-sub mt-1">판매하실 상품 정보를 입력해주세요</p>
+        <h1 class="text-2xl font-bold text-text-main">상품 수정</h1>
+        <p class="text-sm text-text-sub mt-1">수정하실 상품 정보를 입력해주세요</p>
       </div>
     </div>
 
@@ -161,7 +176,8 @@ async function submitForm() {
               <span
                 v-if="index === 0"
                 class="absolute bottom-0 left-0 right-0 text-center text-xs text-white bg-black/50 py-0.5"
-              >대표</span>
+                >대표</span
+              >
             </div>
             <input ref="fileInput" type="file" accept="image/*" multiple class="hidden" @change="handleFileChange" />
           </div>
@@ -181,61 +197,69 @@ async function submitForm() {
 
         <!-- 섹션 3: 카테고리 -->
         <div class="bg-white border border-border rounded-2xl p-6">
-          <h2 class="text-base font-semibold text-text-main mb-4">카테고리</h2>
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="cat in categories"
-              :key="cat.id"
-              @click="productForm.categoryId = cat.id"
-              :class="[
-                'px-3 py-1.5 rounded-lg text-sm border transition-colors',
-                productForm.categoryId === cat.id
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-white text-text-main border-border hover:border-primary'
-              ]"
-            >
-              {{ cat.name }}
-            </button>
-          </div>
+          <div>
+              <h2 class="text-base font-semibold text-text-main mb-4">카테고리</h2>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="cat in categories"
+                  :key="cat.id"
+                  @click="productForm.categoryId = cat.id"
+                  :class="[
+                    'px-3 py-1.5 rounded-lg text-sm border transition-colors',
+                    productForm.categoryId === cat.id
+                      ? 'bg-primary text-white border-primary'
+                      : 'bg-white text-text-main border-border hover:border-primary',
+                  ]"
+                >
+                  {{ cat.name }}
+                </button>
+              </div>
+            </div>
         </div>
 
         <!-- 섹션 4: 상태 -->
         <div class="bg-white border border-border rounded-2xl p-6">
-          <h2 class="text-base font-semibold text-text-main mb-4">상태</h2>
-          <div class="flex gap-2 flex-wrap">
-            <button
-              v-for="cond in conditions"
-              :key="cond.value"
-              @click="productForm.productCondition = cond.value"
-              :class="[
-                'px-4 py-1.5 rounded-lg text-sm border transition-colors',
-                productForm.productCondition === cond.value
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-white text-text-main border-border hover:border-primary'
-              ]"
-            >
-              {{ cond.label }}
-            </button>
-          </div>
+          <div>
+              <h2 class="text-base font-semibold text-text-main mb-4">상태</h2>
+              <div class="flex gap-2 flex-wrap">
+                <button
+                  v-for="cond in conditions"
+                  :key="cond.value"
+                  @click="selectCondition(cond.value)"
+                  :class="[
+                    'px-4 py-1.5 rounded-lg text-sm border transition-colors',
+                    productForm.productCondition === cond.value
+                      ? 'bg-primary text-white border-primary'
+                      : 'bg-white text-text-main border-border hover:border-primary',
+                  ]"
+                >
+                  {{ cond.label }}
+                </button>
+                <button
+                  type="button"
+                  @click="toggleFree"
+                  :class="[
+                    'px-4 py-1.5 rounded-lg text-sm border transition-colors',
+                    productForm.isFree
+                      ? 'bg-primary text-white border-primary'
+                      : 'bg-white text-text-main border-border hover:border-primary',
+                  ]"
+                >
+                  무료나눔
+                </button>
+              </div>
+            </div>
         </div>
 
-        <!-- 섹션 4: 가격 -->
+        <!-- 섹션 5: 가격 -->
         <div class="bg-white border border-border rounded-2xl p-6">
-          <div class="flex items-center justify-between mb-4">
+          <div class="mb-4">
             <h2 class="text-base font-semibold text-text-main">가격</h2>
-            <button
-              type="button"
-              @click="toggleFree"
-              :class="[
-                'px-3 py-1 rounded-lg text-xs border transition-colors',
-                productForm.isFree
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-white text-text-main border-border hover:border-primary'
-              ]"
-            >무료나눔</button>
           </div>
-          <div class="flex items-center border border-border rounded-xl px-4 py-3 focus-within:border-primary"
-            :class="productForm.isFree ? 'bg-gray-50' : ''">
+          <div
+            class="flex items-center border border-border rounded-xl px-4 py-3 focus-within:border-primary"
+            :class="productForm.isFree ? 'bg-gray-50' : ''"
+          >
             <input
               v-model="priceDisplay"
               type="text"
@@ -292,13 +316,17 @@ async function submitForm() {
             :disabled="isSubmitting"
             class="py-4 rounded-xl border border-border text-text-main font-semibold hover:bg-gray-50 disabled:opacity-50"
             @click="router.back()"
-          >취소</button>
+          >
+            취소
+          </button>
           <button
             type="button"
             :disabled="isSubmitting"
             class="py-4 rounded-xl bg-primary text-white font-semibold hover:bg-primary-hover disabled:opacity-50"
             @click="submitForm"
-          >{{ isSubmitting ? '등록 중...' : '등록하기' }}</button>
+          >
+            {{ isSubmitting ? '수정 중...' : '수정하기' }}
+          </button>
         </div>
       </div>
     </div>
