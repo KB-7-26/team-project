@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon } from '@heroicons/vue/24/outline'
 import ProductCard from '@/components/product/ProductCard.vue'
 import { productApi } from '@/api/productApi'
@@ -16,9 +16,10 @@ const totalPages = ref(1)
 const products = ref([])
 const categories = ref([])
 const isLoading = ref(false)
-const showAvailableOnly = ref(false)
+const includeSold = ref(false)
 const authStore = useAuthStore()
 const dropdownRef = ref(null)
+let searchDebounceTimer = null
 const sortParamMap = {
   최신순: null,
   가격낮은순: 'price,asc',
@@ -60,10 +61,11 @@ const fetchProducts = async () => {
     if (selectedCategoryId.value !== null) {
       params.categoryId = selectedCategoryId.value
     }
-    if (showAvailableOnly.value) {
+    if (!includeSold.value) {
       params.saleStatus = 'available'
     }
     if (sortParamMap[sortBy.value]) params.sort = sortParamMap[sortBy.value]
+    if (searchQuery.value.trim()) params.keyword = searchQuery.value.trim()
 
     const { data } = await productApi.getProducts(params)
     products.value = data.content.map((p) => ({
@@ -121,18 +123,21 @@ watch(selectedCategoryId, () => {
   fetchProducts()
 })
 
-watch(showAvailableOnly, () => {
+watch(includeSold, () => {
   currentPage.value = 1
   fetchProducts()
 })
 
+watch(searchQuery, () => {
+  clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    currentPage.value = 1
+    fetchProducts()
+  }, 400)
+})
+
 watch(currentPage, fetchProducts)
 
-const filteredProducts = computed(() => {
-  if (!searchQuery.value.trim()) return products.value
-  const q = searchQuery.value.toLowerCase()
-  return products.value.filter((p) => p.title.toLowerCase().includes(q))
-})
 </script>
 
 <template>
@@ -199,16 +204,16 @@ const filteredProducts = computed(() => {
       <!-- PC 사이드바 -->
       <div class="side hidden md:block border border-border rounded-2xl p-4 w-56 shrink-0 sticky top-20 self-start">
         <p class="text-lg font-bold text-text-main px-4 pt-4 pb-2">카테고리</p>
-        <!-- 거래 가능만 보기 토글 -->
+        <!-- 판매완료 포함 토글 -->
         <div class="flex items-center justify-between px-4 py-2">
-          <span class="text-sm font-medium text-text-main">거래 가능만 보기</span>
+          <span class="text-sm font-medium text-text-main">판매완료 포함</span>
           <button
-            @click="showAvailableOnly = !showAvailableOnly"
-            :class="showAvailableOnly ? 'bg-primary' : 'bg-gray-300'"
+            @click="includeSold = !includeSold"
+            :class="includeSold ? 'bg-primary' : 'bg-gray-300'"
             class="relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0"
           >
             <span
-              :class="showAvailableOnly ? 'translate-x-5' : 'translate-x-0'"
+              :class="includeSold ? 'translate-x-5' : 'translate-x-0'"
               class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
             ></span>
           </button>
@@ -233,11 +238,11 @@ const filteredProducts = computed(() => {
       <div class="flex-1 flex flex-col px-4">
         <!-- 검색 결과 없음 -->
         <p v-if="isLoading" class="text-center text-text-sub py-20">불러오는 중...</p>
-        <p v-else-if="filteredProducts.length === 0" class="text-center text-text-sub py-20">검색 결과가 없습니다.</p>
+        <p v-else-if="products.length === 0" class="text-center text-text-sub py-20">검색 결과가 없습니다.</p>
 
         <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <ProductCard
-            v-for="product in filteredProducts"
+            v-for="product in products"
             :key="product.id"
             :product="product"
             :liked="likedIds.includes(product.id)"

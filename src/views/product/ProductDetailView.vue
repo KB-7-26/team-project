@@ -59,6 +59,15 @@ const next = () => {
   startAutoSlide()
 }
 
+async function toggleStatus(status) {
+  try {
+    await productApi.updateStatus(product.value.id, status)
+    product.value.saleStatus = status
+  } catch (e) {
+    console.error('거래 상태 변경 실패', e)
+  }
+}
+
 async function startChat() {
   const { data } = await chatApi.createChatRoom(product.value.id)
   router.push(`/chats/${data.chatRoomId}`)
@@ -120,10 +129,24 @@ watch(() => route.params.id, () => {
 <template>
   <div class="max-w-4xl mx-auto px-4 pt-4 pb-8">
 
-    <!-- 뒤로가기 -->
-    <button @click="router.back()" class="mb-4 p-1 -ml-1 rounded-lg hover:bg-gray-100 transition cursor-pointer">
-      <ChevronLeftIcon class="w-6 h-6 text-text-main" />
-    </button>
+    <!-- 상단 -->
+    <div class="flex items-center justify-between mb-4">
+      <button @click="router.back()" class="p-1 -ml-1 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+        <ChevronLeftIcon class="w-6 h-6 text-text-main" />
+      </button>
+      <div v-if="product && authStore.user?.id === product.sellerId" class="flex rounded-lg border border-border overflow-hidden text-sm font-medium">
+        <button
+          @click="toggleStatus('available')"
+          :class="product.saleStatus === 'available' ? 'bg-primary text-white' : 'bg-white text-text-sub hover:bg-gray-50'"
+          class="px-3 py-1.5 transition"
+        >판매중</button>
+        <button
+          @click="toggleStatus('sold')"
+          :class="product.saleStatus === 'sold' ? 'bg-primary text-white' : 'bg-white text-text-sub hover:bg-gray-50'"
+          class="px-3 py-1.5 border-l border-border transition"
+        >판매완료</button>
+      </div>
+    </div>
 
     <p v-if="isLoading" class="text-center text-text-sub py-20">불러오는 중...</p>
     <p v-else-if="!product" class="text-center text-text-sub py-20">상품을 찾을 수 없습니다.</p>

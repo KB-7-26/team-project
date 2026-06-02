@@ -18,17 +18,11 @@ const productForm = ref({
   title: '',
   categoryId: null,
   productCondition: '',
-  saleStatus: '',
   price: '',
   isFree: false,
   location: '',
   description: '',
 })
-
-const saleStatuses = [
-  { label: '판매중', value: 'available' },
-  { label: '거래완료', value: 'sold' },
-]
 
 const conditions = [
   { label: '새상품', value: 'NEW' },
@@ -46,7 +40,6 @@ onMounted(async () => {
     productCondition: data.productCondition,
     price: data.price,
     isFree: data.isFree,
-    saleStatus: data.saleStatus,
     location: data.location,
     description: data.description,
   }
@@ -124,7 +117,6 @@ const submitForm = async () => {
       title: productForm.value.title,
       categoryId: productForm.value.categoryId,
       productCondition: productForm.value.productCondition,
-      saleStatus: productForm.value.saleStatus,
       price: productForm.value.isFree ? 0 : Number(productForm.value.price),
       isFree: productForm.value.isFree,
       location: productForm.value.location,
@@ -259,27 +251,7 @@ const submitForm = async () => {
             </div>
         </div>
 
-        <!-- 섹션 5: 거래 상태 -->
-        <div class="bg-white border border-border rounded-2xl p-6">
-          <h2 class="text-base font-semibold text-text-main mb-4">거래 상태</h2>
-          <div class="flex gap-2">
-            <button
-              v-for="status in saleStatuses"
-              :key="status.value"
-              @click="productForm.saleStatus = status.value"
-              :class="[
-                'px-4 py-1.5 rounded-lg text-sm border transition-colors',
-                productForm.saleStatus === status.value
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-white text-text-main border-border hover:border-primary',
-              ]"
-            >
-              {{ status.label }}
-            </button>
-          </div>
-        </div>
-
-        <!-- 섹션 6: 가격 -->
+        <!-- 섹션 5: 가격 -->
         <div class="bg-white border border-border rounded-2xl p-6">
           <div class="mb-4">
             <h2 class="text-base font-semibold text-text-main">가격</h2>
