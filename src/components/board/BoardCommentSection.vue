@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import BoardCommentItem from '@/components/board/BoardCommentItem.vue'
 import { boardApi } from '@/api/boardApi'
 
@@ -11,6 +11,9 @@ const props = defineProps({
 })
 
 const comments = ref([])
+const totalCommentCount = computed(() =>
+  comments.value.reduce((acc, c) => acc + 1 + (c.replies?.length ?? 0), 0),
+)
 const newComment = ref('')
 const replyingToId = ref(null)
 const newReply = ref('')
@@ -81,7 +84,7 @@ const deleteComment = async (commentId) => {
 
 <template>
   <div class="border border-border rounded-2xl p-6">
-    <p class="text-base font-bold text-text-main mb-4">댓글 {{ comments.length }}</p>
+    <p class="text-base font-bold text-text-main mb-4">댓글 {{ totalCommentCount }}</p>
 
     <ul class="flex flex-col divide-y divide-border mb-6">
       <li v-if="comments.length === 0" class="py-8 text-center text-sm text-text-sub">
