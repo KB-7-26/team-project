@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { productApi } from '@/api/productApi'
 import { chatApi } from '@/api/chatApi'
@@ -13,6 +13,7 @@ import {
   MapPinIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  PencilSquareIcon,
 } from '@heroicons/vue/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 
@@ -38,11 +39,24 @@ function timeAgo(dateString) {
   return `${Math.floor(diff / 86400)}일 전`
 }
 
+let autoSlideTimer = null
+
+function startAutoSlide() {
+  clearInterval(autoSlideTimer)
+  if (product.value?.imageUrls.length > 1) {
+    autoSlideTimer = setInterval(() => {
+      currentIndex.value = (currentIndex.value + 1) % product.value.imageUrls.length
+    }, 8000)
+  }
+}
+
 const prev = () => {
   currentIndex.value = (currentIndex.value - 1 + product.value.imageUrls.length) % product.value.imageUrls.length
+  startAutoSlide()
 }
 const next = () => {
   currentIndex.value = (currentIndex.value + 1) % product.value.imageUrls.length
+  startAutoSlide()
 }
 
 async function startChat() {
@@ -61,34 +75,53 @@ const toggleLike = async () => {
   }
 }
 
-onMounted(async () => {
+async function loadProduct() {
   try {
     const { data } = await productApi.getProduct(route.params.id)
     if (!data.imageUrls || data.imageUrls.length === 0) {
       data.imageUrls = ['https://placehold.co/600x450?text=No+Image']
     }
     product.value = data
+    startAutoSlide()
 
+    const TWELVE_HOURS = 12 * 60 * 60 * 1000
     const current = {
       id: data.id,
       title: data.title,
       price: data.price,
       image: data.imageUrls[0],
+      viewedAt: Date.now(),
     }
     const stored = JSON.parse(localStorage.getItem('recentlyViewed') || '[]')
-    const updated = [current, ...stored.filter((p) => p.id !== data.id)].slice(0, 5)
+    const fresh = stored.filter((p) => Date.now() - (p.viewedAt ?? 0) < TWELVE_HOURS)
+    const updated = [current, ...fresh.filter((p) => String(p.id) !== String(data.id))].slice(0, 5)
     localStorage.setItem('recentlyViewed', JSON.stringify(updated))
-    recentlyViewed.value = updated.filter((p) => p.id !== data.id).slice(0, 2)
+    recentlyViewed.value = updated.filter((p) => String(p.id) !== String(data.id)).slice(0, 2)
   } catch (e) {
     console.error('상품 상세 조회 실패', e)
   } finally {
     isLoading.value = false
   }
+}
+
+onMounted(loadProduct)
+onBeforeUnmount(() => clearInterval(autoSlideTimer))
+watch(() => route.params.id, () => {
+  clearInterval(autoSlideTimer)
+  currentIndex.value = 0
+  isLoading.value = true
+  product.value = null
+  loadProduct()
 })
 </script>
 
 <template>
-  <div class="max-w-4xl mx-auto px-4 py-8">
+  <div class="max-w-4xl mx-auto px-4 pt-4 pb-8">
+
+    <!-- 뒤로가기 -->
+    <button @click="router.back()" class="mb-4 p-1 -ml-1 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+      <ChevronLeftIcon class="w-6 h-6 text-text-main" />
+    </button>
 
     <p v-if="isLoading" class="text-center text-text-sub py-20">불러오는 중...</p>
     <p v-else-if="!product" class="text-center text-text-sub py-20">상품을 찾을 수 없습니다.</p>
@@ -100,7 +133,9 @@ onMounted(async () => {
         <!-- 이미지 갤러리 -->
         <div class="flex-1 min-w-0">
           <div class="relative rounded-2xl overflow-hidden bg-gray-100">
-            <img :src="product.imageUrls[currentIndex]" :alt="product.title" class="w-full h-72 lg:h-96 object-cover" />
+            <Transition name="fade" mode="out-in">
+              <img :key="currentIndex" :src="product.imageUrls[currentIndex]" :alt="product.title" class="w-full h-72 lg:h-96 object-cover" />
+            </Transition>
             <span class="absolute bottom-3 right-3 bg-black/50 text-white text-xs px-2.5 py-1 rounded-full">
               {{ currentIndex + 1 }} / {{ product.imageUrls.length }}
             </span>
@@ -122,8 +157,8 @@ onMounted(async () => {
               v-for="(img, i) in product.imageUrls"
               :key="i"
               @click="currentIndex = i"
-              :class="currentIndex === i ? 'ring-2 ring-primary' : 'opacity-60'"
-              class="w-16 h-16 rounded-xl overflow-hidden shrink-0 transition"
+              :class="currentIndex === i ? 'ring-2 ring-primary opacity-100' : 'opacity-50 hover:opacity-100 hover:ring-2 hover:ring-gray-300 cursor-pointer'"
+              class="w-16 h-16 rounded-xl overflow-hidden shrink-0 transition-all duration-150"
             >
               <img :src="img" class="w-full h-full object-cover" />
             </button>
@@ -147,16 +182,26 @@ onMounted(async () => {
               </div>
             </div>
             <button
+              v-if="authStore.user?.id === product.sellerId"
+              @click="router.push(`/product/edit/${product.id}`)"
+              class="flex items-center justify-center gap-2 bg-primary text-white font-semibold py-3 rounded-xl text-sm hover:bg-primary/90 active:scale-95 transition-all duration-150 cursor-pointer shadow-md hover:shadow-lg"
+            >
+              <PencilSquareIcon class="w-5 h-5" />
+              상품 수정
+            </button>
+            <button
+              v-else
               @click="startChat"
-              class="flex items-center justify-center gap-2 bg-primary text-white font-semibold py-3 rounded-xl text-sm hover:bg-primary/90 transition"
+              class="flex items-center justify-center gap-2 bg-primary text-white font-semibold py-3 rounded-xl text-sm hover:bg-primary/90 active:scale-95 transition-all duration-150 cursor-pointer shadow-md hover:shadow-lg"
             >
               <ChatBubbleOvalLeftEllipsisIcon class="w-5 h-5" />
               채팅하기
             </button>
             <!-- 최근 본 상품 -->
-            <div v-if="recentlyViewed.length > 0" class="border-t border-border pt-4">
+            <div class="border-t border-border pt-4">
               <p class="text-sm font-bold text-text-main mb-2">📌 최근 본 상품</p>
-              <div class="flex flex-col gap-1">
+              <p v-if="recentlyViewed.length === 0" class="text-xs text-text-sub text-center py-2">아직 본 상품이 없어요</p>
+              <div v-else class="flex flex-col gap-1">
                 <RouterLink
                   v-for="item in recentlyViewed"
                   :key="item.id"
@@ -237,8 +282,17 @@ onMounted(async () => {
           </div>
         </div>
         <button
+          v-if="authStore.user?.id === product.sellerId"
+          @click="router.push(`/product/edit/${product.id}`)"
+          class="flex items-center justify-center gap-2 bg-primary text-white font-semibold py-3 rounded-xl text-sm hover:bg-primary/90 active:scale-95 transition-all duration-150 cursor-pointer shadow-md hover:shadow-lg"
+        >
+          <PencilSquareIcon class="w-5 h-5" />
+          상품 수정
+        </button>
+        <button
+          v-else
           @click="startChat"
-          class="flex items-center justify-center gap-2 bg-primary text-white font-semibold py-3 rounded-xl text-sm hover:bg-primary/90 transition"
+          class="flex items-center justify-center gap-2 bg-primary text-white font-semibold py-3 rounded-xl text-sm hover:bg-primary/90 active:scale-95 transition-all duration-150 cursor-pointer shadow-md hover:shadow-lg"
         >
           <ChatBubbleOvalLeftEllipsisIcon class="w-5 h-5" />
           채팅하기
@@ -248,3 +302,14 @@ onMounted(async () => {
 
   </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.4s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
