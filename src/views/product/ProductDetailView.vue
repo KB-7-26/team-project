@@ -26,6 +26,7 @@ const liked = ref(false)
 const currentIndex = ref(0)
 const isLoading = ref(true)
 const recentlyViewed = ref([])
+const showSoldConfirm = ref(false)
 
 const saleStatusMap = { available: '판매중', reserved: '거래중', sold: '거래완료' }
 const conditionMap = { NEW: '새상품', USED: '중고' }
@@ -141,7 +142,7 @@ watch(() => route.params.id, () => {
           class="px-3 py-1.5 transition"
         >판매중</button>
         <button
-          @click="toggleStatus('sold')"
+          @click="showSoldConfirm = true"
           :class="product.saleStatus === 'sold' ? 'bg-primary text-white' : 'bg-white text-text-sub hover:bg-gray-50'"
           class="px-3 py-1.5 border-l border-border transition"
         >판매완료</button>
@@ -324,6 +325,26 @@ watch(() => route.params.id, () => {
         </button>
       </div>
     </template>
+
+    <!-- 판매완료 확인 모달 -->
+    <Teleport to="body">
+      <div v-if="showSoldConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="showSoldConfirm = false">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-80 flex flex-col gap-4">
+          <p class="text-base font-bold text-text-main">판매완료로 변경하시겠습니까?</p>
+          <p class="text-sm text-text-sub -mt-2">변경 후에도 다시 판매중으로 되돌릴 수 있어요.</p>
+          <div class="flex gap-3">
+            <button
+              @click="showSoldConfirm = false"
+              class="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold text-text-main hover:bg-gray-50 transition"
+            >취소</button>
+            <button
+              @click="() => { toggleStatus('sold'); showSoldConfirm = false }"
+              class="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition"
+            >확인</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
   </div>
 </template>
