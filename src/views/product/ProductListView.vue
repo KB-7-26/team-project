@@ -19,7 +19,6 @@ const isLoading = ref(false)
 const includeSold = ref(false)
 const authStore = useAuthStore()
 const dropdownRef = ref(null)
-let searchDebounceTimer = null
 const sortParamMap = {
   최신순: null,
   가격낮은순: 'price,asc',
@@ -128,13 +127,10 @@ watch(includeSold, () => {
   fetchProducts()
 })
 
-watch(searchQuery, () => {
-  clearTimeout(searchDebounceTimer)
-  searchDebounceTimer = setTimeout(() => {
-    currentPage.value = 1
-    fetchProducts()
-  }, 400)
-})
+function searchSubmit() {
+  currentPage.value = 1
+  fetchProducts()
+}
 
 watch(currentPage, fetchProducts)
 
@@ -155,6 +151,7 @@ watch(currentPage, fetchProducts)
               type="text"
               placeholder="검색어를 입력해주세요"
               class="flex-1 py-3 text-sm outline-none bg-transparent text-text-main placeholder:text-text-sub"
+              @keyup.enter="searchSubmit"
             />
           </div>
           <!-- 정렬 필터 -->
