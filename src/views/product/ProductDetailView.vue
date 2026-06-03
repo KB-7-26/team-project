@@ -79,7 +79,7 @@ const toggleLike = async () => {
   const prev = liked.value
   liked.value = !liked.value
   try {
-    prev ? await productApi.removeFavorite(product.value.id) : await productApi.addFavorite(product.value.id)
+    await productApi.toggleFavorite(product.value.id)
   } catch {
     liked.value = prev
   }
@@ -94,6 +94,11 @@ async function loadProduct() {
     }
     product.value = data
     startAutoSlide()
+
+    if (authStore.isLoggedIn) {
+      const { data: favorites } = await productApi.getMyFavorites()
+      liked.value = favorites.some((p) => p.id === data.id)
+    }
 
     const TWELVE_HOURS = 12 * 60 * 60 * 1000
     const current = {

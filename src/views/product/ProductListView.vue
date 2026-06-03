@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon } from '@heroicons/vue/24/outline'
 import ProductCard from '@/components/product/ProductCard.vue'
 import { productApi } from '@/api/productApi'
@@ -32,8 +32,7 @@ const saleStatusMap = { available: '판매중', reserved: '거래중', sold: '�
 onMounted(() => {
   fetchCategories()
   fetchProducts()
-  // TODO: favorites API 구현 후 주석 해제
-  // if (authStore.isLoggedIn && authStore.user?.id) fetchFavorites()
+  if (authStore.isLoggedIn) fetchFavorites()
   document.addEventListener('click', handleOutsideClick)
 })
 
@@ -56,7 +55,7 @@ const fetchCategories = async () => {
 const fetchProducts = async () => {
   isLoading.value = true
   try {
-    const params = { page: currentPage.value - 1, size: 10 }
+    const params = { page: currentPage.value - 1, size: 12 }
     if (selectedCategoryId.value !== null) {
       params.categoryId = selectedCategoryId.value
     }
@@ -72,9 +71,9 @@ const fetchProducts = async () => {
       title: p.title,
       price: p.price,
       isFree: p.isFree,
-      image: p.thumbnailUrl ?? 'https://placehold.co/400x300?text=No+Image',
+      image: p.thumbnailUrl || '',
       status: saleStatusMap[p.saleStatus] ?? p.saleStatus,
-      views: p.views ?? 0,
+      views: p.viewCount ?? 0,
       favoriteCount: p.favoriteCount,
     }))
     totalPages.value = data.totalPages
@@ -95,7 +94,7 @@ const toggleLike = async (id) => {
   const isLiked = likedIds.value.includes(id)
   likedIds.value = isLiked ? likedIds.value.filter((i) => i !== id) : [...likedIds.value, id]
   try {
-    isLiked ? await productApi.removeFavorite(id) : await productApi.addFavorite(id)
+    await productApi.toggleFavorite(id)
   } catch (e) {
     likedIds.value = isLiked ? [...likedIds.value, id] : likedIds.value.filter((i) => i !== id)
     console.error('찜 변경 실패', e)
@@ -103,7 +102,7 @@ const toggleLike = async (id) => {
 }
 const fetchFavorites = async () => {
   try {
-    const { data } = await productApi.getFavorites(authStore.user.id)
+    const { data } = await productApi.getMyFavorites()
     const items = Array.isArray(data) ? data : (data.content ?? [])
     likedIds.value = items.map((p) => p.id)
   } catch (e) {
@@ -134,12 +133,19 @@ function searchSubmit() {
 
 watch(currentPage, fetchProducts)
 
+const visiblePages = computed(() => {
+  const blockStart = Math.floor((currentPage.value - 1) / 5) * 5 + 1
+  const blockEnd = Math.min(blockStart + 4, totalPages.value)
+  const pages = []
+  for (let i = blockStart; i <= blockEnd; i++) pages.push(i)
+  return pages
+})
 </script>
 
 <template>
   <div class="flex flex-col">
     <!-- 히어로 -->
-    <div class="bg-primary/10 px-6 py-8">
+    <div class="bg-primary/10 px-4 md:px-6 py-6 md:py-8">
       <div class="max-w-2xl mx-auto">
         <p class="text-3xl font-extrabold text-text-main mb-4">중고 거래</p>
         <div class="flex gap-2">
@@ -197,7 +203,7 @@ watch(currentPage, fetchProducts)
       </button>
     </div>
     <!-- 본문 -->
-    <div class="flex w-full mx-auto items-start px-6 py-8 gap-6">
+    <div class="flex w-full mx-auto items-start px-4 md:px-6 py-6 md:py-8 gap-6">
       <!-- PC 사이드바 -->
       <div class="side hidden md:block border border-border rounded-2xl p-4 w-56 shrink-0 sticky top-20 self-start">
         <p class="text-lg font-bold text-text-main px-4 pt-4 pb-2">카테고리</p>
@@ -232,7 +238,7 @@ watch(currentPage, fetchProducts)
       </div>
 
       <!-- 상품 목록 -->
-      <div class="flex-1 flex flex-col px-4">
+      <div class="flex-1 flex flex-col min-w-0">
         <!-- 검색 결과 없음 -->
         <p v-if="isLoading" class="text-center text-text-sub py-20">불러오는 중...</p>
         <p v-else-if="products.length === 0" class="text-center text-text-sub py-20">검색 결과가 없습니다.</p>
@@ -247,17 +253,47 @@ watch(currentPage, fetchProducts)
           />
         </div>
 
-        <div class="flex justify-center items-center gap-3 mt-8 mb-4">
+        <div class="flex justify-center items-center gap-0.5 md:gap-1 mt-6 mb-2 md:mt-8 md:mb-8">
           <button
-            v-for="page in totalPages"
+            @click="currentPage = Math.max(1, currentPage - 5)"
+            :disabled="currentPage <= 1"
+            class="min-w-8 h-8 md:min-w-10 md:h-10 px-1.5 md:px-2 rounded-xl text-xs md:text-sm font-semibold text-black hover:bg-gray-100 disabled:opacity-30 transition-colors"
+          >
+            «
+          </button>
+          <button
+            @click="currentPage = Math.max(1, currentPage - 1)"
+            :disabled="currentPage <= 1"
+            class="min-w-8 h-8 md:min-w-10 md:h-10 px-1.5 md:px-2 rounded-xl text-xs md:text-sm font-semibold text-black hover:bg-gray-100 disabled:opacity-30 transition-colors"
+          >
+            ‹
+          </button>
+          <button
+            v-for="page in visiblePages"
             :key="page"
             @click="currentPage = page"
             :class="
-              currentPage === page ? 'bg-primary text-white' : 'border border-border text-text-main hover:bg-primary/10'
+              currentPage === page
+                ? 'bg-primary text-white border-primary'
+                : 'border border-border text-text-main hover:bg-primary/10'
             "
-            class="min-w-10 h-10 px-3 rounded-xl font-semibold text-sm transition-colors duration-200 flex items-center justify-center"
+            class="min-w-8 h-8 md:min-w-10 md:h-10 px-2 md:px-3 rounded-xl font-semibold text-xs md:text-sm transition-colors"
           >
             {{ page }}
+          </button>
+          <button
+            @click="currentPage = Math.min(totalPages, currentPage + 1)"
+            :disabled="currentPage >= totalPages"
+            class="min-w-8 h-8 md:min-w-10 md:h-10 px-1.5 md:px-2 rounded-xl text-xs md:text-sm font-semibold text-black hover:bg-gray-100 disabled:opacity-30 transition-colors"
+          >
+            ›
+          </button>
+          <button
+            @click="currentPage = Math.min(totalPages, currentPage + 5)"
+            :disabled="currentPage >= totalPages"
+            class="min-w-8 h-8 md:min-w-10 md:h-10 px-1.5 md:px-2 rounded-xl text-xs md:text-sm font-semibold text-black hover:bg-gray-100 disabled:opacity-30 transition-colors"
+          >
+            »
           </button>
         </div>
       </div>
