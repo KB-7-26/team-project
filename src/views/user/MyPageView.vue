@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import {
   AcademicCapIcon,
   ArchiveBoxIcon,
@@ -21,7 +21,9 @@ import {
   XMarkIcon,
 } from '@heroicons/vue/24/outline'
 import ProductCard from '@/components/product/ProductCard.vue'
+import BoardPostCard from '@/components/board/BoardPostCard.vue'
 import { useAuthStore } from '@/stores/auth'
+import { userBoardActivityApi } from '@/api/userBoardActivityApi'
 import { userProfileApi } from '@/api/userProfileApi'
 import { useRouter } from 'vue-router'
 
@@ -40,6 +42,11 @@ const isProfileLoading = ref(false)
 const isProfileSaving = ref(false)
 const profileEditError = ref('')
 const profileEditSuccess = ref('')
+const boardActivityPosts = ref([])
+const boardActivityCurrentPage = ref(0)
+const boardActivityTotalPages = ref(0)
+const isBoardActivityLoading = ref(false)
+const boardActivityError = ref('')
 const profileImageInput = ref(null)
 const profileEditImagePreview = ref('')
 const profileEditObjectUrl = ref('')
@@ -287,8 +294,20 @@ const favoriteProducts = [
   },
 ]
 
+const boardActivityMenuIds = ['myPosts', 'commentedPosts']
+const boardActivityDescriptions = {
+  myPosts: '내가 작성한 낙서장 글을 모아봅니다',
+  commentedPosts: '내가 댓글을 남긴 낙서장 글을 모아봅니다',
+}
+const boardActivityEmptyMessages = {
+  myPosts: '아직 작성한 글이 없습니다',
+  commentedPosts: '아직 댓글을 남긴 글이 없습니다',
+}
 const menuItems = computed(() => menuSections.flatMap((section) => section.items))
 const activeMenu = computed(() => menuItems.value.find((item) => item.id === selectedMenu.value) || menuItems.value[0])
+const isBoardActivityMenu = computed(() => boardActivityMenuIds.includes(selectedMenu.value))
+const boardActivityDescription = computed(() => boardActivityDescriptions[selectedMenu.value] || '')
+const boardActivityEmptyMessage = computed(() => boardActivityEmptyMessages[selectedMenu.value] || '표시할 글이 없습니다')
 const filteredSaleProducts = computed(() =>
   saleProducts.filter((product) => product.status === selectedSaleStatus.value),
 )
@@ -365,6 +384,33 @@ const fetchMyProfile = async () => {
     await redirectIfProfileRequired(error)
   } finally {
     isProfileLoading.value = false
+  }
+}
+
+const fetchBoardActivityPosts = async (page = 0) => {
+  if (!isBoardActivityMenu.value || !authStore.isLoggedIn) return
+
+  isBoardActivityLoading.value = true
+  boardActivityError.value = ''
+
+  try {
+    const pageData =
+      selectedMenu.value === 'myPosts'
+        ? await userBoardActivityApi.getMyPosts(page, 10)
+        : await userBoardActivityApi.getMyCommentedPosts(page, 10)
+
+    boardActivityPosts.value = pageData.content
+    boardActivityTotalPages.value = pageData.totalPages
+    boardActivityCurrentPage.value = page
+  } catch (error) {
+    if (await redirectIfProfileRequired(error)) return
+
+    boardActivityPosts.value = []
+    boardActivityTotalPages.value = 0
+    boardActivityError.value =
+      error.response?.data?.message || '게시판 활동 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.'
+  } finally {
+    isBoardActivityLoading.value = false
   }
 }
 
@@ -472,6 +518,12 @@ const saveProfileEdit = async () => {
 
 onMounted(() => {
   fetchMyProfile()
+})
+
+watch(selectedMenu, (nextMenu) => {
+  if (boardActivityMenuIds.includes(nextMenu)) {
+    fetchBoardActivityPosts(0)
+  }
 })
 </script>
 
@@ -601,6 +653,52 @@ onMounted(() => {
             </dl>
           </section>
         </div>
+
+        <template v-else-if="isBoardActivityMenu">
+          <div class="rounded-2xl border border-border bg-white p-6 shadow-sm md:p-8">
+            <h2 class="text-2xl font-extrabold text-text-main">{{ activeMenu.label }}</h2>
+            <p class="mt-2 text-sm font-medium text-text-sub">{{ boardActivityDescription }}</p>
+          </div>
+
+          <div class="mt-6 rounded-2xl border border-border bg-white p-4 shadow-sm md:p-6">
+            <p v-if="isBoardActivityLoading" class="py-12 text-center text-sm font-bold text-text-sub">
+              목록을 불러오는 중입니다
+            </p>
+            <p
+              v-else-if="boardActivityError"
+              class="rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600"
+            >
+              {{ boardActivityError }}
+            </p>
+            <ul v-else-if="boardActivityPosts.length" class="flex flex-col divide-y divide-border">
+              <li v-for="post in boardActivityPosts" :key="post.id">
+                <BoardPostCard :post="post" />
+              </li>
+            </ul>
+            <div v-else class="px-6 py-12 text-center">
+              <ArchiveBoxIcon class="mx-auto h-12 w-12 text-text-sub" />
+              <p class="mt-4 text-lg font-extrabold text-text-main">{{ boardActivityEmptyMessage }}</p>
+              <p class="mt-2 text-sm font-medium text-text-sub">활동이 생기면 이곳에 표시됩니다</p>
+            </div>
+
+            <div v-if="boardActivityTotalPages > 1" class="mt-6 flex justify-center gap-2">
+              <button
+                v-for="page in boardActivityTotalPages"
+                :key="page"
+                type="button"
+                class="h-10 w-10 rounded-xl text-sm font-extrabold transition"
+                :class="
+                  boardActivityCurrentPage === page - 1
+                    ? 'bg-primary text-white'
+                    : 'border border-border text-text-main hover:bg-primary/10 hover:text-primary'
+                "
+                @click="fetchBoardActivityPosts(page - 1)"
+              >
+                {{ page }}
+              </button>
+            </div>
+          </div>
+        </template>
 
         <template v-else-if="selectedMenu === 'sales'">
           <div class="rounded-2xl border border-border bg-white p-6 shadow-sm md:p-8">
