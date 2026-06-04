@@ -30,9 +30,7 @@ const conditions = [
 onMounted(async () => {
   try {
     const res = await categoryApi.getCategories()
-    console.log('카테고리 전체응답:', res)
-    console.log('카테고리 data:', res.data)
-    categories.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
+categories.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
   } catch (e) {
     console.error('카테고리 로드 실패:', e)
   }

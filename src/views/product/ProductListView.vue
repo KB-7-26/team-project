@@ -55,7 +55,7 @@ const fetchCategories = async () => {
 const fetchProducts = async () => {
   isLoading.value = true
   try {
-    const params = { page: currentPage.value - 1, size: 12 }
+    const params = { page: currentPage.value - 1, size: 20 }
     if (selectedCategoryId.value !== null) {
       params.categoryId = selectedCategoryId.value
     }
@@ -71,7 +71,7 @@ const fetchProducts = async () => {
       title: p.title,
       price: p.price,
       isFree: p.isFree,
-      image: p.thumbnailUrl || '',
+      image: p.thumbnailUrl || `https://picsum.photos/seed/${p.id}/400/300`,
       status: saleStatusMap[p.saleStatus] ?? p.saleStatus,
       views: p.viewCount ?? 0,
       favoriteCount: p.favoriteCount,
@@ -129,6 +129,7 @@ watch(includeSold, () => {
 function searchSubmit() {
   currentPage.value = 1
   fetchProducts()
+  searchQuery.value = ''
 }
 
 watch(currentPage, fetchProducts)
