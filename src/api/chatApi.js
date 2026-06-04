@@ -15,6 +15,10 @@ export const chatApi = {
     return api.get(`${BASE_URL}/${chatRoomId}`)
   },
 
+  getMessages(chatRoomId) {
+    return api.get(`${BASE_URL}/${chatRoomId}/messages`)
+  },
+
   sendMessage(chatRoomId, content) {
     return api.post(`${BASE_URL}/${chatRoomId}/messages`, { content })
   },
