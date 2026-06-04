@@ -1,29 +1,65 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import ChatRoomCard from '@/components/chat/ChatRoomCard.vue'
+import { chatApi } from '@/api/chatApi'
 
 const searchQuery = ref('')
+const chatRooms = ref([])
+const isLoading = ref(false)
+const errorMessage = ref('')
 
-const chatRooms = ref([
-  {
-    chatRoomId: 1,
-    productTitle: '맥북 프로 M1',
-    productImage: 'https://picsum.photos/seed/mac/56/56',
-    opponentName: '김철수',
-    lastMessage: '네, 내일 2시에 만나요!',
-    lastMessageTime: '오전 11:30',
-    unreadCount: 2,
-  },
-  {
-    chatRoomId: 2,
-    productTitle: '아이패드 Air',
-    productImage: 'https://picsum.photos/seed/ipad/56/56',
-    opponentName: '이영희',
-    lastMessage: '가격 조정 가능한가요?',
-    lastMessageTime: '어제',
-    unreadCount: 0,
-  },
-])
+// 시간 포맷 함수: "2026-05-31T10:30:00" → "오전 10:30" or "어제" 등
+function formatTime(dateStr) {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now - date
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffDays === 0) {
+    const hours = date.getHours()
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    const ampm = hours < 12 ? '오전' : '오후'
+    const h = hours % 12 || 12
+    return `${ampm} ${h}:${minutes}`
+  } else if (diffDays === 1) {
+    return '어제'
+  } else if (diffDays < 7) {
+    return `${diffDays}일 전`
+  } else {
+    return `${date.getMonth() + 1}/${date.getDate()}`
+  }
+}
+
+// 검색어로 필터링
+const filteredRooms = computed(() => {
+  if (!searchQuery.value) return chatRooms.value
+  return chatRooms.value.filter(room =>
+    room.opponentName.includes(searchQuery.value) ||
+    room.productTitle.includes(searchQuery.value)
+  )
+})
+
+// 컴포넌트가 화면에 그려질 때 API 호출
+onMounted(async () => {
+  isLoading.value = true
+  try {
+    const { data } = await chatApi.getChatRooms()
+    chatRooms.value = data.data.map(room => ({
+      chatRoomId: room.chatRoomId,
+      productTitle: room.productTitle,
+      productImage: null,
+      opponentName: room.opponentNickname,
+      lastMessage: '',
+      lastMessageTime: formatTime(room.lastMessageAt ?? room.createdAt),
+      unreadCount: 0,
+    }))
+  } catch (e) {
+    errorMessage.value = '채팅방 목록을 불러오지 못했습니다.'
+  } finally {
+    isLoading.value = false
+  }
+})
 </script>
 
 <template>
@@ -40,8 +76,25 @@ const chatRooms = ref([
       />
     </div>
 
+    <!-- 로딩 중 -->
+    <div v-if="isLoading" class="text-center text-text-sub text-sm py-10">
+      불러오는 중...
+    </div>
+
+    <!-- 에러 -->
+    <div v-else-if="errorMessage" class="text-center text-red-400 text-sm py-10">
+      {{ errorMessage }}
+    </div>
+
+    <!-- 채팅방 없을 때 -->
+    <div v-else-if="filteredRooms.length === 0" class="text-center text-text-sub text-sm py-10">
+      채팅방이 없습니다.
+    </div>
+
+    <!-- 채팅방 목록 -->
     <ChatRoomCard
-      v-for="room in chatRooms"
+      v-else
+      v-for="room in filteredRooms"
       :key="room.chatRoomId"
       :productImage="room.productImage"
       :opponentName="room.opponentName"
