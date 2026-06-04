@@ -136,13 +136,34 @@ const accountRows = computed(() => [
   { label: '가입일', value: formatDate(profileData.value.createdAt), icon: CalendarDaysIcon },
 ])
 
-const menuItems = [
-  { id: 'profile', label: '내 프로필', icon: UserIcon },
-  { id: 'sales', label: '판매목록', icon: ShoppingBagIcon },
-  { id: 'purchases', label: '구매목록', icon: CubeIcon },
-  { id: 'favorites', label: '찜 목록', icon: HeartIcon },
-  { id: 'chats', label: '채팅목록', icon: ChatBubbleOvalLeftIcon },
-  { id: 'settings', label: '환경설정', icon: Cog6ToothIcon },
+const menuSections = [
+  {
+    id: 'profile',
+    items: [{ id: 'profile', label: '내 프로필', icon: UserIcon }],
+  },
+  {
+    id: 'board',
+    title: '낙서장',
+    items: [
+      { id: 'myPosts', label: '내가 쓴 글', icon: PencilSquareIcon },
+      { id: 'commentedPosts', label: '댓글 단 글', icon: ChatBubbleOvalLeftIcon },
+      { id: 'likedPosts', label: '좋아요 한 글', icon: HeartIcon },
+    ],
+  },
+  {
+    id: 'market',
+    title: '낙서장터',
+    items: [
+      { id: 'sales', label: '판매 목록', icon: ShoppingBagIcon },
+      { id: 'purchases', label: '구매 목록', icon: CubeIcon },
+      { id: 'favorites', label: '찜 목록', icon: HeartIcon },
+      { id: 'chats', label: '채팅 목록', icon: ChatBubbleOvalLeftIcon },
+    ],
+  },
+  {
+    id: 'settings',
+    items: [{ id: 'settings', label: '환경설정', icon: Cog6ToothIcon }],
+  },
 ]
 
 const saleStatusTabs = ['판매중', '판매완료', '숨김']
@@ -266,7 +287,8 @@ const favoriteProducts = [
   },
 ]
 
-const activeMenu = computed(() => menuItems.find((item) => item.id === selectedMenu.value))
+const menuItems = computed(() => menuSections.flatMap((section) => section.items))
+const activeMenu = computed(() => menuItems.value.find((item) => item.id === selectedMenu.value) || menuItems.value[0])
 const filteredSaleProducts = computed(() =>
   saleProducts.filter((product) => product.status === selectedSaleStatus.value),
 )
@@ -465,21 +487,31 @@ onMounted(() => {
     <div class="mx-auto flex max-w-7xl flex-col gap-8 lg:flex-row">
       <aside class="flex w-full flex-col gap-6 lg:w-80 lg:shrink-0">
         <nav class="rounded-2xl border border-border bg-white p-4 shadow-sm">
-          <button
-            v-for="item in menuItems"
-            :key="item.id"
-            type="button"
-            class="flex w-full items-center gap-4 rounded-xl px-4 py-4 text-base font-bold transition"
-            :class="
-              selectedMenu === item.id
-                ? 'bg-primary text-white'
-                : 'text-text-main hover:bg-primary/10 hover:text-primary'
-            "
-            @click="selectedMenu = item.id"
+          <div
+            v-for="(section, sectionIndex) in menuSections"
+            :key="section.id"
+            class="border-border pt-4 first:pt-0"
+            :class="sectionIndex === 0 ? '' : 'mt-4 border-t'"
           >
-            <component :is="item.icon" class="h-6 w-6" />
-            {{ item.label }}
-          </button>
+            <p v-if="section.title" class="px-4 pb-2 text-sm font-extrabold text-text-main">
+              {{ section.title }}
+            </p>
+            <button
+              v-for="item in section.items"
+              :key="item.id"
+              type="button"
+              class="flex w-full items-center gap-4 rounded-xl px-4 py-4 text-base font-bold transition"
+              :class="
+                selectedMenu === item.id
+                  ? 'bg-primary text-white'
+                  : 'text-text-main hover:bg-primary/10 hover:text-primary'
+              "
+              @click="selectedMenu = item.id"
+            >
+              <component :is="item.icon" class="h-6 w-6" />
+              {{ item.label }}
+            </button>
+          </div>
         </nav>
       </aside>
 
