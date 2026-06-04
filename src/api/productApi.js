@@ -27,24 +27,16 @@ export const productApi = {
     return api.delete(`/products/${id}`)
   },
 
-  searchProducts(params) {
-    return api.get('/products/search', { params })
-  },
-
   updateStatus(id, status) {
     return api.patch(`/products/${id}/status`, { status })
   },
 
-  getFavorites(userId) {
-    return api.get(`/users/${userId}/favorites`)
+  getMyFavorites() {
+    return api.get('/users/me/favorites')
   },
 
-  addFavorite(id) {
+  toggleFavorite(id) {
     return api.post(`/products/${id}/favorites`)
-  },
-
-  removeFavorite(id) {
-    return api.delete(`/products/${id}/favorites`)
   },
 
   uploadImages(id, formData) {

@@ -11,7 +11,7 @@ const showTopNavBar = computed(() => !route.meta.hideNav)
 
 <template>
   <TopNavBar v-if="showTopNavBar" />
-  <div :class="showTopNavBar ? 'pt-16 pb-4 md:pb-0' : ''">
+  <div :class="showTopNavBar ? 'pt-16 pb-16 md:pb-0' : ''">
     <RouterView />
   </div>
   <BottomNavBar v-if="showTopNavBar" />

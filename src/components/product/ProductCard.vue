@@ -19,6 +19,7 @@ defineEmits(['toggle-like'])
           :src="product.image"
           :alt="product.title"
           class="w-full h-36 md:h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+          @error="(e) => { e.target.onerror = null; e.target.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect width=\'100%25\' height=\'100%25\' fill=\'%23e5e7eb\'/%3E%3C/svg%3E' }"
         />
       </div>
 
