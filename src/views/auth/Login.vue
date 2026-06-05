@@ -238,7 +238,7 @@ const googleLoginHandler = async () => {
             :disabled="isSubmitting || isGoogleSubmitting"
             class="mt-6 h-17 rounded-2xl bg-primary text-xl font-extrabold text-white transition hover:bg-primary-hover active:bg-primary-active disabled:cursor-not-allowed disabled:bg-primary/60"
           >
-            {{ isSubmitting ? '로그인 중...' : '로그인' }}
+            {{ isSubmitting ? '로그인 중...' : '이메일로 로그인' }}
           </button>
         </form>
 
@@ -254,7 +254,7 @@ const googleLoginHandler = async () => {
 
         <p class="mt-10 text-center text-base font-medium text-text-sub sm:text-lg">
           계정이 없으신가요?
-          <RouterLink to="/signup" class="ml-2 font-extrabold text-primary hover:text-primary-hover">회원가입</RouterLink>
+          <RouterLink to="/signup" class="ml-2 font-extrabold text-primary hover:text-primary-hover">이메일로 가입하기</RouterLink>
         </p>
 
         <div class="mt-10 border-t border-border pt-9 text-center text-base font-medium text-text-sub">
