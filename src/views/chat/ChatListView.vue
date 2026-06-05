@@ -1,12 +1,15 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import ChatRoomCard from '@/components/chat/ChatRoomCard.vue'
 import { chatApi } from '@/api/chatApi'
 import { useChatStore } from '@/stores/chat'
 
+const route = useRoute()
 const chatStore = useChatStore()
 
+const activeChatRoomId = computed(() => Number(route.params.chatRoomId) || null)
 const searchQuery = ref('')
 const chatRooms = ref([])
 const isLoading = ref(false)
@@ -114,6 +117,7 @@ onMounted(loadChatRooms)
         :productTitle="room.productTitle"
         :lastMessage="room.lastMessage"
         :unreadCount="room.unreadCount"
+        :isActive="room.chatRoomId === activeChatRoomId"
         @click="$router.push(`/chats/${room.chatRoomId}`)"
       />
     </div>

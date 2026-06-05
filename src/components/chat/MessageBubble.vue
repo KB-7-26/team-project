@@ -25,7 +25,7 @@ defineProps({
           'px-3.5 py-2.5 text-sm leading-relaxed m-0 border-2 border-ink',
           senderType === 'me'
             ? 'bg-[#ffe066] text-ink rounded-2xl rounded-br-sm shadow-[2px_2px_0_#1c1712]'
-            : 'bg-white text-ink rounded-2xl rounded-bl-sm shadow-[2px_2px_0_#1c1712]',
+            : 'bg-[#a8c8e8] text-ink rounded-2xl rounded-bl-sm shadow-[2px_2px_0_#1c1712]',
         ]"
       >
         {{ content }}

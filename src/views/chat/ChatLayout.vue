@@ -8,11 +8,11 @@ const hasChatRoom = computed(() => !!route.params.chatRoomId)
 </script>
 
 <template>
-  <div class="flex h-[calc(100vh-60px)] border-t-2 border-[#c8bca8]">
+  <div :class="['flex', hasChatRoom ? 'h-screen md:h-[calc(100vh-60px)]' : 'h-[calc(100vh-60px)]']">
     <!-- 채팅 목록 패널 -->
     <div
       :class="[
-        'w-full md:w-85 md:shrink-0 border-r-2 border-[#c8bca8] overflow-y-auto bg-paper',
+        'w-full md:w-85 md:shrink-0 border-r-2 border-[#c8bca8] overflow-y-auto bg-[#fef9ec]',
         hasChatRoom ? 'hidden md:block' : 'block',
       ]"
     >
@@ -21,7 +21,7 @@ const hasChatRoom = computed(() => !!route.params.chatRoomId)
     <!-- 채팅방 패널 -->
     <div
       :class="[
-        'flex-1 overflow-hidden bg-paper-dots',
+        'flex-1 overflow-hidden bg-paper',
         hasChatRoom ? 'flex flex-col' : 'hidden md:flex md:flex-col',
       ]"
     >

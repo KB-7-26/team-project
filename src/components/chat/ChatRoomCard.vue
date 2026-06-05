@@ -6,11 +6,21 @@ defineProps({
   productTitle: String,
   lastMessage: String,
   unreadCount: Number,
+  isActive: Boolean,
 })
 </script>
 
 <template>
-  <div class="room-card flex items-center gap-3 px-5 py-4 border-b-2 border-[#c8bca8] cursor-pointer hover:bg-[#ffe066]/10 transition-colors">
+  <div
+    :class="[
+      'room-card flex items-center gap-3 py-4 border-b-2 border-[#c8bca8] cursor-pointer transition-colors relative',
+      isActive
+        ? 'bg-[#ffe066]/30 pl-4 pr-5'
+        : 'hover:bg-[#ffe066]/10 px-5',
+    ]"
+  >
+    <!-- 활성 표시 바 -->
+    <div v-if="isActive" class="absolute left-0 top-2 bottom-2 w-1 bg-ink rounded-r-full" />
     <!-- 상품 이미지 -->
     <div class="shrink-0 w-14 h-14 rounded-xl overflow-hidden border-2 border-ink shadow-[2px_2px_0_#1c1712]">
       <img v-if="productImage" :src="productImage" class="w-full h-full object-cover" />

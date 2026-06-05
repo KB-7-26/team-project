@@ -23,7 +23,7 @@ const router = createRouter({
       path: '/chats',
       component: () => import('@/views/chat/ChatLayout.vue'),
       meta: { requiresAuth: true },
-      children: [{ path: ':chatRoomId', component: () => import('@/views/chat/ChatRoomView.vue') }],
+      children: [{ path: ':chatRoomId', component: () => import('@/views/chat/ChatRoomView.vue'), meta: { hideNavMobile: true } }],
     },
     {
       path: '/login',

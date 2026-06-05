@@ -33,6 +33,7 @@ onMounted(async () => {
 })
 
 async function submitForm() {
+  if (isSubmitting.value) return
   if (!productForm.value.title.trim()) {
     errorMessage.value = '제목을 입력해주세요'
     return

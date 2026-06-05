@@ -3,51 +3,40 @@ import { HomeIcon, ShoppingBagIcon, ChatBubbleLeftRightIcon, ChatBubbleOvalLeftI
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
+
+const items = [
+  { to: '/', icon: HomeIcon, label: '홈', match: (p) => p === '/' },
+  { to: '/products', icon: ShoppingBagIcon, label: '중고거래', match: (p) => p.startsWith('/products') },
+  { to: '/board', icon: ChatBubbleLeftRightIcon, label: '게시판', match: (p) => p.startsWith('/board') },
+  { to: '/chats', icon: ChatBubbleOvalLeftIcon, label: '채팅', match: (p) => p.startsWith('/chats') },
+  { to: '/mypage', icon: UserIcon, label: '마이페이지', match: (p) => p.startsWith('/mypage') },
+]
 </script>
 
 <template>
-  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-border md:hidden z-50">
-    <ul class="flex">
+  <nav class="fixed bottom-0 left-0 right-0 bg-[#fef9ec] border-t-2 border-ink md:hidden z-50">
+    <ul class="flex px-2 py-2 gap-1">
       <RouterLink
-        to="/"
-        class="flex-1 flex flex-col items-center py-3 gap-1 cursor-pointer"
-        :class="route.path === '/' ? 'text-primary' : 'text-text-sub'"
+        v-for="item in items"
+        :key="item.to"
+        :to="item.to"
+        class="nav-item flex-1 flex flex-col items-center py-1.5 px-1 gap-0.5 rounded-xl transition-all"
+        :class="
+          item.match(route.path)
+            ? 'bg-[#ffe066] border-2 border-ink shadow-[2px_2px_0_#1c1712] text-ink'
+            : 'text-[#8c7e6e] border-2 border-transparent hover:text-ink'
+        "
       >
-        <HomeIcon class="w-6 h-6" />
-        <span class="text-xs">홈</span>
-      </RouterLink>
-      <RouterLink
-        to="/products"
-        class="flex-1 flex flex-col items-center py-3 gap-1 cursor-pointer"
-        :class="route.path.startsWith('/products') ? 'text-primary' : 'text-text-sub'"
-      >
-        <ShoppingBagIcon class="w-6 h-6" />
-        <span class="text-xs">중고거래</span>
-      </RouterLink>
-      <RouterLink
-        to="/board"
-        class="flex-1 flex flex-col items-center py-3 gap-1 cursor-pointer"
-        :class="route.path.startsWith('/board') ? 'text-primary' : 'text-text-sub'"
-      >
-        <ChatBubbleLeftRightIcon class="w-6 h-6" />
-        <span class="text-xs">게시판</span>
-      </RouterLink>
-      <RouterLink
-        to="/chats"
-        class="flex-1 flex flex-col items-center py-3 gap-1 cursor-pointer"
-        :class="route.path.startsWith('/chats') ? 'text-primary' : 'text-text-sub'"
-      >
-        <ChatBubbleOvalLeftIcon class="w-6 h-6" />
-        <span class="text-xs">채팅</span>
-      </RouterLink>
-      <RouterLink
-        to="/mypage"
-        class="flex-1 flex flex-col items-center py-3 gap-1 cursor-pointer"
-        :class="route.path.startsWith('/mypage') ? 'text-primary' : 'text-text-sub'"
-      >
-        <UserIcon class="w-6 h-6" />
-        <span class="text-xs">마이페이지</span>
+        <component :is="item.icon" class="w-5 h-5" />
+        <span class="text-[10px] font-bold leading-none">{{ item.label }}</span>
       </RouterLink>
     </ul>
   </nav>
 </template>
+
+<style scoped>
+.nav-item:active {
+  transform: translate(1px, 1px);
+  box-shadow: none !important;
+}
+</style>
