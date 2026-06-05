@@ -1,12 +1,15 @@
 <script setup>
-import { ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { RouterLink, useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useChatStore } from '@/stores/chat'
 import { PlusIcon } from '@heroicons/vue/24/solid'
 import { onMounted, onBeforeUnmount } from 'vue'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
+const chatStore = useChatStore()
 const showMobileMenu = ref(false)
 const mobileMenuRef = ref(null)
 
@@ -22,7 +25,15 @@ const handleOutsideClick = (e) => {
   }
 }
 
-onMounted(() => document.addEventListener('click', handleOutsideClick))
+// 라우트 변경마다 갱신
+watch(() => route.path, () => {
+  if (authStore.isLoggedIn) chatStore.fetchUnreadCount()
+})
+
+onMounted(() => {
+  document.addEventListener('click', handleOutsideClick)
+  if (authStore.isLoggedIn) chatStore.fetchUnreadCount()
+})
 onBeforeUnmount(() => document.removeEventListener('click', handleOutsideClick))
 </script>
 
@@ -44,8 +55,14 @@ onBeforeUnmount(() => document.removeEventListener('click', handleOutsideClick))
           <li>
             <RouterLink to="/board" class="nav-link text-base text-[#8c7e6e] hover:text-ink transition-colors">게시판</RouterLink>
           </li>
-          <li>
-            <RouterLink to="/chats" class="nav-link text-base text-[#8c7e6e] hover:text-ink transition-colors">채팅</RouterLink>
+          <li class="text-base text-text-main hover:text-primary cursor-pointer">
+            <RouterLink to="/chats" class="relative inline-flex items-center">
+              채팅
+              <span
+                v-if="chatStore.unreadCount > 0"
+                class="absolute -top-1.5 -right-3 w-2 h-2 bg-red-500 rounded-full"
+              ></span>
+            </RouterLink>
           </li>
           <li>
             <RouterLink to="/mypage" class="nav-link text-base text-[#8c7e6e] hover:text-ink transition-colors">마이페이지</RouterLink>
