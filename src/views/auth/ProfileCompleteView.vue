@@ -16,23 +16,20 @@ const isSubmitting = ref(false)
 const profileForm = ref({
   name: authStore.pendingUser?.name || '',
   nickname: '',
-  phoneNumber: '',
   gender: '',
   cohort: '',
 })
 const invalidFields = ref({
   name: false,
   nickname: false,
-  phoneNumber: false,
   gender: false,
   cohort: false,
 })
 
-const requiredFields = ['name', 'nickname', 'phoneNumber', 'gender', 'cohort']
+const requiredFields = ['name', 'nickname', 'gender', 'cohort']
 const emptyMessages = {
   name: '이름을 입력해주세요',
   nickname: '닉네임을 입력해주세요',
-  phoneNumber: '전화번호를 입력해주세요',
   gender: '성별을 선택해주세요',
   cohort: '회차를 선택해주세요',
 }
@@ -48,8 +45,6 @@ const cohortOptions = [
   '29회차 전공',
   '30회차 비전공',
 ]
-const phoneNumberPattern = /^[0-9]{2,3}-?[0-9]{3,4}-?[0-9]{4}$/
-
 const formMessage = computed(() => formErrorMessage.value || defaultFormMessage)
 const isFormError = computed(() => Boolean(formErrorMessage.value))
 const pendingEmail = computed(() => authStore.pendingUser?.email || '')
@@ -85,15 +80,6 @@ const submitProfile = async () => {
     return
   }
 
-  if (!phoneNumberPattern.test(profileForm.value.phoneNumber.trim())) {
-    invalidFields.value = {
-      ...nextInvalidFields,
-      phoneNumber: true,
-    }
-    formErrorMessage.value = '전화번호 형식이 올바르지 않습니다'
-    return
-  }
-
   formErrorMessage.value = ''
   isSubmitting.value = true
 
@@ -101,7 +87,6 @@ const submitProfile = async () => {
     await authStore.completeProfile({
       name: profileForm.value.name.trim(),
       nickname: profileForm.value.nickname.trim(),
-      phoneNumber: profileForm.value.phoneNumber.trim(),
       gender: profileForm.value.gender,
       cohort: profileForm.value.cohort,
       profileImageUrl: authStore.pendingUser?.profileImageUrl || '',
@@ -221,26 +206,6 @@ const logout = async () => {
                   : 'border-border placeholder:text-text-sub focus:border-primary focus:ring-primary/15'
               "
               @input="clearError('nickname')"
-            />
-          </label>
-
-          <label class="block">
-            <span class="text-base font-extrabold text-text-main">전화번호</span>
-            <input
-              v-model="profileForm.phoneNumber"
-              type="tel"
-              autocomplete="tel"
-              inputmode="tel"
-              placeholder="010-1234-5678"
-              :aria-invalid="invalidFields.phoneNumber"
-              aria-describedby="profile-form-message"
-              class="mt-3 h-14 w-full rounded-2xl border bg-white px-5 text-base font-medium text-text-main outline-none transition focus:ring-4"
-              :class="
-                invalidFields.phoneNumber
-                  ? 'border-red-500 placeholder:text-red-500 focus:border-red-500 focus:ring-red-500/15'
-                  : 'border-border placeholder:text-text-sub focus:border-primary focus:ring-primary/15'
-              "
-              @input="clearError('phoneNumber')"
             />
           </label>
 

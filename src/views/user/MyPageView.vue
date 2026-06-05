@@ -12,7 +12,6 @@ import {
   HeartIcon,
   IdentificationIcon,
   PencilSquareIcon,
-  PhoneIcon,
   ShieldCheckIcon,
   ShoppingBagIcon,
   TrashIcon,
@@ -52,7 +51,6 @@ const profileEditImagePreview = ref('')
 const profileEditObjectUrl = ref('')
 const profileEditForm = ref({
   nickname: '',
-  phoneNumber: '',
   cohort: '',
   gender: '',
 })
@@ -64,14 +62,14 @@ const fallbackProfile = {
   name: '김민수',
   nickname: '스왑러 민수',
   email: 'minsu.swap@example.com',
-  phoneNumber: '01012345678',
-  profileImageUrl: 'https://picsum.photos/seed/swap-profile/240/240',
   cohort: 'KB IT 5기',
   gender: 'M',
   trustScore: 86,
   isVerified: true,
   createdAt: '2026-03-18T10:30:00',
 }
+
+const normalizeProfileImageUrl = (value) => (typeof value === 'string' ? value.trim() : '')
 
 const formatDate = (value) => {
   if (!value) return '-'
@@ -81,17 +79,6 @@ const formatDate = (value) => {
     month: 'long',
     day: 'numeric',
   }).format(new Date(value))
-}
-
-const formatPhoneNumber = (value) => {
-  if (!value) return '-'
-  const digits = value.replace(/[^0-9]/g, '')
-
-  if (digits.length === 11) {
-    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
-  }
-
-  return value
 }
 
 const genderLabel = (value) => {
@@ -107,8 +94,7 @@ const profileData = computed(() => {
     name: user.name || fallbackProfile.name,
     nickname: user.nickname || fallbackProfile.nickname,
     email: user.email || firebaseUser.value?.email || fallbackProfile.email,
-    phoneNumber: user.phoneNumber || fallbackProfile.phoneNumber,
-    profileImageUrl: user.profileImageUrl || firebaseUser.value?.photoURL || fallbackProfile.profileImageUrl,
+    profileImageUrl: normalizeProfileImageUrl(user.profileImageUrl),
     cohort: user.cohort || fallbackProfile.cohort,
     gender: user.gender || fallbackProfile.gender,
     trustScore: user.trustScore ?? fallbackProfile.trustScore,
@@ -137,7 +123,6 @@ const accountRows = computed(() => [
   { label: '이름', value: profileData.value.name, icon: IdentificationIcon },
   { label: '닉네임', value: profileData.value.nickname, icon: UserIcon },
   { label: '이메일', value: profileData.value.email, icon: EnvelopeIcon },
-  { label: '전화번호', value: formatPhoneNumber(profileData.value.phoneNumber), icon: PhoneIcon },
   { label: '회차', value: profileData.value.cohort, icon: AcademicCapIcon },
   { label: '성별', value: genderLabel(profileData.value.gender), icon: IdentificationIcon },
   { label: '가입일', value: formatDate(profileData.value.createdAt), icon: CalendarDaysIcon },
@@ -345,7 +330,6 @@ const applyProfileResponse = (profileResponse) => {
       name: profileResponse.name,
       nickname: profileResponse.nickname,
       email: profileResponse.email,
-      phoneNumber: profileResponse.phoneNumber,
       profileImageUrl: profileResponse.profileImageUrl,
       cohort: profileResponse.cohort,
       gender: profileResponse.gender,
@@ -417,7 +401,6 @@ const fetchBoardActivityPosts = async (page = 0) => {
 const openProfileEditModal = () => {
   profileEditForm.value = {
     nickname: profileData.value.nickname,
-    phoneNumber: profileData.value.phoneNumber,
     cohort: profileData.value.cohort,
     gender: profileData.value.gender,
   }
@@ -469,10 +452,6 @@ const validateProfileEditForm = () => {
     return '닉네임을 입력해주세요.'
   }
 
-  if (!/^[0-9]{2,3}-?[0-9]{3,4}-?[0-9]{4}$/.test(profileEditForm.value.phoneNumber.trim())) {
-    return '전화번호는 숫자 또는 하이픈 형식으로 입력해주세요.'
-  }
-
   if (!profileEditForm.value.cohort.trim()) {
     return '회차를 입력해주세요.'
   }
@@ -495,7 +474,6 @@ const saveProfileEdit = async () => {
   try {
     const { data } = await userProfileApi.updateMyProfile({
       nickname: profileEditForm.value.nickname.trim(),
-      phoneNumber: profileEditForm.value.phoneNumber.trim(),
       cohort: profileEditForm.value.cohort.trim(),
       gender: profileEditForm.value.gender,
     })
@@ -845,14 +823,6 @@ watch(selectedMenu, (nextMenu) => {
             <input
               v-model="profileEditForm.nickname"
               type="text"
-              class="mt-2 h-12 w-full rounded-xl border border-border px-4 text-sm font-bold text-text-main outline-none focus:border-primary"
-            />
-          </label>
-          <label class="block">
-            <span class="text-sm font-bold text-text-sub">전화번호</span>
-            <input
-              v-model="profileEditForm.phoneNumber"
-              type="tel"
               class="mt-2 h-12 w-full rounded-xl border border-border px-4 text-sm font-bold text-text-main outline-none focus:border-primary"
             />
           </label>
