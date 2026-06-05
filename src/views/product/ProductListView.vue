@@ -5,6 +5,7 @@ import ProductCard from '@/components/product/ProductCard.vue'
 import { productApi } from '@/api/productApi'
 import { categoryApi } from '@/api/categoryApi'
 import { useAuthStore } from '@/stores/auth'
+import { mapProduct } from '@/utils/product'
 
 const likedIds = ref([])
 const currentPage = ref(1)
@@ -27,7 +28,6 @@ const sortParamMap = {
 }
 
 const sortOptions = ['최신순', '가격낮은순', '가격높은순', '추천순']
-const saleStatusMap = { available: '판매중', reserved: '거래중', sold: '거래완료' }
 
 onMounted(() => {
   fetchCategories()
@@ -66,16 +66,7 @@ const fetchProducts = async () => {
     if (searchQuery.value.trim()) params.keyword = searchQuery.value.trim()
 
     const { data } = await productApi.getProducts(params)
-    products.value = data.content.map((p) => ({
-      id: p.id,
-      title: p.title,
-      price: p.price,
-      isFree: p.isFree,
-      image: p.thumbnailUrl || `https://picsum.photos/seed/${p.id}/400/300`,
-      status: saleStatusMap[p.saleStatus] ?? p.saleStatus,
-      views: p.viewCount ?? 0,
-      favoriteCount: p.favoriteCount,
-    }))
+    products.value = data.content.map((p) => ({ ...mapProduct(p), favoriteCount: p.favoriteCount }))
     totalPages.value = data.totalPages
   } catch (e) {
     console.error('상품 목록 조회 실패', e)

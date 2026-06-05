@@ -9,8 +9,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import { productApi } from '@/api/productApi'
 import ProductCard from '@/components/product/ProductCard.vue'
-
-const saleStatusMap = { available: '판매중', reserved: '거래중', sold: '거래완료' }
+import { mapProduct } from '@/utils/product'
 
 const categories = [
   { icon: ShoppingBagIcon, title: '중고거래', desc: '안전한 학생 간 거래', to: '/products', tape: '#ffe066' },
@@ -24,15 +23,7 @@ const popularProducts = ref([])
 onMounted(async () => {
   try {
     const { data } = await productApi.getProducts({ sort: 'favoriteCount,desc', size: 4, saleStatus: 'available' })
-    popularProducts.value = data.content.map((p) => ({
-      id: p.id,
-      title: p.title,
-      price: p.price,
-      isFree: p.isFree,
-      image: p.thumbnailUrl || `https://picsum.photos/seed/${p.id}/400/300`,
-      status: saleStatusMap[p.saleStatus] ?? p.saleStatus,
-      views: p.viewCount ?? 0,
-    }))
+    popularProducts.value = data.content.map(mapProduct)
   } catch (e) {
     console.error('인기 상품 조회 실패', e)
   }

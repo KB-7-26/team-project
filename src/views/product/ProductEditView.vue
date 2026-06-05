@@ -1,15 +1,13 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { CameraIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { productApi, categoryApi } from '@/api/productApi'
+import { conditions, useProductForm } from '@/composables/useProductForm'
 
 const route = useRoute()
 const router = useRouter()
 
-const images = ref([])
-const deletedImageIds = ref([])
-const fileInput = ref(null)
 const isSubmitting = ref(false)
 const errorMessage = ref('')
 const categories = ref([])
@@ -24,10 +22,13 @@ const productForm = ref({
   description: '',
 })
 
-const conditions = [
-  { label: '새상품', value: 'NEW' },
-  { label: '중고', value: 'USED' },
-]
+const { images, deletedImageIds, fileInput, priceDisplay, toggleFree, addPrice, handleFileChange, removeImage } = useProductForm(productForm)
+
+function selectCondition(value) {
+  productForm.value.productCondition = value
+  productForm.value.isFree = false
+  if (productForm.value.price === '0') productForm.value.price = ''
+}
 
 onMounted(async () => {
   const catRes = await categoryApi.getCategories()
@@ -47,53 +48,6 @@ onMounted(async () => {
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map((img) => ({ id: img.id, url: img.imageUrl, isExisting: true }))
 })
-
-const priceDisplay = computed({
-  get() {
-    if (productForm.value.isFree) return '0'
-    if (!productForm.value.price) return ''
-    return Number(productForm.value.price).toLocaleString('ko-KR')
-  },
-  set(val) {
-    productForm.value.price = val.replace(/[^0-9]/g, '')
-  },
-})
-
-function toggleFree() {
-  productForm.value.isFree = !productForm.value.isFree
-  if (productForm.value.isFree) productForm.value.price = '0'
-}
-
-function selectCondition(value) {
-  productForm.value.productCondition = value
-  productForm.value.isFree = false
-  if (productForm.value.price === '0') productForm.value.price = ''
-}
-
-function handleFileChange(event) {
-  const files = Array.from(event.target.files)
-  files.forEach((file) => {
-    if (images.value.length >= 10) return
-    images.value.push({ file, url: URL.createObjectURL(file) })
-  })
-  event.target.value = ''
-}
-
-function removeImage(index) {
-  const img = images.value[index]
-  if (img.isExisting) {
-    deletedImageIds.value.push(img.id)
-  } else {
-    URL.revokeObjectURL(img.url)
-  }
-  images.value.splice(index, 1)
-}
-
-function addPrice(amount) {
-  if (productForm.value.isFree) return
-  const current = Number(productForm.value.price) || 0
-  productForm.value.price = String(current + amount)
-}
 
 const submitForm = async () => {
   errorMessage.value = ''

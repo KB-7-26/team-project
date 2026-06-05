@@ -1,13 +1,12 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { CameraIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { productApi, categoryApi } from '@/api/productApi'
+import { conditions, useProductForm } from '@/composables/useProductForm'
 
 const router = useRouter()
 
-const images = ref([])
-const fileInput = ref(null)
 const isSubmitting = ref(false)
 const errorMessage = ref('')
 const categories = ref([])
@@ -22,55 +21,16 @@ const productForm = ref({
   description: '',
 })
 
-const conditions = [
-  { label: '새상품', value: 'NEW' },
-  { label: '중고', value: 'USED' },
-]
+const { images, fileInput, priceDisplay, toggleFree, addPrice, handleFileChange, removeImage } = useProductForm(productForm)
 
 onMounted(async () => {
   try {
     const res = await categoryApi.getCategories()
-categories.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
+    categories.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
   } catch (e) {
     console.error('카테고리 로드 실패:', e)
   }
 })
-
-const priceDisplay = computed({
-  get() {
-    if (productForm.value.isFree) return '0'
-    if (!productForm.value.price) return ''
-    return Number(productForm.value.price).toLocaleString('ko-KR')
-  },
-  set(val) {
-    productForm.value.price = val.replace(/[^0-9]/g, '')
-  },
-})
-
-function toggleFree() {
-  productForm.value.isFree = !productForm.value.isFree
-  if (productForm.value.isFree) productForm.value.price = '0'
-}
-
-function handleFileChange(event) {
-  const files = Array.from(event.target.files)
-  files.forEach((file) => {
-    if (images.value.length >= 10) return
-    images.value.push({ file, url: URL.createObjectURL(file) })
-  })
-  event.target.value = ''
-}
-
-function removeImage(index) {
-  URL.revokeObjectURL(images.value[index].url)
-  images.value.splice(index, 1)
-}
-
-function addPrice(amount) {
-  if (productForm.value.isFree) return
-  const current = Number(productForm.value.price) || 0
-  productForm.value.price = String(current + amount)
-}
 
 async function submitForm() {
   if (!productForm.value.title.trim()) {
