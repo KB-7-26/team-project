@@ -5,6 +5,8 @@ import { TrashIcon, PencilSquareIcon, ArrowLeftIcon } from '@heroicons/vue/24/ou
 import BoardCommentSection from '@/components/board/BoardCommentSection.vue'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
+import { useToastStore } from '@/stores/toast'
+import { formatDate } from '@/utils/formatDate'
 
 const route = useRoute()
 const router = useRouter()
@@ -14,6 +16,7 @@ const post = ref(null)
 const loading = ref(true)
 
 const { isLoading: isDeleting, error: deleteError, request } = useApiRequest()
+const toast = useToastStore()
 
 onMounted(async () => {
   try {
@@ -38,7 +41,10 @@ const deletePost = async () => {
       on403: () => { deleteError.value = '게시글 삭제 권한이 없습니다.' },
     },
   )
-  if (ok) router.replace('/board')
+  if (ok) {
+    toast.show('게시글이 삭제되었습니다.')
+    router.replace('/board')
+  }
 }
 </script>
 
@@ -80,7 +86,7 @@ const deletePost = async () => {
         <p v-if="deleteError" class="text-sm text-red-400 mb-3">{{ deleteError }}</p>
         <div class="flex items-center gap-3 text-xs text-text-sub mb-6">
           <span class="font-medium text-primary">{{ post.displayName }}</span>
-          <span>{{ post.createdAt }}</span>
+          <span>{{ formatDate(post.createdAt) }}</span>
           <span>조회 {{ post.viewCount }}</span>
         </div>
         <p class="text-base text-text-main leading-relaxed whitespace-pre-line">{{ post.content }}</p>

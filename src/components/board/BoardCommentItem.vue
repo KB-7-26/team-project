@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { ChatBubbleOvalLeftIcon, PencilSquareIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import { formatDate } from '@/utils/formatDate'
 
 const props = defineProps({
   comment: Object,
@@ -40,7 +41,7 @@ const submitEdit = () => {
     <div class="flex items-center gap-2 mb-1.5">
       <span v-if="isReply" class="text-xs text-text-sub">↳</span>
       <span class="text-xs font-medium text-primary">{{ comment.displayName }}</span>
-      <span class="text-xs text-text-sub">{{ comment.createdAt }}</span>
+      <span class="text-xs text-text-sub">{{ formatDate(comment.createdAt) }}</span>
       <div v-if="comment.isOwner" class="flex items-center gap-1.5 ml-auto">
         <button
           @click="startEdit"
