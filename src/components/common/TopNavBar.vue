@@ -4,7 +4,6 @@ import { RouterLink, useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useChatStore } from '@/stores/chat'
 import { PlusIcon } from '@heroicons/vue/24/solid'
-import { onMounted, onBeforeUnmount } from 'vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -55,8 +54,8 @@ onBeforeUnmount(() => document.removeEventListener('click', handleOutsideClick))
           <li>
             <RouterLink to="/board" class="nav-link text-base text-[#8c7e6e] hover:text-ink transition-colors">게시판</RouterLink>
           </li>
-          <li class="text-base text-text-main hover:text-primary cursor-pointer">
-            <RouterLink to="/chats" class="relative inline-flex items-center">
+          <li>
+            <RouterLink to="/chats" class="nav-link relative inline-flex items-center text-base text-[#8c7e6e] hover:text-ink transition-colors">
               채팅
               <span
                 v-if="chatStore.unreadCount > 0"
