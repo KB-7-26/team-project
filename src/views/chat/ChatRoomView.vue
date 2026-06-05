@@ -8,18 +8,21 @@ import MessageBubble from '@/components/chat/MessageBubble.vue'
 import MessageInput from '@/components/chat/MessageInput.vue'
 import { chatApi } from '@/api/chatApi'
 import { useAuthStore } from '@/stores/auth'
+import { useChatStore } from '@/stores/chat'
 import { auth } from '@/firebase'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const chatStore = useChatStore()
 
 const messages = ref([])
 const opponentName = ref('')
 const productInfo = ref({})
 const stompClient = ref(null)
 const messageListRef = ref(null)
-const showNewMessageBanner = ref(false)  // 새 메시지 알림 배너
+const showNewMessageBanner = ref(false)
+const opponentRead = ref(false) // 상대방이 읽었는지
 
 // 스크롤이 맨 아래에 있는지 확인
 function isAtBottom() {
@@ -38,16 +41,26 @@ async function scrollToBottom() {
   }
 }
 
-// 메시지 목록 바뀔 때
-watch(messages, () => {
-  if (isAtBottom()) {
-    // 이미 맨 아래에 있으면 자동 스크롤
+// 읽음 처리 + 네비바 뱃지 갱신
+async function markAsReadAndUpdate() {
+  await chatApi.markAsRead(chatRoomId.value).catch(() => {})
+  chatStore.fetchUnreadCount()
+}
+
+// 메시지 개수 변화를 watch (deep 대신 length 감지로 정확하게)
+watch(() => messages.value.length, (newLen, oldLen) => {
+  if (newLen <= oldLen) return
+  const lastMsg = messages.value[newLen - 1]
+
+  if (lastMsg.senderType === 'me') {
+    // 내가 보낸 메시지 → 항상 맨 아래로
     scrollToBottom()
   } else {
-    // 위로 스크롤 중이면 배너 표시
-    showNewMessageBanner.value = true
+    // 상대방 메시지 → 맨 아래에 있으면 스크롤, 아니면 배너
+    if (isAtBottom()) scrollToBottom()
+    else showNewMessageBanner.value = true
   }
-}, { deep: true })
+})
 
 const chatRoomId = computed(() => Number(route.params.chatRoomId))
 const myId = computed(() => authStore.user?.id)
@@ -66,6 +79,7 @@ function formatTime(dateStr) {
 async function loadMessages() {
   try {
     const { data } = await chatApi.getMessages(chatRoomId.value)
+    opponentRead.value = false
     messages.value = data.data.map(msg => ({
       messageId: msg.messageId,
       senderId: msg.senderId,
@@ -107,18 +121,26 @@ async function connectWebSocket() {
       console.error('❌ STOMP 에러:', frame)
     },
     onConnect: () => {
-      console.log('✅ WebSocket 연결 성공!')
+      // 읽음 이벤트 구독 - 상대방이 읽으면 모든 내 메시지를 읽음으로 변경
+      client.subscribe(`/topic/chat/${chatRoomId.value}/read`, () => {
+        opponentRead.value = true
+      })
+
       // 채팅방 구독 - 새 메시지 실시간 수신
       client.subscribe(`/topic/chat/${chatRoomId.value}`, (frame) => {
-        console.log('📨 메시지 수신:', frame.body)
         const msg = JSON.parse(frame.body)
+        const isMyMessage = msg.senderId === myId.value
         messages.value.push({
           messageId: msg.messageId,
           senderId: msg.senderId,
-          senderType: msg.senderId === myId.value ? 'me' : 'other',
+          senderType: isMyMessage ? 'me' : 'other',
           content: msg.content,
           createdAt: formatTime(msg.createdAt),
         })
+        // 상대방 메시지이고 현재 맨 아래에서 보고 있으면 즉시 읽음 처리
+        if (!isMyMessage && isAtBottom()) {
+          markAsReadAndUpdate()
+        }
       })
     },
   })
@@ -129,7 +151,6 @@ async function connectWebSocket() {
 
 // 메시지 전송
 function handleSend(content) {
-  console.log('전송 시도, connected:', stompClient.value?.connected)
   if (!stompClient.value?.connected) return
   stompClient.value.publish({
     destination: `/app/chat/${chatRoomId.value}/send`,
@@ -145,12 +166,14 @@ watch(chatRoomId, async () => {
   await loadRoomInfo()
   await loadMessages()
   connectWebSocket()
+  markAsReadAndUpdate()
 })
 
 onMounted(async () => {
   await loadRoomInfo()
   await loadMessages()
   connectWebSocket()
+  markAsReadAndUpdate()
 })
 
 onUnmounted(() => {
@@ -185,6 +208,7 @@ onUnmounted(() => {
           :senderType="message.senderType"
           :content="message.content"
           :createdAt="message.createdAt"
+          :isRead="opponentRead"
         />
       </div>
 

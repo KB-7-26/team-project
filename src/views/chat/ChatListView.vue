@@ -1,7 +1,10 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import ChatRoomCard from '@/components/chat/ChatRoomCard.vue'
 import { chatApi } from '@/api/chatApi'
+import { useChatStore } from '@/stores/chat'
+
+const chatStore = useChatStore()
 
 const searchQuery = ref('')
 const chatRooms = ref([])
@@ -40,8 +43,7 @@ const filteredRooms = computed(() => {
   )
 })
 
-// 컴포넌트가 화면에 그려질 때 API 호출
-onMounted(async () => {
+async function loadChatRooms() {
   isLoading.value = true
   try {
     const { data } = await chatApi.getChatRooms()
@@ -52,14 +54,19 @@ onMounted(async () => {
       opponentName: room.opponentNickname,
       lastMessage: '',
       lastMessageTime: formatTime(room.lastMessageAt ?? room.createdAt),
-      unreadCount: 0,
+      unreadCount: room.unreadCount ?? 0,
     }))
   } catch (e) {
     errorMessage.value = '채팅방 목록을 불러오지 못했습니다.'
   } finally {
     isLoading.value = false
   }
-})
+}
+
+// unreadCount 바뀌면 목록 다시 로드 (markAsRead 후 자동 갱신)
+watch(() => chatStore.unreadCount, loadChatRooms)
+
+onMounted(loadChatRooms)
 </script>
 
 <template>

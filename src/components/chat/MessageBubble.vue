@@ -3,6 +3,7 @@ defineProps({
   senderType: String,
   content: String,
   createdAt: String,
+  isRead: Boolean,
 })
 </script>
 
@@ -13,6 +14,10 @@ defineProps({
     </div>
 
     <div :class="['max-w-[60%] flex flex-col', senderType === 'me' ? 'items-end' : 'items-start']">
+      <!-- 내 메시지일 때 읽음 표시 -->
+      <span v-if="senderType === 'me' && isRead" class="text-[10px] text-text-sub mb-0.5">
+        읽음
+      </span>
       <p
         :class="[
           'px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed m-0',

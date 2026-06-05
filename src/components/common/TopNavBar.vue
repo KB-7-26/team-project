@@ -1,11 +1,14 @@
 <script setup>
-import { ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { RouterLink, useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useChatStore } from '@/stores/chat'
 import { PlusIcon } from '@heroicons/vue/24/solid'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
+const chatStore = useChatStore()
 const showMobileMenu = ref(false)
 const mobileMenuRef = ref(null)
 
@@ -21,8 +24,15 @@ const handleOutsideClick = (e) => {
   }
 }
 
-import { onMounted, onBeforeUnmount } from 'vue'
-onMounted(() => document.addEventListener('click', handleOutsideClick))
+// 라우트 변경마다 갱신
+watch(() => route.path, () => {
+  if (authStore.isLoggedIn) chatStore.fetchUnreadCount()
+})
+
+onMounted(() => {
+  document.addEventListener('click', handleOutsideClick)
+  if (authStore.isLoggedIn) chatStore.fetchUnreadCount()
+})
 onBeforeUnmount(() => document.removeEventListener('click', handleOutsideClick))
 </script>
 
@@ -49,7 +59,13 @@ onBeforeUnmount(() => document.removeEventListener('click', handleOutsideClick))
             <RouterLink to="/board">게시판</RouterLink>
           </li>
           <li class="text-base text-text-main hover:text-primary cursor-pointer">
-            <RouterLink to="/chats">채팅</RouterLink>
+            <RouterLink to="/chats" class="relative inline-flex items-center">
+              채팅
+              <span
+                v-if="chatStore.unreadCount > 0"
+                class="absolute -top-1.5 -right-3 w-2 h-2 bg-red-500 rounded-full"
+              ></span>
+            </RouterLink>
           </li>
           <li class="text-base text-text-main hover:text-primary cursor-pointer">
             <RouterLink to="/mypage">마이페이지</RouterLink>

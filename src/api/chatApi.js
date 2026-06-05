@@ -26,4 +26,12 @@ export const chatApi = {
   completeTrade(chatRoomId) {
     return api.patch(`${BASE_URL}/${chatRoomId}/complete`)
   },
+
+  markAsRead(chatRoomId) {
+    return api.patch(`${BASE_URL}/${chatRoomId}/read`)
+  },
+
+  getUnreadCount() {
+    return api.get(`${BASE_URL}/unread-count`)
+  },
 }
