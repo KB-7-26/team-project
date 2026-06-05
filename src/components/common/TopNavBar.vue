@@ -4,7 +4,6 @@ import { RouterLink, useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useChatStore } from '@/stores/chat'
 import { PlusIcon } from '@heroicons/vue/24/solid'
-import { onMounted, onBeforeUnmount } from 'vue'
 
 const router = useRouter()
 const route = useRoute()

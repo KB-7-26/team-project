@@ -21,7 +21,6 @@ const signupForm = ref({
   passwordConfirm: '',
   name: '',
   nickname: '',
-  phoneNumber: '',
   gender: '',
   cohort: '',
 })
@@ -31,7 +30,6 @@ const invalidFields = ref({
   passwordConfirm: false,
   name: false,
   nickname: false,
-  phoneNumber: false,
   gender: false,
   cohort: false,
 })
@@ -42,7 +40,6 @@ const requiredFields = [
   'passwordConfirm',
   'name',
   'nickname',
-  'phoneNumber',
   'gender',
   'cohort',
 ]
@@ -52,7 +49,6 @@ const emptyMessages = {
   passwordConfirm: '비밀번호 확인을 입력해주세요',
   name: '이름을 입력해주세요',
   nickname: '닉네임을 입력해주세요',
-  phoneNumber: '전화번호를 입력해주세요',
   gender: '성별을 선택해주세요',
   cohort: '회차를 선택해주세요',
 }
@@ -67,7 +63,6 @@ const firebaseErrorMessages = {
 const formMessage = computed(() => formErrorMessage.value || defaultFormMessage)
 const isFormError = computed(() => Boolean(formErrorMessage.value))
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const phoneNumberPattern = /^[0-9]{2,3}-?[0-9]{3,4}-?[0-9]{4}$/
 
 const benefits = [
   {
@@ -159,15 +154,6 @@ const signupHandler = async () => {
     return
   }
 
-  if (!phoneNumberPattern.test(signupForm.value.phoneNumber.trim())) {
-    invalidFields.value = {
-      ...nextInvalidFields,
-      phoneNumber: true,
-    }
-    formErrorMessage.value = '전화번호 형식이 올바르지 않습니다'
-    return
-  }
-
   formErrorMessage.value = ''
   isSubmitting.value = true
 
@@ -181,7 +167,6 @@ const signupHandler = async () => {
     await authStore.completeProfile({
       name: signupForm.value.name.trim(),
       nickname: signupForm.value.nickname.trim(),
-      phoneNumber: signupForm.value.phoneNumber.trim(),
       gender: signupForm.value.gender,
       cohort: signupForm.value.cohort,
     })
@@ -337,26 +322,6 @@ const signupHandler = async () => {
                   : 'border-border placeholder:text-text-sub focus:border-primary focus:ring-primary/15'
               "
               @input="clearError('nickname')"
-            />
-          </label>
-
-          <label class="block">
-            <span class="text-base font-extrabold text-text-main">전화번호</span>
-            <input
-              v-model="signupForm.phoneNumber"
-              type="tel"
-              autocomplete="tel"
-              inputmode="tel"
-              placeholder="010-1234-5678"
-              :aria-invalid="invalidFields.phoneNumber"
-              aria-describedby="signup-form-message"
-              class="mt-3 h-14 w-full rounded-2xl border bg-white px-5 text-base font-medium text-text-main outline-none transition focus:ring-4"
-              :class="
-                invalidFields.phoneNumber
-                  ? 'border-red-500 placeholder:text-red-500 focus:border-red-500 focus:ring-red-500/15'
-                  : 'border-border placeholder:text-text-sub focus:border-primary focus:ring-primary/15'
-              "
-              @input="clearError('phoneNumber')"
             />
           </label>
 
