@@ -6,15 +6,17 @@ import {
   ChatBubbleOvalLeftIcon,
   UserIcon,
   MagnifyingGlassIcon,
-  ArrowRightIcon,
 } from '@heroicons/vue/24/outline'
 import { productApi } from '@/api/productApi'
+import ProductCard from '@/components/product/ProductCard.vue'
+
+const saleStatusMap = { available: '판매중', reserved: '거래중', sold: '거래완료' }
 
 const categories = [
-  { icon: ShoppingBagIcon, title: '중고거래', desc: '안전한 학생 간 거래', to: '/products' },
-  { icon: ChatBubbleLeftRightIcon, title: '익명게시판', desc: '자유로운 소통 공간', to: '/board' },
-  { icon: ChatBubbleOvalLeftIcon, title: '채팅목록', desc: '실시간 대화', to: '/chats' },
-  { icon: UserIcon, title: '마이페이지', desc: '내 정보 관리', to: '/mypage' },
+  { icon: ShoppingBagIcon, title: '중고거래', desc: '안전한 학생 간 거래', to: '/products', tape: '#ffe066' },
+  { icon: ChatBubbleLeftRightIcon, title: '익명게시판', desc: '자유로운 소통 공간', to: '/board', tape: '#96d4b4' },
+  { icon: ChatBubbleOvalLeftIcon, title: '채팅목록', desc: '실시간 대화', to: '/chats', tape: '#a8c8e8' },
+  { icon: UserIcon, title: '마이페이지', desc: '내 정보 관리', to: '/mypage', tape: '#f4a8b8' },
 ]
 
 const popularProducts = ref([])
@@ -22,7 +24,15 @@ const popularProducts = ref([])
 onMounted(async () => {
   try {
     const { data } = await productApi.getProducts({ sort: 'favoriteCount,desc', size: 4, saleStatus: 'available' })
-    popularProducts.value = data.content
+    popularProducts.value = data.content.map((p) => ({
+      id: p.id,
+      title: p.title,
+      price: p.price,
+      isFree: p.isFree,
+      image: p.thumbnailUrl || `https://picsum.photos/seed/${p.id}/400/300`,
+      status: saleStatusMap[p.saleStatus] ?? p.saleStatus,
+      views: p.viewCount ?? 0,
+    }))
   } catch (e) {
     console.error('인기 상품 조회 실패', e)
   }
@@ -30,107 +40,196 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div>
-    <div class="bg-hero-gradient py-[clamp(3rem,8vw,7.5rem)] text-center">
-      <div class="max-w-4xl mx-auto px-6 flex flex-col items-center">
-        <h2 class="text-[clamp(1.8rem,5vw,3rem)] font-extrabold text-text-main mb-6">안전한 캠퍼스 중고거래</h2>
-        <p class="text-base font-normal text-[#555] mb-10">학생 인증으로 더 믿을 수 있는 거래 환경을 만들어요</p>
-        <div class="w-full relative">
-          <MagnifyingGlassIcon class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="물품이나 게시글을 검색해보세요"
-            class="w-full pl-12 pr-14 py-4 rounded-2xl bg-white/80 outline-none shadow-[0_10px_30px_rgba(0,0,0,0.1)]"
-          />
-          <button
-            class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-primary hover:bg-primary-hover rounded-xl flex items-center justify-center transition-colors cursor-pointer"
-          >
-            <ArrowRightIcon class="w-4 h-4 text-white" />
-          </button>
-        </div>
-        <div class="mt-6 flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
-          <span class="text-sm text-text-main shrink-0">인기 검색어:</span>
-          <ul class="flex gap-2 list-none shrink-0">
-            <li
-              class="px-3 py-1.5 md:px-4 md:py-2 bg-white rounded-full text-xs md:text-sm font-medium cursor-pointer hover:bg-white/90 shadow-sm"
-            >
-              노트북
-            </li>
-            <li
-              class="px-3 py-1.5 md:px-4 md:py-2 bg-white rounded-full text-xs md:text-sm font-medium cursor-pointer hover:bg-white/90 shadow-sm"
-            >
-              모니터
-            </li>
-            <li
-              class="px-3 py-1.5 md:px-4 md:py-2 bg-white rounded-full text-xs md:text-sm font-medium cursor-pointer hover:bg-white/90 shadow-sm"
-            >
-              키보드
-            </li>
-            <li
-              class="px-3 py-1.5 md:px-4 md:py-2 bg-white rounded-full text-xs md:text-sm font-medium cursor-pointer hover:bg-white/90 shadow-sm"
-            >
-              마우스
-            </li>
-            <li
-              class="px-3 py-1.5 md:px-4 md:py-2 bg-white rounded-full text-xs md:text-sm font-medium cursor-pointer hover:bg-white/90 shadow-sm"
-            >
-              도서
-            </li>
-          </ul>
-        </div>
+  <div class="bg-paper-dots min-h-screen">
+    <!-- HERO -->
+    <div class="relative max-w-[920px] mx-auto px-6 md:px-10 py-16 md:py-20 overflow-hidden">
+      <div
+        class="doodle-ring absolute top-[50px] right-5 w-40 h-40 border-[3px] border-dashed border-[#c8bca8] rounded-full opacity-50 pointer-events-none hidden md:block"
+      />
+      <div
+        class="absolute bottom-[60px] right-[120px] text-5xl opacity-[0.15] pointer-events-none hidden md:block select-none"
+      >
+        ✦
+      </div>
+
+      <span
+        class="inline-block -rotate-[1.2deg] mb-6 px-3 py-0.5 font-sketch text-sm text-[#8c7e6e] border-2 border-[#8c7e6e] rounded-md"
+        >✦ 캠퍼스 중고거래 플랫폼</span
+      >
+
+      <h1 class="font-sketch font-bold leading-[1.05] mb-5 text-[clamp(3rem,7vw,5.5rem)]">
+        학생들의<br />
+        <span class="hl-word">낙서장</span>
+      </h1>
+
+      <p class="text-lg text-[#8c7e6e] mb-9">학생 인증으로 더 믿을 수 있는 거래 환경을 만들어요 ✌️</p>
+
+      <div
+        class="flex items-center bg-white border-2 border-ink rounded-xl px-4 py-1.5 max-w-[560px] shadow-[4px_4px_0_#1c1712] gap-2.5"
+      >
+        <MagnifyingGlassIcon class="w-5 h-5 text-[#c8bca8] shrink-0" />
+        <input
+          type="text"
+          placeholder="물품이나 게시글을 검색해보세요"
+          class="flex-1 outline-none text-sm bg-transparent text-ink placeholder:text-[#c8bca8]"
+        />
+        <RouterLink
+          to="/products"
+          class="search-btn bg-[#ffe066] border-2 border-ink rounded-[10px] px-5 py-2 font-bold text-sm text-ink whitespace-nowrap"
+          >검색</RouterLink
+        >
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 mt-4">
+        <span class="text-sm text-[#8c7e6e]">인기 검색어:</span>
+        <RouterLink
+          v-for="tag in ['노트북', '모니터', '키보드', '마우스', '도서']"
+          :key="tag"
+          to="/products"
+          class="text-sm bg-white border-[1.5px] border-[#c8bca8] rounded-full px-3.5 py-1 text-[#8c7e6e] transition-all hover:border-ink hover:bg-[#ffe066] hover:text-ink"
+          >{{ tag }}</RouterLink
+        >
       </div>
     </div>
-    <div class="category pt-12 pb-6 bg-white">
-      <div class="category-container grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-5xl mx-auto px-6">
+
+    <div class="dash-divider h-0.5" />
+
+    <!-- CATEGORIES -->
+    <section class="max-w-[1100px] mx-auto px-6 md:px-10 py-[52px]">
+      <div class="flex items-baseline justify-between mb-8">
+        <h2 class="sec-title font-bold text-[26px]">카테고리</h2>
         <RouterLink
-          class="category-card rounded-2xl flex p-4 md:p-8 flex-col gap-2 md:gap-4 items-center text-center md:items-start md:text-left border border-border shadow-sm hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.3)] transition-all cursor-pointer hover:-translate-y-2"
+          to="/products"
+          class="text-sm text-[#8c7e6e] border-b border-dashed border-[#8c7e6e] pb-0.5 hover:text-ink hover:border-ink transition-colors"
+          >전체보기 →</RouterLink
+        >
+      </div>
+      <div class="cat-grid grid grid-cols-2 md:grid-cols-4 gap-4">
+        <RouterLink
           v-for="item in categories"
           :key="item.title"
           :to="item.to"
+          class="cat-card bg-white border-2 border-ink rounded-[18px] p-6 cursor-pointer relative overflow-hidden block"
         >
+          <div class="absolute top-0 left-0 right-0 h-[6px]" :style="{ background: item.tape }" />
           <div
-            class="w-10 h-10 md:w-14 md:h-14 bg-[#ff9102] rounded-xl md:rounded-2xl flex items-center justify-center"
+            class="w-10 h-10 rounded-xl flex items-center justify-center mb-3 mt-1"
+            :style="{ background: item.tape }"
           >
-            <component :is="item.icon" class="w-5 h-5 md:w-7 md:h-7 text-white" />
+            <component :is="item.icon" class="w-5 h-5 text-ink" />
           </div>
-          <p class="text-base md:text-xl font-bold text-text-main">{{ item.title }}</p>
-          <p class="text-xs md:text-sm text-text-sub">{{ item.desc }}</p>
+          <p class="font-bold text-[17px] text-ink">{{ item.title }}</p>
+          <p class="text-xs text-[#8c7e6e] mt-1">{{ item.desc }}</p>
         </RouterLink>
       </div>
-    </div>
+    </section>
 
-    <div class="pt-8 pb-16 bg-white">
-      <div class="max-w-5xl mx-auto px-6">
-        <div class="flex items-end justify-between mb-8">
-          <div>
-            <h2 class="text-2xl font-extrabold text-text-main">인기 상품</h2>
-            <p class="text-sm text-text-sub mt-1">지금 가장 인기있는 거래 상품을 확인하세요</p>
-          </div>
-          <RouterLink to="/products" class="text-sm font-medium text-primary hover:text-primary-hover transition-colors">전체보기 →</RouterLink>
-        </div>
+    <div class="dash-divider h-0.5" />
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
-          <RouterLink
-            v-for="product in popularProducts"
-            :key="product.id"
-            :to="`/products/${product.id}`"
-            class="border border-border rounded-2xl overflow-hidden hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.3)] transition-all cursor-pointer hover:-translate-y-2"
-          >
-            <img
-              :src="product.thumbnailUrl || `https://picsum.photos/seed/${product.id}/400/300`"
-              :alt="product.title"
-              class="w-full h-44 object-cover"
-            />
-            <div class="p-4 flex flex-col gap-1">
-              <p class="text-base font-bold text-text-main line-clamp-2">{{ product.title }}</p>
-              <p class="text-lg font-extrabold text-text-main">
-                {{ product.isFree ? '무료나눔' : `${product.price.toLocaleString()}원` }}
-              </p>
-              <p class="text-xs text-text-sub">찜 {{ product.favoriteCount }}</p>
-            </div>
-          </RouterLink>
-        </div>
+    <!-- POPULAR PRODUCTS -->
+    <section class="max-w-[1100px] mx-auto px-6 md:px-10 py-[52px]">
+      <div class="flex items-baseline justify-between mb-8">
+        <h2 class="sec-title font-bold text-[26px]">인기 상품 🔥</h2>
+        <RouterLink
+          to="/products"
+          class="text-sm text-[#8c7e6e] border-b border-dashed border-[#8c7e6e] pb-0.5 hover:text-ink hover:border-ink transition-colors"
+          >전체보기 →</RouterLink
+        >
       </div>
-    </div>
+      <div class="prod-grid grid grid-cols-2 md:grid-cols-4 gap-5">
+        <ProductCard v-for="product in popularProducts" :key="product.id" :product="product" :liked="false" />
+      </div>
+    </section>
   </div>
 </template>
+
+<style scoped>
+.doodle-ring {
+  animation: spin-slow 35s linear infinite;
+}
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.hl-word {
+  position: relative;
+  display: inline-block;
+  z-index: 1;
+}
+.hl-word::before {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: -6px;
+  right: -6px;
+  height: 22px;
+  background: #ffe066;
+  z-index: -1;
+  transform: rotate(-0.8deg) skewX(-4deg);
+  border-radius: 3px;
+}
+
+.sec-title {
+  position: relative;
+  display: inline-block;
+}
+.sec-title::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #ffe066;
+  border-radius: 2px;
+}
+
+.dash-divider {
+  background: repeating-linear-gradient(90deg, #c8bca8 0 8px, transparent 8px 16px);
+}
+
+.search-btn {
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s;
+}
+.search-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 2px 2px 0 #1c1712;
+}
+.search-btn:active {
+  transform: none;
+  box-shadow: none;
+}
+
+.cat-card {
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+.cat-grid > :nth-child(odd) {
+  transform: rotate(-0.6deg);
+}
+.cat-grid > :nth-child(even) {
+  transform: rotate(0.6deg);
+}
+.cat-grid > *:hover {
+  transform: translateY(-5px) rotate(0deg);
+  box-shadow: 5px 6px 0 #1c1712;
+}
+
+.prod-grid > *:nth-child(1) {
+  transform: rotate(-1deg);
+}
+.prod-grid > *:nth-child(2) {
+  transform: rotate(0.7deg);
+}
+.prod-grid > *:nth-child(3) {
+  transform: rotate(-0.4deg);
+}
+.prod-grid > *:nth-child(4) {
+  transform: rotate(1.1deg);
+}
+</style>
