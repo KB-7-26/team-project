@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import BoardCommentItem from '@/components/board/BoardCommentItem.vue'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
+import { useToastStore } from '@/stores/toast'
 
 const props = defineProps({
   postId: {
@@ -21,6 +22,7 @@ const newReply = ref('')
 
 const { isLoading: isSubmitting, error: submitError, request } = useApiRequest()
 const { isLoading: isSubmittingReply, request: requestReply } = useApiRequest()
+const toast = useToastStore()
 
 onMounted(async () => {
   const { ok, data } = await request(
@@ -39,6 +41,7 @@ const submitComment = async () => {
   if (ok) {
     comments.value.push({ ...data, replies: [] })
     newComment.value = ''
+    toast.show('댓글이 등록되었습니다.')
   }
 }
 
@@ -63,6 +66,7 @@ const submitReply = async (parentCommentId) => {
     if (parent) parent.replies.push(data)
     newReply.value = ''
     replyingToId.value = null
+    toast.show('답글이 등록되었습니다.')
   }
 }
 
@@ -75,6 +79,7 @@ const updateComment = async (commentId, content) => {
     },
   )
   if (!ok) return
+  toast.show('댓글이 수정되었습니다.')
   const comment = comments.value.find((c) => c.id === commentId)
   if (comment) {
     comment.content = data.content
@@ -99,6 +104,7 @@ const deleteComment = async (commentId) => {
     },
   )
   if (!ok) return
+  toast.show('댓글이 삭제되었습니다.')
   const idx = comments.value.findIndex((c) => c.id === commentId)
   if (idx !== -1) {
     comments.value.splice(idx, 1)

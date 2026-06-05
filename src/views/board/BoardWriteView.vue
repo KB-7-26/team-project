@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
+import { useToastStore } from '@/stores/toast'
 
 const router = useRouter()
 
@@ -13,6 +14,7 @@ const titleError = ref(false)
 const contentError = ref(false)
 
 const { isLoading: isSubmitting, error: submitError, request } = useApiRequest()
+const toast = useToastStore()
 
 const submit = async () => {
   titleError.value = !title.value.trim()
@@ -23,7 +25,10 @@ const submit = async () => {
     () => boardApi.createPost(title.value.trim(), content.value.trim()),
     { errorMessage: '게시글 등록에 실패했습니다. 다시 시도해주세요.' },
   )
-  if (ok) router.push(`/board/${data.id}`)
+  if (ok) {
+    toast.show('게시글이 등록되었습니다.')
+    router.push(`/board/${data.id}`)
+  }
 }
 </script>
 

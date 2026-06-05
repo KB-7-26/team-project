@@ -1,5 +1,6 @@
 <script setup>
 import { EyeIcon } from '@heroicons/vue/24/outline'
+import { formatDate } from '@/utils/formatDate'
 
 defineProps({
   post: Object,
@@ -14,7 +15,7 @@ defineProps({
     <p class="text-base font-bold text-text-main line-clamp-1">{{ post.title }}</p>
     <div class="flex items-center gap-3 text-xs text-text-sub mt-1">
       <span class="font-medium text-primary">{{ post.displayName }}</span>
-      <span>{{ post.createdAt }}</span>
+      <span>{{ formatDate(post.createdAt) }}</span>
       <span class="flex items-center gap-1 ml-auto">
         <EyeIcon class="w-3.5 h-3.5" />
         {{ post.viewCount }}
