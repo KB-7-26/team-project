@@ -1,8 +1,10 @@
 <script setup>
 import { HomeIcon, ShoppingBagIcon, ChatBubbleLeftRightIcon, ChatBubbleOvalLeftIcon, UserIcon } from '@heroicons/vue/24/outline'
 import { useRoute } from 'vue-router'
+import { useChatStore } from '@/stores/chat'
 
 const route = useRoute()
+const chatStore = useChatStore()
 </script>
 
 <template>
@@ -37,7 +39,13 @@ const route = useRoute()
         class="flex-1 flex flex-col items-center py-3 gap-1 cursor-pointer"
         :class="route.path.startsWith('/chats') ? 'text-primary' : 'text-text-sub'"
       >
-        <ChatBubbleOvalLeftIcon class="w-6 h-6" />
+        <div class="relative">
+          <ChatBubbleOvalLeftIcon class="w-6 h-6" />
+          <span
+            v-if="chatStore.unreadCount > 0"
+            class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"
+          ></span>
+        </div>
         <span class="text-xs">채팅</span>
       </RouterLink>
       <RouterLink

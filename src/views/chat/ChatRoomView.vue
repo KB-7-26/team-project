@@ -22,7 +22,7 @@ const productInfo = ref({})
 const stompClient = ref(null)
 const messageListRef = ref(null)
 const showNewMessageBanner = ref(false)
-const opponentRead = ref(false) // 상대방이 읽었는지
+const opponentLastReadAt = ref(null) // 상대방이 마지막으로 읽은 시간 (ISO string)
 
 // 스크롤이 맨 아래에 있는지 확인
 function isAtBottom() {
@@ -79,13 +79,13 @@ function formatTime(dateStr) {
 async function loadMessages() {
   try {
     const { data } = await chatApi.getMessages(chatRoomId.value)
-    opponentRead.value = false
     messages.value = data.data.map(msg => ({
       messageId: msg.messageId,
       senderId: msg.senderId,
       senderType: msg.senderId === myId.value ? 'me' : 'other',
       content: msg.content,
       createdAt: formatTime(msg.createdAt),
+      rawCreatedAt: msg.createdAt, // 읽음 비교용 원본 시간
     }))
   } catch (e) {
     console.error('메시지 불러오기 실패', e)
@@ -100,6 +100,8 @@ async function loadRoomInfo() {
     if (room) {
       opponentName.value = room.opponentNickname
       productInfo.value = { productTitle: room.productTitle }
+      // 상대방이 마지막으로 읽은 시간 → 재입장해도 읽음 표시 유지
+      opponentLastReadAt.value = room.opponentLastReadAt ?? null
     }
   } catch (e) {
     console.error('채팅방 정보 불러오기 실패', e)
@@ -121,11 +123,11 @@ async function connectWebSocket() {
       console.error('❌ STOMP 에러:', frame)
     },
     onConnect: () => {
-      // 읽음 이벤트 구독 - 상대방이 읽었을 때만 opponentRead = true
-      client.subscribe(`/topic/chat/${chatRoomId.value}/read`, (frame) => {
+      // 읽음 이벤트 구독 - 상대방이 읽으면 방 정보 다시 가져와서 정확한 시간 반영
+      client.subscribe(`/topic/chat/${chatRoomId.value}/read`, async (frame) => {
         const readerId = JSON.parse(frame.body)
         if (readerId !== myId.value) {
-          opponentRead.value = true
+          await loadRoomInfo()
         }
       })
 
@@ -139,6 +141,7 @@ async function connectWebSocket() {
           senderType: isMyMessage ? 'me' : 'other',
           content: msg.content,
           createdAt: formatTime(msg.createdAt),
+          rawCreatedAt: msg.createdAt,
         })
         // 상대방 메시지이고 현재 맨 아래에서 보고 있으면 즉시 읽음 처리
         if (!isMyMessage && isAtBottom()) {
@@ -211,7 +214,7 @@ onUnmounted(() => {
           :senderType="message.senderType"
           :content="message.content"
           :createdAt="message.createdAt"
-          :isRead="opponentRead"
+          :isRead="opponentLastReadAt !== null && new Date(message.rawCreatedAt) <= new Date(opponentLastReadAt)"
         />
       </div>
 

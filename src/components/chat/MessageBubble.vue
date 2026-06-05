@@ -24,11 +24,11 @@ defineProps({
       >
         {{ content }}
       </p>
-      <span class="text-[11px] text-text-sub mt-1">{{ createdAt }}</span>
-      <!-- 내 메시지일 때 읽음 표시 - 시간 아래 -->
-      <span v-if="senderType === 'me' && isRead" class="text-[10px] text-text-sub mt-0.5">
-        읽음
-      </span>
+      <div class="flex items-center gap-1 mt-1">
+        <!-- 내 메시지일 때 읽음 표시 - 시간 앞 -->
+        <span v-if="senderType === 'me' && isRead" class="text-[10px] text-text-sub">읽음</span>
+        <span class="text-[11px] text-text-sub">{{ createdAt }}</span>
+      </div>
     </div>
   </div>
 </template>
