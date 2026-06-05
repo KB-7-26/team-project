@@ -144,20 +144,20 @@ const visiblePages = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-col">
+  <div class="flex flex-col bg-paper-dots">
     <!-- 히어로 -->
-    <div class="bg-primary/10 px-4 md:px-6 py-6 md:py-8">
+    <div class="px-4 md:px-6 py-6 md:py-8">
       <div class="max-w-2xl mx-auto">
-        <p class="text-3xl font-extrabold text-text-main mb-4">중고 거래</p>
+        <p class="font-bold text-3xl text-ink mb-4">중고 거래</p>
         <div class="flex gap-2">
           <!-- 검색바 -->
-          <div class="flex-1 flex items-center bg-white rounded-xl border border-border px-3 gap-2 shadow-sm">
-            <MagnifyingGlassIcon class="w-5 h-5 text-text-sub shrink-0" />
+          <div class="flex-1 flex items-center bg-white rounded-xl border-2 border-ink px-3 gap-2 shadow-[3px_3px_0_#1c1712]">
+            <MagnifyingGlassIcon class="w-5 h-5 text-[#8c7e6e] shrink-0" />
             <input
               v-model="searchQuery"
               type="text"
               placeholder="검색어를 입력해주세요"
-              class="flex-1 py-3 text-sm outline-none bg-transparent text-text-main placeholder:text-text-sub"
+              class="flex-1 py-3 text-sm outline-none bg-transparent text-ink placeholder:text-[#8c7e6e]"
               @keyup.enter="searchSubmit"
             />
           </div>
@@ -165,22 +165,20 @@ const visiblePages = computed(() => {
           <div ref="dropdownRef" class="relative">
             <button
               @click="showSortDropdown = !showSortDropdown"
-              class="h-full px-4 bg-white rounded-xl border border-border text-sm font-semibold flex items-center gap-1.5 shadow-sm whitespace-nowrap"
+              class="sort-btn h-full px-4 bg-white rounded-xl border-2 border-ink font-bold text-sm flex items-center gap-1.5 shadow-[3px_3px_0_#1c1712] whitespace-nowrap transition-all"
             >
               <AdjustmentsHorizontalIcon class="w-4 h-4" />
               {{ sortBy }}
             </button>
             <div
               v-if="showSortDropdown"
-              class="absolute right-0 top-full mt-1 bg-white border border-border rounded-xl shadow-lg z-10 overflow-hidden"
+              class="absolute right-0 top-full mt-1 bg-white border-2 border-ink rounded-xl shadow-[3px_3px_0_#1c1712] z-10 overflow-hidden"
             >
               <button
                 v-for="option in sortOptions"
                 :key="option"
                 @click="selectSort(option)"
-                :class="
-                  sortBy === option ? 'bg-primary/10 text-primary font-semibold' : 'text-text-main hover:bg-gray-50'
-                "
+                :class="sortBy === option ? 'bg-[#ffe066] text-ink font-bold' : 'text-ink hover:bg-primary/10'"
                 class="block w-full text-left px-5 py-3 text-sm whitespace-nowrap"
               >
                 {{ option }}
@@ -197,41 +195,44 @@ const visiblePages = computed(() => {
         v-for="category in categories"
         :key="category.id"
         @click="selectedCategoryId = category.id"
-        :class="selectedCategoryId === category.id ? 'bg-primary text-white shadow-md' : 'bg-gray-100 text-gray-600'"
-        class="shrink-0 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition"
+        :class="selectedCategoryId === category.id ? 'bg-primary text-white border-ink shadow-[2px_2px_0_#1c1712]' : 'bg-white text-ink border-[#c8bca8] hover:border-ink'"
+        class="shrink-0 px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-all border-2"
       >
         {{ category.name }}
       </button>
     </div>
+
     <!-- 본문 -->
     <div class="flex w-full mx-auto items-start px-4 md:px-6 py-6 md:py-8 gap-6">
       <!-- PC 사이드바 -->
-      <div class="side hidden md:block border border-border rounded-2xl p-4 w-56 shrink-0 sticky top-20 self-start">
-        <p class="text-lg font-bold text-text-main px-4 pt-4 pb-2">카테고리</p>
+      <div class="hidden md:block border-2 border-ink rounded-2xl p-4 w-56 shrink-0 sticky top-20 self-start bg-white shadow-[4px_4px_0_#1c1712]">
+        <p class="font-bold text-lg text-ink px-4 pt-4 pb-2">카테고리</p>
         <!-- 판매완료 포함 토글 -->
         <div class="flex items-center justify-between px-4 py-2">
-          <span class="text-sm font-medium text-text-main">판매완료 포함</span>
+          <span class="text-sm font-bold text-ink">판매완료 포함</span>
           <button
             @click="includeSold = !includeSold"
-            :class="includeSold ? 'bg-primary' : 'bg-gray-300'"
-            class="relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0"
+            :class="includeSold ? 'bg-primary' : 'bg-[#c8bca8]'"
+            class="relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 border-2 border-ink"
           >
             <span
               :class="includeSold ? 'translate-x-5' : 'translate-x-0'"
-              class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+              class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200"
             ></span>
           </button>
         </div>
-        <hr class="mx-4 mb-2 border-border" />
+        <hr class="mx-4 mb-2 border-[#c8bca8]" />
         <ul class="flex flex-col">
           <li
             v-for="category in categories"
             :key="category.id"
             @click="selectedCategoryId = category.id"
             :class="
-              selectedCategoryId === category.id ? 'bg-primary text-white shadow' : 'hover:bg-primary/10 text-text-main'
+              selectedCategoryId === category.id
+                ? 'bg-primary text-white border-ink shadow-[2px_2px_0_#1c1712]'
+                : 'text-ink hover:bg-primary/10 border-transparent'
             "
-            class="mx-2 my-2 px-4 py-2 cursor-pointer rounded-lg"
+            class="mx-2 my-1 px-4 py-2 cursor-pointer rounded-lg border-2 transition-all"
           >
             {{ category.name }}
           </li>
@@ -240,11 +241,10 @@ const visiblePages = computed(() => {
 
       <!-- 상품 목록 -->
       <div class="flex-1 flex flex-col min-w-0">
-        <!-- 검색 결과 없음 -->
-        <p v-if="isLoading" class="text-center text-text-sub py-20">불러오는 중...</p>
-        <p v-else-if="products.length === 0" class="text-center text-text-sub py-20">검색 결과가 없습니다.</p>
+        <p v-if="isLoading" class="text-center text-[#8c7e6e] py-20">불러오는 중...</p>
+        <p v-else-if="products.length === 0" class="text-center text-[#8c7e6e] py-20">검색 결과가 없습니다.</p>
 
-        <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div v-else class="product-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <ProductCard
             v-for="product in products"
             :key="product.id"
@@ -254,50 +254,51 @@ const visiblePages = computed(() => {
           />
         </div>
 
-        <div class="flex justify-center items-center gap-0.5 md:gap-1 mt-6 mb-2 md:mt-8 md:mb-8">
+        <!-- 페이지네이션 -->
+        <div class="flex justify-center items-center gap-1 mt-8 mb-4">
           <button
             @click="currentPage = Math.max(1, currentPage - 5)"
             :disabled="currentPage <= 1"
-            class="min-w-8 h-8 md:min-w-10 md:h-10 px-1.5 md:px-2 rounded-xl text-xs md:text-sm font-semibold text-black hover:bg-gray-100 disabled:opacity-30 transition-colors"
-          >
-            «
-          </button>
+            class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all"
+          >«</button>
           <button
             @click="currentPage = Math.max(1, currentPage - 1)"
             :disabled="currentPage <= 1"
-            class="min-w-8 h-8 md:min-w-10 md:h-10 px-1.5 md:px-2 rounded-xl text-xs md:text-sm font-semibold text-black hover:bg-gray-100 disabled:opacity-30 transition-colors"
-          >
-            ‹
-          </button>
+            class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all"
+          >‹</button>
           <button
             v-for="page in visiblePages"
             :key="page"
             @click="currentPage = page"
             :class="
               currentPage === page
-                ? 'bg-primary text-white border-primary'
-                : 'border border-border text-text-main hover:bg-primary/10'
+                ? 'bg-[#ffe066] border-ink shadow-[2px_2px_0_#1c1712] text-ink'
+                : 'bg-white border-[#c8bca8] text-ink hover:border-ink hover:shadow-[2px_2px_0_#1c1712]'
             "
-            class="min-w-8 h-8 md:min-w-10 md:h-10 px-2 md:px-3 rounded-xl font-semibold text-xs md:text-sm transition-colors"
-          >
-            {{ page }}
-          </button>
+            class="min-w-8 h-8 md:min-w-9 md:h-9 px-2 rounded-xl font-bold text-sm border-2 transition-all"
+          >{{ page }}</button>
           <button
             @click="currentPage = Math.min(totalPages, currentPage + 1)"
             :disabled="currentPage >= totalPages"
-            class="min-w-8 h-8 md:min-w-10 md:h-10 px-1.5 md:px-2 rounded-xl text-xs md:text-sm font-semibold text-black hover:bg-gray-100 disabled:opacity-30 transition-colors"
-          >
-            ›
-          </button>
+            class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all"
+          >›</button>
           <button
             @click="currentPage = Math.min(totalPages, currentPage + 5)"
             :disabled="currentPage >= totalPages"
-            class="min-w-8 h-8 md:min-w-10 md:h-10 px-1.5 md:px-2 rounded-xl text-xs md:text-sm font-semibold text-black hover:bg-gray-100 disabled:opacity-30 transition-colors"
-          >
-            »
-          </button>
+            class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all"
+          >»</button>
         </div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.sort-btn:active { transform: translate(2px, 2px); box-shadow: none; }
+
+.product-grid > *:nth-child(4n + 1) { transform: rotate(-0.8deg); }
+.product-grid > *:nth-child(4n + 2) { transform: rotate(0.6deg); }
+.product-grid > *:nth-child(4n + 3) { transform: rotate(-0.4deg); }
+.product-grid > *:nth-child(4n + 4) { transform: rotate(1deg); }
+.product-grid > *:hover { transform: translateY(-6px) rotate(0deg); }
+</style>
