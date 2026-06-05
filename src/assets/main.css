@@ -1,14 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&display=swap');
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
 @import 'tailwindcss';
 
 @theme {
   --font-sans: 'Pretendard', sans-serif;
-  /* 메인 컬러 */
-  --color-primary: #ffb800;
-  --color-primary-hover: #e5a600;
-  --color-primary-active: #cc9500;
-  --color-primary-mid: #ffc933;
-  --color-primary-light: #ffd966;
+  --font-sketch: 'Gaegu', cursive;
+
+  /* 메인 컬러 - 허니 머스타드 */
+  --color-primary: #d4920a;
+  --color-primary-hover: #b87d09;
+  --color-primary-active: #9c6a07;
+  --color-primary-mid: #e0a312;
+  --color-primary-light: #fdf0d5;
+
+  /* 낙서장 테마 */
+  --color-paper: #f5f0e3;
+  --color-ink: #1c1712;
 
   /* 배경 */
   --color-sub-bg: #fafafa;
@@ -42,20 +49,18 @@ html {
 .bg-hero-gradient {
   background: linear-gradient(
     to bottom right,
-    #ffb800 0%,
-    #ffba0e 7%,
-    #ffbd17 14%,
-    #ffbf1e 21%,
-    #ffc224 29%,
-    #ffc42a 36%,
-    #ffc72f 43%,
-    #ffc933 50%,
-    #ffcb3c 57%,
-    #ffce45 64%,
-    #ffd04c 71%,
-    #ffd255 79%,
-    #ffd55e 86%,
-    #ffd862 93%,
-    #ffd966 100%
+    #d4920a 0%,
+    #d9980f 15%,
+    #dfa015 30%,
+    #e4a81b 45%,
+    #e8b020 55%,
+    #ecb826 65%,
+    #f0c030 75%,
+    #f3c93a 85%,
+    #f5d048 100%
   );
+}
+
+.bg-paper-dots {
+  background-color: #f5f0e3;
 }

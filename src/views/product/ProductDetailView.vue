@@ -90,7 +90,7 @@ async function loadProduct() {
     const { data } = await productApi.getProduct(route.params.id)
     data.imageUrls = (data.images || []).map((img) => img.imageUrl)
     if (data.imageUrls.length === 0) {
-      data.imageUrls = ['https://placehold.co/600x450?text=No+Image']
+      data.imageUrls = [`https://picsum.photos/seed/${data.id}/600/450`]
     }
     product.value = data
     startAutoSlide()
@@ -133,234 +133,232 @@ watch(() => route.params.id, () => {
 </script>
 
 <template>
-  <div class="max-w-4xl mx-auto px-4 pt-4 pb-8">
+  <div class="bg-paper-dots min-h-screen">
+    <div class="max-w-4xl mx-auto px-4 pt-4 pb-12">
 
-    <!-- 상단 -->
-    <div class="flex items-center justify-between mb-4">
-      <button @click="router.back()" class="p-1 -ml-1 rounded-lg hover:bg-gray-100 transition cursor-pointer">
-        <ChevronLeftIcon class="w-6 h-6 text-text-main" />
-      </button>
-      <div v-if="product && authStore.user?.id === product.sellerId" class="flex rounded-lg border border-border overflow-hidden text-sm font-medium">
+      <!-- 상단 네비게이션 -->
+      <div class="flex items-center justify-between mb-5">
         <button
-          @click="toggleStatus('available')"
-          :class="product.saleStatus === 'available' ? 'bg-primary text-white' : 'bg-white text-text-sub hover:bg-gray-50'"
-          class="px-3 py-1.5 transition"
-        >판매중</button>
-        <button
-          @click="showSoldConfirm = true"
-          :class="product.saleStatus === 'sold' ? 'bg-primary text-white' : 'bg-white text-text-sub hover:bg-gray-50'"
-          class="px-3 py-1.5 border-l border-border transition"
-        >판매완료</button>
+          @click="router.back()"
+          class="flex items-center gap-1.5 px-3 py-1.5 bg-white border-2 border-ink rounded-xl text-sm text-ink shadow-[2px_2px_0_#1c1712] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+        >
+          <ChevronLeftIcon class="w-4 h-4" />
+          뒤로
+        </button>
+        <div v-if="product && authStore.user?.id === product.sellerId" class="flex bg-white border-2 border-ink rounded-xl overflow-hidden shadow-[2px_2px_0_#1c1712] text-sm font-bold">
+          <button
+            @click="toggleStatus('available')"
+            :class="product.saleStatus === 'available' ? 'bg-[#ffe066] text-ink' : 'text-[#8c7e6e] hover:bg-primary/10'"
+            class="px-3 py-1.5 transition"
+          >판매중</button>
+          <button
+            @click="showSoldConfirm = true"
+            :class="product.saleStatus === 'sold' ? 'bg-[#ffe066] text-ink' : 'text-[#8c7e6e] hover:bg-primary/10'"
+            class="px-3 py-1.5 border-l-2 border-ink transition"
+          >판매완료</button>
+        </div>
       </div>
-    </div>
 
-    <p v-if="isLoading" class="text-center text-text-sub py-20">불러오는 중...</p>
-    <p v-else-if="!product" class="text-center text-text-sub py-20">상품을 찾을 수 없습니다.</p>
+      <p v-if="isLoading" class="text-center text-[#8c7e6e] py-20">불러오는 중...</p>
+      <p v-else-if="!product" class="text-center text-[#8c7e6e] py-20">상품을 찾을 수 없습니다.</p>
 
-    <template v-else>
-      <!-- 이미지 + 판매자 카드 (데스크탑: 좌우 / 모바일: 이미지만) -->
-      <div class="lg:flex lg:gap-6 mb-6">
+      <template v-else>
+        <!-- 이미지 + 판매자 카드 -->
+        <div class="lg:flex lg:gap-6 mb-6">
 
-        <!-- 이미지 갤러리 -->
-        <div class="flex-1 min-w-0">
-          <div class="relative rounded-2xl overflow-hidden bg-gray-100">
-            <Transition name="fade" mode="out-in">
-              <img :key="currentIndex" :src="product.imageUrls[currentIndex]" :alt="product.title" class="w-full h-72 lg:h-96 object-cover" />
-            </Transition>
-            <span class="absolute bottom-3 right-3 bg-black/50 text-white text-xs px-2.5 py-1 rounded-full">
-              {{ currentIndex + 1 }} / {{ product.imageUrls.length }}
+          <!-- 이미지 갤러리 -->
+          <div class="flex-1 min-w-0">
+            <div class="relative border-2 border-ink rounded-2xl overflow-hidden bg-gray-100 shadow-[4px_4px_0_#1c1712]">
+              <Transition name="fade" mode="out-in">
+                <img :key="currentIndex" :src="product.imageUrls[currentIndex]" :alt="product.title" class="w-full h-72 lg:h-96 object-cover" />
+              </Transition>
+              <span class="absolute bottom-3 right-3 bg-ink text-white text-xs px-2.5 py-1 rounded-full">
+                {{ currentIndex + 1 }} / {{ product.imageUrls.length }}
+              </span>
+              <button @click="prev" class="slide-btn absolute left-3 top-1/2 -translate-y-1/2 bg-white border-2 border-ink rounded-full p-1.5 shadow-[2px_2px_0_#1c1712] transition-all">
+                <ChevronLeftIcon class="w-5 h-5 text-ink" />
+              </button>
+              <button @click="next" class="slide-btn absolute right-3 top-1/2 -translate-y-1/2 bg-white border-2 border-ink rounded-full p-1.5 shadow-[2px_2px_0_#1c1712] transition-all">
+                <ChevronRightIcon class="w-5 h-5 text-ink" />
+              </button>
+            </div>
+            <div class="flex gap-2 mt-3 overflow-x-auto no-scrollbar justify-center">
+              <button
+                v-for="(img, i) in product.imageUrls"
+                :key="i"
+                @click="currentIndex = i"
+                :class="currentIndex === i ? 'ring-2 ring-primary opacity-100' : 'opacity-50 hover:opacity-100 hover:ring-2 hover:ring-gray-300 cursor-pointer'"
+                class="w-16 h-16 rounded-xl overflow-hidden shrink-0 transition-all duration-150"
+              >
+                <img :src="img" class="w-full h-full object-cover" />
+              </button>
+            </div>
+          </div>
+
+          <!-- 판매자 카드 (PC) -->
+          <div class="hidden lg:flex lg:w-60 shrink-0 self-start sticky top-20">
+            <div class="w-full bg-white border-2 border-ink rounded-2xl p-5 shadow-[4px_4px_0_#1c1712] flex flex-col gap-4">
+              <div class="flex items-center gap-3">
+                <img v-if="product.sellerProfileImageUrl" :src="product.sellerProfileImageUrl" class="w-11 h-11 rounded-full object-cover shrink-0 border-2 border-ink" />
+                <div v-else class="w-11 h-11 rounded-full bg-[#ffe066] border-2 border-ink flex items-center justify-center text-ink font-bold text-lg shrink-0">
+                  {{ product.sellerNickname?.[0] }}
+                </div>
+                <p class="font-bold text-ink">{{ product.sellerNickname }}</p>
+              </div>
+              <button
+                v-if="authStore.user?.id === product.sellerId"
+                @click="router.replace(`/product/edit/${product.id}`)"
+                class="action-btn flex items-center justify-center gap-2 bg-primary border-2 border-ink text-white font-bold py-3 rounded-xl text-sm shadow-[3px_3px_0_#1c1712] transition-all"
+              >
+                <PencilSquareIcon class="w-5 h-5" />
+                상품 수정
+              </button>
+              <button
+                v-else
+                @click="startChat"
+                class="action-btn flex items-center justify-center gap-2 bg-[#ffe066] border-2 border-ink text-ink font-bold py-3 rounded-xl text-sm shadow-[3px_3px_0_#1c1712] transition-all"
+              >
+                <ChatBubbleOvalLeftEllipsisIcon class="w-5 h-5" />
+                채팅하기
+              </button>
+              <div class="border-t-2 border-dashed border-[#c8bca8] pt-4">
+                <p class="font-bold text-ink text-sm mb-2">📌 최근 본 상품</p>
+                <p v-if="recentlyViewed.length === 0" class="text-xs text-[#8c7e6e] text-center py-2">아직 본 상품이 없어요</p>
+                <div v-else class="flex flex-col gap-1">
+                  <RouterLink
+                    v-for="item in recentlyViewed"
+                    :key="item.id"
+                    :to="`/products/${item.id}`"
+                    class="flex items-center gap-2 p-1.5 rounded-xl hover:bg-primary/10 transition"
+                  >
+                    <img :src="item.image" class="w-10 h-10 rounded-lg object-cover shrink-0 border border-ink" />
+                    <div class="flex-1 min-w-0">
+                      <p class="text-xs text-ink line-clamp-2 leading-snug">{{ item.title }}</p>
+                      <span :class="['font-bold text-xs mt-0.5 inline-block px-1.5 py-0.5 rounded', item.isFree ? 'bg-[#96d4b4]' : 'bg-[#ffe066]']">
+                        {{ item.isFree ? '무료나눔' : `${item.price.toLocaleString()}원` }}
+                      </span>
+                    </div>
+                  </RouterLink>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 상품 정보 카드 -->
+        <div class="bg-white border-2 border-ink rounded-2xl p-6 mb-4 shadow-[4px_4px_0_#1c1712]">
+          <div class="flex items-start justify-between mb-3">
+            <span class="font-bold text-xs bg-[#ffe066] text-ink border border-ink px-3 py-1 rounded-full">{{ product.categoryName }}</span>
+            <div class="flex gap-2">
+              <button
+                @click="toggleLike"
+                class="p-1.5 bg-white border-2 border-ink rounded-full shadow-[2px_2px_0_#1c1712] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+              >
+                <HeartSolidIcon v-if="liked" class="w-5 h-5 text-red-500" />
+                <HeartIcon v-else class="w-5 h-5 text-[#8c7e6e]" />
+              </button>
+              <button class="p-1.5 bg-white border-2 border-ink rounded-full shadow-[2px_2px_0_#1c1712] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+                <ShareIcon class="w-5 h-5 text-[#8c7e6e]" />
+              </button>
+            </div>
+          </div>
+
+          <h1 class="font-bold text-2xl text-ink mb-3 leading-snug">{{ product.title }}</h1>
+
+          <p class="mb-4">
+            <span :class="['font-bold text-3xl inline-block px-3 py-1 rounded rotate-[-0.5deg]', product.isFree ? 'bg-[#96d4b4]/50' : 'bg-[#ffe066]/50']">
+              {{ product.isFree ? '무료나눔' : `${product.price.toLocaleString()}원` }}
             </span>
-            <button
-              @click="prev"
-              class="absolute left-3 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm rounded-full p-1.5 shadow hover:bg-white transition"
-            >
-              <ChevronLeftIcon class="w-5 h-5 text-text-main" />
-            </button>
-            <button
-              @click="next"
-              class="absolute right-3 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm rounded-full p-1.5 shadow hover:bg-white transition"
-            >
-              <ChevronRightIcon class="w-5 h-5 text-text-main" />
-            </button>
+          </p>
+
+          <div class="flex items-center gap-4 text-sm text-[#8c7e6e] mb-6">
+            <span class="flex items-center gap-1"><EyeIcon class="w-4 h-4" /> {{ product.viewCount }}</span>
+            <span class="flex items-center gap-1"><HeartIcon class="w-4 h-4" /> {{ product.favoriteCount }}</span>
+            <span class="flex items-center gap-1"><ClockIcon class="w-4 h-4" /> {{ timeAgo(product.createdAt) }}</span>
           </div>
-          <div class="flex gap-2 mt-6 overflow-x-auto no-scrollbar justify-center">
-            <button
-              v-for="(img, i) in product.imageUrls"
-              :key="i"
-              @click="currentIndex = i"
-              :class="currentIndex === i ? 'ring-2 ring-primary opacity-100' : 'opacity-50 hover:opacity-100 hover:ring-2 hover:ring-gray-300 cursor-pointer'"
-              class="w-16 h-16 rounded-xl overflow-hidden shrink-0 transition-all duration-150"
-            >
-              <img :src="img" class="w-full h-full object-cover" />
-            </button>
+
+          <table class="w-full text-sm mb-6">
+            <tbody>
+              <tr class="border-t-2 border-[#c8bca8]">
+                <td class="py-3 text-[#8c7e6e] w-24">상태</td>
+                <td class="py-3 font-bold text-ink">{{ conditionMap[product.productCondition] ?? product.productCondition }}</td>
+              </tr>
+              <tr class="border-t border-[#c8bca8]">
+                <td class="py-3 text-[#8c7e6e]">거래상태</td>
+                <td class="py-3 font-bold text-ink">{{ saleStatusMap[product.saleStatus] ?? product.saleStatus }}</td>
+              </tr>
+              <tr class="border-t border-[#c8bca8]">
+                <td class="py-3 text-[#8c7e6e]">위치</td>
+                <td class="py-3 font-bold text-ink">
+                  <span class="flex items-center gap-1"><MapPinIcon class="w-4 h-4 text-[#8c7e6e]" />{{ product.location || '미입력' }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="border-t-2 border-dashed border-[#c8bca8] pt-5">
+            <p class="font-bold text-ink mb-3">상품 설명</p>
+            <p class="text-sm text-ink whitespace-pre-line leading-relaxed">{{ product.description }}</p>
           </div>
         </div>
 
-        <!-- 판매자 카드 (데스크탑만) -->
-        <div class="hidden lg:flex lg:w-60 shrink-0 self-start sticky top-20">
-          <div class="w-full border border-border rounded-2xl p-5 flex flex-col gap-4">
-            <div class="flex items-center gap-3">
-              <img
-                v-if="product.sellerProfileImageUrl"
-                :src="product.sellerProfileImageUrl"
-                class="w-11 h-11 rounded-full object-cover shrink-0"
-              />
-              <div v-else class="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-white font-bold text-lg shrink-0">
-                {{ product.sellerNickname?.[0] }}
-              </div>
-              <div>
-                <p class="font-bold text-text-main">{{ product.sellerNickname }}</p>
-              </div>
+        <!-- 판매자 카드 (모바일) -->
+        <div class="lg:hidden bg-white border-2 border-ink rounded-2xl p-5 shadow-[4px_4px_0_#1c1712] flex flex-col gap-4 mb-6">
+          <div class="flex items-center gap-3">
+            <img v-if="product.sellerProfileImageUrl" :src="product.sellerProfileImageUrl" class="w-11 h-11 rounded-full object-cover shrink-0 border-2 border-ink" />
+            <div v-else class="w-11 h-11 rounded-full bg-[#ffe066] border-2 border-ink flex items-center justify-center text-ink font-bold text-lg shrink-0">
+              {{ product.sellerNickname?.[0] }}
             </div>
-            <button
-              v-if="authStore.user?.id === product.sellerId"
-              @click="router.replace(`/product/edit/${product.id}`)"
-              class="flex items-center justify-center gap-2 bg-primary text-white font-semibold py-3 rounded-xl text-sm hover:bg-primary/90 active:scale-95 transition-all duration-150 cursor-pointer shadow-md hover:shadow-lg"
-            >
-              <PencilSquareIcon class="w-5 h-5" />
-              상품 수정
-            </button>
-            <button
-              v-else
-              @click="startChat"
-              class="flex items-center justify-center gap-2 bg-primary text-white font-semibold py-3 rounded-xl text-sm hover:bg-primary/90 active:scale-95 transition-all duration-150 cursor-pointer shadow-md hover:shadow-lg"
-            >
-              <ChatBubbleOvalLeftEllipsisIcon class="w-5 h-5" />
-              채팅하기
-            </button>
-            <!-- 최근 본 상품 -->
-            <div class="border-t border-border pt-4">
-              <p class="text-sm font-bold text-text-main mb-2">📌 최근 본 상품</p>
-              <p v-if="recentlyViewed.length === 0" class="text-xs text-text-sub text-center py-2">아직 본 상품이 없어요</p>
-              <div v-else class="flex flex-col gap-1">
-                <RouterLink
-                  v-for="item in recentlyViewed"
-                  :key="item.id"
-                  :to="`/products/${item.id}`"
-                  class="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-50 transition"
-                >
-                  <img :src="item.image" class="w-10 h-10 rounded-lg object-cover shrink-0" />
-                  <div class="flex-1 min-w-0">
-                    <p class="text-xs text-text-main line-clamp-2 leading-snug">{{ item.title }}</p>
-                    <p :class="['text-xs font-semibold mt-0.5', item.isFree ? 'text-primary' : 'text-text-main']">{{ item.isFree ? '무료나눔' : `${item.price.toLocaleString()}원` }}</p>
-                  </div>
-                </RouterLink>
-              </div>
-            </div>
+            <p class="font-bold text-ink">{{ product.sellerNickname }}</p>
           </div>
+          <button
+            v-if="authStore.user?.id === product.sellerId"
+            @click="router.replace(`/product/edit/${product.id}`)"
+            class="action-btn flex items-center justify-center gap-2 bg-primary border-2 border-ink text-white font-bold py-3 rounded-xl text-sm shadow-[3px_3px_0_#1c1712] transition-all"
+          >
+            <PencilSquareIcon class="w-5 h-5" />
+            상품 수정
+          </button>
+          <button
+            v-else
+            @click="startChat"
+            class="action-btn flex items-center justify-center gap-2 bg-[#ffe066] border-2 border-ink text-ink font-bold py-3 rounded-xl text-sm shadow-[3px_3px_0_#1c1712] transition-all"
+          >
+            <ChatBubbleOvalLeftEllipsisIcon class="w-5 h-5" />
+            채팅하기
+          </button>
         </div>
-
-      </div>
-
-      <!-- 상품 정보 -->
-      <div class="border border-border rounded-2xl p-6 mb-6">
-        <div class="flex items-start justify-between mb-3">
-          <span class="text-xs font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full">{{ product.categoryName }}</span>
-          <div class="flex gap-3">
-            <button @click="toggleLike">
-              <HeartSolidIcon v-if="liked" class="w-6 h-6 text-red-500" />
-              <HeartIcon v-else class="w-6 h-6 text-text-sub" />
-            </button>
-            <button>
-              <ShareIcon class="w-6 h-6 text-text-sub" />
-            </button>
-          </div>
-        </div>
-        <h1 class="text-xl font-bold text-text-main mb-2">{{ product.title }}</h1>
-        <p class="text-2xl font-extrabold text-primary mb-4">
-          {{ product.isFree ? '무료나눔' : `${product.price.toLocaleString()}원` }}
-        </p>
-        <div class="flex items-center gap-4 text-text-sub text-sm mb-6">
-          <span class="flex items-center gap-1"><EyeIcon class="w-4 h-4" /> 조회 {{ product.viewCount }}</span>
-          <span class="flex items-center gap-1"><HeartIcon class="w-4 h-4" /> {{ product.favoriteCount }}</span>
-          <span class="flex items-center gap-1"><ClockIcon class="w-4 h-4" /> {{ timeAgo(product.createdAt) }}</span>
-        </div>
-        <table class="w-full text-sm mb-6">
-          <tbody class="divide-y divide-border">
-            <tr>
-              <td class="py-3 text-text-sub w-24">상태</td>
-              <td class="py-3 text-text-main font-medium">{{ conditionMap[product.productCondition] ?? product.productCondition }}</td>
-            </tr>
-            <tr>
-              <td class="py-3 text-text-sub">거래상태</td>
-              <td class="py-3 text-text-main font-medium">{{ saleStatusMap[product.saleStatus] ?? product.saleStatus }}</td>
-            </tr>
-            <tr>
-              <td class="py-3 text-text-sub">위치</td>
-              <td class="py-3 text-text-main font-medium flex items-center gap-1">
-                <MapPinIcon class="w-4 h-4 text-text-sub" />{{ product.location }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p class="text-sm font-bold text-text-main mb-3">상품 설명</p>
-        <p class="text-sm text-text-main whitespace-pre-line leading-relaxed">{{ product.description }}</p>
-      </div>
-
-      <!-- 판매자 카드 (모바일만) -->
-      <div class="lg:hidden border border-border rounded-2xl p-5 flex flex-col gap-4 mb-6">
-        <div class="flex items-center gap-3">
-          <img
-            v-if="product.sellerProfileImageUrl"
-            :src="product.sellerProfileImageUrl"
-            class="w-11 h-11 rounded-full object-cover shrink-0"
-          />
-          <div v-else class="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-white font-bold text-lg shrink-0">
-            {{ product.sellerNickname?.[0] }}
-          </div>
-          <div>
-            <p class="font-bold text-text-main">{{ product.sellerNickname }}</p>
-          </div>
-        </div>
-        <button
-          v-if="authStore.user?.id === product.sellerId"
-          @click="router.replace(`/product/edit/${product.id}`)"
-          class="flex items-center justify-center gap-2 bg-primary text-white font-semibold py-3 rounded-xl text-sm hover:bg-primary/90 active:scale-95 transition-all duration-150 cursor-pointer shadow-md hover:shadow-lg"
-        >
-          <PencilSquareIcon class="w-5 h-5" />
-          상품 수정
-        </button>
-        <button
-          v-else
-          @click="startChat"
-          class="flex items-center justify-center gap-2 bg-primary text-white font-semibold py-3 rounded-xl text-sm hover:bg-primary/90 active:scale-95 transition-all duration-150 cursor-pointer shadow-md hover:shadow-lg"
-        >
-          <ChatBubbleOvalLeftEllipsisIcon class="w-5 h-5" />
-          채팅하기
-        </button>
-      </div>
-    </template>
+      </template>
+    </div>
 
     <!-- 판매완료 확인 모달 -->
     <Teleport to="body">
-      <div v-if="showSoldConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="showSoldConfirm = false">
-        <div class="bg-white rounded-2xl shadow-xl p-6 w-80 flex flex-col gap-4">
-          <p class="text-base font-bold text-text-main">판매완료로 변경하시겠습니까?</p>
-          <p class="text-sm text-text-sub -mt-2">변경 후에도 다시 판매중으로 되돌릴 수 있어요.</p>
+      <div v-if="showSoldConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-ink/40" @click.self="showSoldConfirm = false">
+        <div class="bg-white border-2 border-ink rounded-2xl shadow-[6px_6px_0_#1c1712] p-6 w-80 flex flex-col gap-4">
+          <p class="font-bold text-ink text-lg">판매완료로 변경할까요?</p>
+          <p class="text-sm text-[#8c7e6e] -mt-2">변경 후에도 다시 판매중으로 되돌릴 수 있어요.</p>
           <div class="flex gap-3">
             <button
               @click="showSoldConfirm = false"
-              class="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold text-text-main hover:bg-gray-50 transition"
+              class="flex-1 py-2.5 rounded-xl border-2 border-ink font-bold text-sm text-ink hover:bg-gray-50 transition shadow-[2px_2px_0_#1c1712]"
             >취소</button>
             <button
               @click="() => { toggleStatus('sold'); showSoldConfirm = false }"
-              class="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition"
+              class="flex-1 py-2.5 rounded-xl bg-[#ffe066] border-2 border-ink font-bold text-sm text-ink hover:bg-primary/20 transition shadow-[2px_2px_0_#1c1712]"
             >확인</button>
           </div>
         </div>
       </div>
     </Teleport>
-
   </div>
 </template>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.4s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
+.fade-enter-active, .fade-leave-active { transition: opacity 0.4s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
+.action-btn:hover { transform: translate(2px, 2px); box-shadow: none !important; }
+.action-btn:active { transform: translate(3px, 3px); }
+
+.slide-btn:active { transform: translateY(-50%) translate(2px, 2px); box-shadow: none; }
 </style>
