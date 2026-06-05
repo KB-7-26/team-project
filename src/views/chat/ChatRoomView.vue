@@ -121,9 +121,12 @@ async function connectWebSocket() {
       console.error('❌ STOMP 에러:', frame)
     },
     onConnect: () => {
-      // 읽음 이벤트 구독 - 상대방이 읽으면 모든 내 메시지를 읽음으로 변경
-      client.subscribe(`/topic/chat/${chatRoomId.value}/read`, () => {
-        opponentRead.value = true
+      // 읽음 이벤트 구독 - 상대방이 읽었을 때만 opponentRead = true
+      client.subscribe(`/topic/chat/${chatRoomId.value}/read`, (frame) => {
+        const readerId = JSON.parse(frame.body)
+        if (readerId !== myId.value) {
+          opponentRead.value = true
+        }
       })
 
       // 채팅방 구독 - 새 메시지 실시간 수신
