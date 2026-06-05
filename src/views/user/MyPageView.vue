@@ -21,6 +21,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import ProductCard from '@/components/product/ProductCard.vue'
 import BoardPostCard from '@/components/board/BoardPostCard.vue'
+import { productApi } from '@/api/productApi'
 import { useAuthStore } from '@/stores/auth'
 import { userBoardActivityApi } from '@/api/userBoardActivityApi'
 import { userProfileApi } from '@/api/userProfileApi'
@@ -33,8 +34,8 @@ defineOptions({
 const authStore = useAuthStore()
 const router = useRouter()
 const selectedMenu = ref('profile')
-const selectedSaleStatus = ref('판매중')
-const likedIds = ref(new Set([1, 3, 5]))
+const selectedSaleStatus = ref('all')
+const likedIds = ref(new Set())
 const isProfileEditModalOpen = ref(false)
 const serverProfile = ref(null)
 const isProfileLoading = ref(false)
@@ -46,6 +47,14 @@ const boardActivityCurrentPage = ref(0)
 const boardActivityTotalPages = ref(0)
 const isBoardActivityLoading = ref(false)
 const boardActivityError = ref('')
+const mySaleProducts = ref([])
+const saleCurrentPage = ref(0)
+const saleTotalPages = ref(0)
+const isSalesLoading = ref(false)
+const salesError = ref('')
+const myFavoriteProducts = ref([])
+const isFavoritesLoading = ref(false)
+const favoritesError = ref('')
 const profileImageInput = ref(null)
 const profileEditImagePreview = ref('')
 const profileEditObjectUrl = ref('')
@@ -158,70 +167,18 @@ const menuSections = [
   },
 ]
 
-const saleStatusTabs = ['판매중', '판매완료', '숨김']
-
-const saleProducts = [
-  {
-    id: 1,
-    title: '메이저급 소닉 2세대 판매합니다!',
-    price: 180000,
-    status: '판매중',
-    image: 'https://picsum.photos/id/96/500/360',
-    likes: 12,
-    comments: 5,
-    views: 234,
-  },
-  {
-    id: 2,
-    title: '메이저급 무선 이어폰',
-    price: 250000,
-    status: '판매중',
-    image: 'https://picsum.photos/id/180/500/360',
-    likes: 8,
-    comments: 3,
-    views: 156,
-  },
-  {
-    id: 3,
-    title: '님 의 블루투스 마 헤드셋',
-    price: 95000,
-    status: '판매중',
-    image: 'https://picsum.photos/id/119/500/360',
-    likes: 15,
-    comments: 7,
-    views: 312,
-  },
-  {
-    id: 4,
-    title: '기계식 키보드 새제품 같음',
-    price: 120000,
-    status: '판매완료',
-    image: 'https://picsum.photos/id/60/500/360',
-    likes: 23,
-    comments: 12,
-    views: 445,
-  },
-  {
-    id: 5,
-    title: '로지텍 무선 마우스',
-    price: 45000,
-    status: '판매중',
-    image: 'https://picsum.photos/id/26/500/360',
-    likes: 6,
-    comments: 2,
-    views: 98,
-  },
-  {
-    id: 6,
-    title: '노트북 거치대',
-    price: 35000,
-    status: '숨김',
-    image: 'https://picsum.photos/id/48/500/360',
-    likes: 9,
-    comments: 4,
-    views: 167,
-  },
+const saleStatusTabs = [
+  { label: '전체', value: 'all' },
+  { label: '판매중', value: 'available' },
+  { label: '판매완료', value: 'sold' },
 ]
+
+const saleStatusMap = {
+  available: '판매중',
+  reserved: '거래중',
+  sold: '판매완료',
+  hidden: '숨김',
+}
 
 const purchaseProducts = [
   {
@@ -246,39 +203,6 @@ const purchaseProducts = [
   },
 ]
 
-const favoriteProducts = [
-  {
-    id: 9,
-    title: '아이패드 필기용 케이스',
-    price: 28000,
-    status: '판매중',
-    image: 'https://picsum.photos/id/24/500/360',
-    likes: 18,
-    comments: 6,
-    views: 209,
-  },
-  {
-    id: 10,
-    title: '전공책 일괄 판매',
-    price: 52000,
-    status: '판매중',
-    image: 'https://picsum.photos/id/1073/500/360',
-    likes: 11,
-    comments: 4,
-    views: 134,
-  },
-  {
-    id: 11,
-    title: '노트북 거치대',
-    price: 35000,
-    status: '판매중',
-    image: 'https://picsum.photos/id/48/500/360',
-    likes: 9,
-    comments: 4,
-    views: 167,
-  },
-]
-
 const boardActivityMenuIds = ['myPosts', 'commentedPosts']
 const boardActivityDescriptions = {
   myPosts: '내가 작성한 낙서장 글을 모아봅니다',
@@ -293,29 +217,58 @@ const activeMenu = computed(() => menuItems.value.find((item) => item.id === sel
 const isBoardActivityMenu = computed(() => boardActivityMenuIds.includes(selectedMenu.value))
 const boardActivityDescription = computed(() => boardActivityDescriptions[selectedMenu.value] || '')
 const boardActivityEmptyMessage = computed(() => boardActivityEmptyMessages[selectedMenu.value] || '표시할 글이 없습니다')
-const filteredSaleProducts = computed(() =>
-  saleProducts.filter((product) => product.status === selectedSaleStatus.value),
-)
 const contentProducts = computed(() => {
   if (selectedMenu.value === 'purchases') {
     return purchaseProducts
   }
 
-  if (selectedMenu.value === 'favorites') {
-    return favoriteProducts
-  }
-
   return []
 })
 
-const toggleLike = (id) => {
-  if (likedIds.value.has(id)) {
-    likedIds.value.delete(id)
+const mapProductListItem = (product) => ({
+  id: product.id,
+  title: product.title,
+  price: product.price ?? 0,
+  isFree: product.isFree,
+  image: product.thumbnailUrl || `https://picsum.photos/seed/${product.id}/400/300`,
+  status: saleStatusMap[product.saleStatus] ?? product.saleStatus,
+  views: product.viewCount ?? 0,
+  favoriteCount: product.favoriteCount ?? 0,
+})
+
+const syncLikedIdsFromProducts = (products) => {
+  likedIds.value = new Set(products.map((product) => product.id))
+}
+
+const toggleLike = async (id) => {
+  if (!authStore.isLoggedIn) return
+
+  const previousLikedIds = new Set(likedIds.value)
+  const nextLikedIds = new Set(likedIds.value)
+  const wasLiked = nextLikedIds.has(id)
+
+  if (wasLiked) {
+    nextLikedIds.delete(id)
   } else {
-    likedIds.value.add(id)
+    nextLikedIds.add(id)
   }
 
-  likedIds.value = new Set(likedIds.value)
+  likedIds.value = nextLikedIds
+
+  try {
+    await productApi.toggleFavorite(id)
+
+    if (selectedMenu.value === 'favorites' && wasLiked) {
+      myFavoriteProducts.value = myFavoriteProducts.value.filter((product) => product.id !== id)
+    }
+  } catch (error) {
+    likedIds.value = previousLikedIds
+
+    if (selectedMenu.value === 'favorites') {
+      favoritesError.value =
+        error.response?.data?.message || '찜 상태를 변경하지 못했습니다. 잠시 후 다시 시도해주세요.'
+    }
+  }
 }
 
 const applyProfileResponse = (profileResponse) => {
@@ -395,6 +348,57 @@ const fetchBoardActivityPosts = async (page = 0) => {
       error.response?.data?.message || '게시판 활동 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.'
   } finally {
     isBoardActivityLoading.value = false
+  }
+}
+
+const fetchMySaleProducts = async (page = 0) => {
+  if (!authStore.isLoggedIn) return
+
+  isSalesLoading.value = true
+  salesError.value = ''
+
+  try {
+    const { data } = await productApi.getMyProducts({
+      page,
+      size: 10,
+      saleStatus: selectedSaleStatus.value,
+    })
+
+    mySaleProducts.value = data.content.map(mapProductListItem)
+    saleTotalPages.value = data.totalPages
+    saleCurrentPage.value = page
+  } catch (error) {
+    if (await redirectIfProfileRequired(error)) return
+
+    mySaleProducts.value = []
+    saleTotalPages.value = 0
+    salesError.value =
+      error.response?.data?.message || '판매 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.'
+  } finally {
+    isSalesLoading.value = false
+  }
+}
+
+const fetchMyFavoriteProducts = async () => {
+  if (!authStore.isLoggedIn) return
+
+  isFavoritesLoading.value = true
+  favoritesError.value = ''
+
+  try {
+    const { data } = await productApi.getMyFavorites()
+    const products = Array.isArray(data) ? data : (data.content ?? [])
+
+    myFavoriteProducts.value = products.map(mapProductListItem)
+    syncLikedIdsFromProducts(products)
+  } catch (error) {
+    if (await redirectIfProfileRequired(error)) return
+
+    myFavoriteProducts.value = []
+    favoritesError.value =
+      error.response?.data?.message || '찜 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.'
+  } finally {
+    isFavoritesLoading.value = false
   }
 }
 
@@ -501,6 +505,20 @@ onMounted(() => {
 watch(selectedMenu, (nextMenu) => {
   if (boardActivityMenuIds.includes(nextMenu)) {
     fetchBoardActivityPosts(0)
+  }
+
+  if (nextMenu === 'sales') {
+    fetchMySaleProducts(0)
+  }
+
+  if (nextMenu === 'favorites') {
+    fetchMyFavoriteProducts()
+  }
+})
+
+watch(selectedSaleStatus, () => {
+  if (selectedMenu.value === 'sales') {
+    fetchMySaleProducts(0)
   }
 })
 </script>
@@ -688,25 +706,34 @@ watch(selectedMenu, (nextMenu) => {
               <div class="flex flex-wrap gap-3">
                 <button
                   v-for="status in saleStatusTabs"
-                  :key="status"
+                  :key="status.value"
                   type="button"
                   class="h-12 rounded-full px-6 text-sm font-extrabold transition"
                   :class="
-                    selectedSaleStatus === status
+                    selectedSaleStatus === status.value
                       ? 'bg-primary text-white shadow-[0_8px_18px_rgba(255,184,0,0.35)]'
                       : 'bg-sub-bg text-text-main hover:bg-primary/10 hover:text-primary'
                   "
-                  @click="selectedSaleStatus = status"
+                  @click="selectedSaleStatus = status.value"
                 >
-                  {{ status }}
+                  {{ status.label }}
                 </button>
               </div>
             </div>
           </div>
 
-          <div v-if="filteredSaleProducts.length" class="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <p v-if="isSalesLoading" class="mt-6 rounded-2xl border border-border bg-white py-12 text-center text-sm font-bold text-text-sub shadow-sm">
+            판매 목록을 불러오는 중입니다
+          </p>
+          <p
+            v-else-if="salesError"
+            class="mt-6 rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-bold text-red-600 shadow-sm"
+          >
+            {{ salesError }}
+          </p>
+          <div v-else-if="mySaleProducts.length" class="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             <ProductCard
-              v-for="product in filteredSaleProducts"
+              v-for="product in mySaleProducts"
               :key="product.id"
               :product="product"
               :liked="likedIds.has(product.id)"
@@ -719,9 +746,61 @@ watch(selectedMenu, (nextMenu) => {
             <p class="mt-4 text-lg font-extrabold text-text-main">표시할 상품이 없습니다</p>
             <p class="mt-2 text-sm font-medium text-text-sub">다른 판매 상태를 선택해보세요</p>
           </div>
+
+          <div v-if="!isSalesLoading && !salesError && saleTotalPages > 1" class="mt-6 flex justify-center gap-2">
+            <button
+              v-for="page in saleTotalPages"
+              :key="page"
+              type="button"
+              class="h-10 w-10 rounded-xl text-sm font-extrabold transition"
+              :class="
+                saleCurrentPage === page - 1
+                  ? 'bg-primary text-white'
+                  : 'border border-border bg-white text-text-main hover:bg-primary/10 hover:text-primary'
+              "
+              @click="fetchMySaleProducts(page - 1)"
+            >
+              {{ page }}
+            </button>
+          </div>
         </template>
 
-        <template v-else-if="selectedMenu === 'purchases' || selectedMenu === 'favorites'">
+        <template v-else-if="selectedMenu === 'favorites'">
+          <div class="rounded-2xl border border-border bg-white p-6 shadow-sm md:p-8">
+            <h2 class="text-2xl font-extrabold text-text-main">찜 목록</h2>
+            <p class="mt-2 text-sm font-medium text-text-sub">내가 찜한 낙서장터 상품을 확인하세요</p>
+          </div>
+
+          <p
+            v-if="isFavoritesLoading"
+            class="mt-6 rounded-2xl border border-border bg-white py-12 text-center text-sm font-bold text-text-sub shadow-sm"
+          >
+            찜 목록을 불러오는 중입니다
+          </p>
+          <p
+            v-else-if="favoritesError"
+            class="mt-6 rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-bold text-red-600 shadow-sm"
+          >
+            {{ favoritesError }}
+          </p>
+          <div v-else-if="myFavoriteProducts.length" class="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <ProductCard
+              v-for="product in myFavoriteProducts"
+              :key="product.id"
+              :product="product"
+              :liked="likedIds.has(product.id)"
+              @toggle-like="toggleLike"
+            />
+          </div>
+
+          <div v-else class="mt-6 rounded-2xl border border-border bg-white px-6 py-16 text-center shadow-sm">
+            <ArchiveBoxIcon class="mx-auto h-12 w-12 text-text-sub" />
+            <p class="mt-4 text-lg font-extrabold text-text-main">찜한 상품이 없습니다</p>
+            <p class="mt-2 text-sm font-medium text-text-sub">관심 있는 상품을 찜하면 이곳에 표시됩니다</p>
+          </div>
+        </template>
+
+        <template v-else-if="selectedMenu === 'purchases'">
           <div class="rounded-2xl border border-border bg-white p-6 shadow-sm md:p-8">
             <h2 class="text-2xl font-extrabold text-text-main">{{ activeMenu.label }}</h2>
             <p class="mt-2 text-sm font-medium text-text-sub">상품 카드 컴포넌트를 재사용한 더미 목록입니다</p>
