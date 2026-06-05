@@ -52,6 +52,11 @@ const saleCurrentPage = ref(0)
 const saleTotalPages = ref(0)
 const isSalesLoading = ref(false)
 const salesError = ref('')
+const myPurchaseProducts = ref([])
+const purchaseCurrentPage = ref(0)
+const purchaseTotalPages = ref(0)
+const isPurchasesLoading = ref(false)
+const purchasesError = ref('')
 const myFavoriteProducts = ref([])
 const isFavoritesLoading = ref(false)
 const favoritesError = ref('')
@@ -158,7 +163,6 @@ const menuSections = [
       { id: 'sales', label: '판매 목록', icon: ShoppingBagIcon },
       { id: 'purchases', label: '구매 목록', icon: CubeIcon },
       { id: 'favorites', label: '찜 목록', icon: HeartIcon },
-      { id: 'chats', label: '채팅 목록', icon: ChatBubbleOvalLeftIcon },
     ],
   },
   {
@@ -180,29 +184,6 @@ const saleStatusMap = {
   hidden: '숨김',
 }
 
-const purchaseProducts = [
-  {
-    id: 7,
-    title: '기계식 키보드 새제품 같음',
-    price: 120000,
-    status: '거래완료',
-    image: 'https://picsum.photos/id/60/500/360',
-    likes: 23,
-    comments: 12,
-    views: 445,
-  },
-  {
-    id: 8,
-    title: '로지텍 무선 마우스',
-    price: 45000,
-    status: '거래완료',
-    image: 'https://picsum.photos/id/26/500/360',
-    likes: 6,
-    comments: 2,
-    views: 98,
-  },
-]
-
 const boardActivityMenuIds = ['myPosts', 'commentedPosts']
 const boardActivityDescriptions = {
   myPosts: '내가 작성한 낙서장 글을 모아봅니다',
@@ -217,14 +198,6 @@ const activeMenu = computed(() => menuItems.value.find((item) => item.id === sel
 const isBoardActivityMenu = computed(() => boardActivityMenuIds.includes(selectedMenu.value))
 const boardActivityDescription = computed(() => boardActivityDescriptions[selectedMenu.value] || '')
 const boardActivityEmptyMessage = computed(() => boardActivityEmptyMessages[selectedMenu.value] || '표시할 글이 없습니다')
-const contentProducts = computed(() => {
-  if (selectedMenu.value === 'purchases') {
-    return purchaseProducts
-  }
-
-  return []
-})
-
 const mapProductListItem = (product) => ({
   id: product.id,
   title: product.title,
@@ -379,6 +352,33 @@ const fetchMySaleProducts = async (page = 0) => {
   }
 }
 
+const fetchMyPurchaseProducts = async (page = 0) => {
+  if (!authStore.isLoggedIn) return
+
+  isPurchasesLoading.value = true
+  purchasesError.value = ''
+
+  try {
+    const { data } = await productApi.getMyPurchases({
+      page,
+      size: 10,
+    })
+
+    myPurchaseProducts.value = data.content.map(mapProductListItem)
+    purchaseTotalPages.value = data.totalPages
+    purchaseCurrentPage.value = page
+  } catch (error) {
+    if (await redirectIfProfileRequired(error)) return
+
+    myPurchaseProducts.value = []
+    purchaseTotalPages.value = 0
+    purchasesError.value =
+      error.response?.data?.message || '구매 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.'
+  } finally {
+    isPurchasesLoading.value = false
+  }
+}
+
 const fetchMyFavoriteProducts = async () => {
   if (!authStore.isLoggedIn) return
 
@@ -509,6 +509,10 @@ watch(selectedMenu, (nextMenu) => {
 
   if (nextMenu === 'sales') {
     fetchMySaleProducts(0)
+  }
+
+  if (nextMenu === 'purchases') {
+    fetchMyPurchaseProducts(0)
   }
 
   if (nextMenu === 'favorites') {
@@ -802,13 +806,25 @@ watch(selectedSaleStatus, () => {
 
         <template v-else-if="selectedMenu === 'purchases'">
           <div class="rounded-2xl border border-border bg-white p-6 shadow-sm md:p-8">
-            <h2 class="text-2xl font-extrabold text-text-main">{{ activeMenu.label }}</h2>
-            <p class="mt-2 text-sm font-medium text-text-sub">상품 카드 컴포넌트를 재사용한 더미 목록입니다</p>
+            <h2 class="text-2xl font-extrabold text-text-main">구매 목록</h2>
+            <p class="mt-2 text-sm font-medium text-text-sub">거래 완료된 구매 상품을 확인하세요</p>
           </div>
 
-          <div v-if="contentProducts.length" class="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <p
+            v-if="isPurchasesLoading"
+            class="mt-6 rounded-2xl border border-border bg-white py-12 text-center text-sm font-bold text-text-sub shadow-sm"
+          >
+            구매 목록을 불러오는 중입니다
+          </p>
+          <p
+            v-else-if="purchasesError"
+            class="mt-6 rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-bold text-red-600 shadow-sm"
+          >
+            {{ purchasesError }}
+          </p>
+          <div v-else-if="myPurchaseProducts.length" class="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             <ProductCard
-              v-for="product in contentProducts"
+              v-for="product in myPurchaseProducts"
               :key="product.id"
               :product="product"
               :liked="likedIds.has(product.id)"
@@ -818,8 +834,28 @@ watch(selectedSaleStatus, () => {
 
           <div v-else class="mt-6 rounded-2xl border border-border bg-white px-6 py-16 text-center shadow-sm">
             <ArchiveBoxIcon class="mx-auto h-12 w-12 text-text-sub" />
-            <p class="mt-4 text-lg font-extrabold text-text-main">표시할 상품이 없습니다</p>
-            <p class="mt-2 text-sm font-medium text-text-sub">목록이 추가되면 이곳에 표시됩니다</p>
+            <p class="mt-4 text-lg font-extrabold text-text-main">구매 완료된 상품이 없습니다</p>
+            <p class="mt-2 text-sm font-medium text-text-sub">거래 완료 내역이 생기면 이곳에 표시됩니다</p>
+          </div>
+
+          <div
+            v-if="!isPurchasesLoading && !purchasesError && purchaseTotalPages > 1"
+            class="mt-6 flex justify-center gap-2"
+          >
+            <button
+              v-for="page in purchaseTotalPages"
+              :key="page"
+              type="button"
+              class="h-10 w-10 rounded-xl text-sm font-extrabold transition"
+              :class="
+                purchaseCurrentPage === page - 1
+                  ? 'bg-primary text-white'
+                  : 'border border-border bg-white text-text-main hover:bg-primary/10 hover:text-primary'
+              "
+              @click="fetchMyPurchaseProducts(page - 1)"
+            >
+              {{ page }}
+            </button>
           </div>
         </template>
 
