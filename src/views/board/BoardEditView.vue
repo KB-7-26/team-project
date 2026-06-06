@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
+import { useToastStore } from '@/stores/toast'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,6 +17,7 @@ const contentError = ref(false)
 const loading = ref(true)
 
 const { isLoading: isSubmitting, error: submitError, request } = useApiRequest()
+const toast = useToastStore()
 
 onMounted(async () => {
   try {
@@ -45,7 +47,10 @@ const submit = async () => {
       on403: () => router.replace(`/board/${postId}`),
     },
   )
-  if (ok) router.push(`/board/${postId}`)
+  if (ok) {
+    toast.show('게시글이 수정되었습니다.')
+    router.push(`/board/${postId}`)
+  }
 }
 </script>
 

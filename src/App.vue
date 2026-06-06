@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 import { Client } from '@stomp/stompjs'
 import TopNavBar from './components/common/TopNavBar.vue'
 import BottomNavBar from './components/common/BottomNavBar.vue'
+import ToastNotification from './components/common/ToastNotification.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useChatStore } from '@/stores/chat'
 import { auth } from '@/firebase'
@@ -67,4 +68,5 @@ onUnmounted(disconnectNotification)
   <div v-if="showNav" :class="route.meta.hideNavMobile ? 'hidden' : ''">
     <BottomNavBar />
   </div>
+  <ToastNotification />
 </template>

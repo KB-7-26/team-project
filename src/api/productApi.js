@@ -35,6 +35,14 @@ export const productApi = {
     return api.get('/users/me/favorites')
   },
 
+  getMyProducts(params) {
+    return api.get('/users/me/products', { params })
+  },
+
+  getMyPurchases(params) {
+    return api.get('/users/me/purchases', { params })
+  },
+
   toggleFavorite(id) {
     return api.post(`/products/${id}/favorites`)
   },
