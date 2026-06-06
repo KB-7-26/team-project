@@ -13,7 +13,12 @@ import { auth } from '@/firebase'
 const route = useRoute()
 const authStore = useAuthStore()
 const chatStore = useChatStore()
-const showTopNavBar = computed(() => !route.meta.hideNav)
+const showNav = computed(() => !route.meta.hideNav)
+const contentClass = computed(() => {
+  if (route.meta.hideNav) return ''
+  if (route.meta.hideNavMobile) return 'md:pt-15'
+  return 'pt-15 pb-16 md:pb-0'
+})
 
 let notificationClient = null
 
@@ -54,10 +59,14 @@ onUnmounted(disconnectNotification)
 </script>
 
 <template>
-  <TopNavBar v-if="showTopNavBar" />
-  <div :class="showTopNavBar ? 'pt-16 pb-16 md:pb-0' : ''">
+  <div v-if="showNav" :class="route.meta.hideNavMobile ? 'hidden md:block' : ''">
+    <TopNavBar />
+  </div>
+  <div :class="contentClass">
     <RouterView />
   </div>
-  <BottomNavBar v-if="showTopNavBar" />
+  <div v-if="showNav" :class="route.meta.hideNavMobile ? 'hidden' : ''">
+    <BottomNavBar />
+  </div>
   <ToastNotification />
 </template>

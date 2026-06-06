@@ -9,8 +9,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import { productApi } from '@/api/productApi'
 import ProductCard from '@/components/product/ProductCard.vue'
-
-const saleStatusMap = { available: '판매중', reserved: '거래중', sold: '거래완료' }
+import { mapProduct } from '@/utils/product'
 
 const categories = [
   { icon: ShoppingBagIcon, title: '중고거래', desc: '안전한 학생 간 거래', to: '/products', tape: '#ffe066' },
@@ -24,15 +23,7 @@ const popularProducts = ref([])
 onMounted(async () => {
   try {
     const { data } = await productApi.getProducts({ sort: 'favoriteCount,desc', size: 4, saleStatus: 'available' })
-    popularProducts.value = data.content.map((p) => ({
-      id: p.id,
-      title: p.title,
-      price: p.price,
-      isFree: p.isFree,
-      image: p.thumbnailUrl || `https://picsum.photos/seed/${p.id}/400/300`,
-      status: saleStatusMap[p.saleStatus] ?? p.saleStatus,
-      views: p.viewCount ?? 0,
-    }))
+    popularProducts.value = data.content.map(mapProduct)
   } catch (e) {
     console.error('인기 상품 조회 실패', e)
   }
@@ -42,18 +33,16 @@ onMounted(async () => {
 <template>
   <div class="bg-paper-dots min-h-screen">
     <!-- HERO -->
-    <div class="relative max-w-[920px] mx-auto px-6 md:px-10 py-16 md:py-20 overflow-hidden">
+    <div class="relative max-w-230 mx-auto px-6 md:px-10 py-16 md:py-20 overflow-hidden">
       <div
-        class="doodle-ring absolute top-[50px] right-5 w-40 h-40 border-[3px] border-dashed border-[#c8bca8] rounded-full opacity-50 pointer-events-none hidden md:block"
+        class="doodle-ring absolute top-12.5 right-5 w-40 h-40 border-[3px] border-dashed border-[#c8bca8] rounded-full opacity-50 pointer-events-none hidden md:block"
       />
-      <div
-        class="absolute bottom-[60px] right-[120px] text-5xl opacity-[0.15] pointer-events-none hidden md:block select-none"
-      >
+      <div class="absolute bottom-15 right-30 text-5xl opacity-[0.15] pointer-events-none hidden md:block select-none">
         ✦
       </div>
 
       <span
-        class="inline-block -rotate-[1.2deg] mb-6 px-3 py-0.5 font-sketch text-sm text-[#8c7e6e] border-2 border-[#8c7e6e] rounded-md"
+        class="inline-block rotate-[-1.2deg] mb-6 px-3 py-0.5 font-sketch text-sm text-[#8c7e6e] border-2 border-[#8c7e6e] rounded-md"
         >✦ 캠퍼스 중고거래 플랫폼</span
       >
 
@@ -65,7 +54,7 @@ onMounted(async () => {
       <p class="text-lg text-[#8c7e6e] mb-9">학생 인증으로 더 믿을 수 있는 거래 환경을 만들어요 ✌️</p>
 
       <div
-        class="flex items-center bg-white border-2 border-ink rounded-xl px-4 py-1.5 max-w-[560px] shadow-[4px_4px_0_#1c1712] gap-2.5"
+        class="flex items-center bg-white border-2 border-ink rounded-xl px-4 py-1.5 max-w-140 shadow-[4px_4px_0_#1c1712] gap-2.5"
       >
         <MagnifyingGlassIcon class="w-5 h-5 text-[#c8bca8] shrink-0" />
         <input
@@ -95,7 +84,7 @@ onMounted(async () => {
     <div class="dash-divider h-0.5" />
 
     <!-- CATEGORIES -->
-    <section class="max-w-[1100px] mx-auto px-6 md:px-10 py-[52px]">
+    <section class="max-w-275 mx-auto px-6 md:px-10 py-13">
       <div class="flex items-baseline justify-between mb-8">
         <h2 class="sec-title font-bold text-[26px]">카테고리</h2>
         <RouterLink
@@ -111,7 +100,7 @@ onMounted(async () => {
           :to="item.to"
           class="cat-card bg-white border-2 border-ink rounded-[18px] p-6 cursor-pointer relative overflow-hidden block"
         >
-          <div class="absolute top-0 left-0 right-0 h-[6px]" :style="{ background: item.tape }" />
+          <div class="absolute top-0 left-0 right-0 h-1.5" :style="{ background: item.tape }" />
           <div
             class="w-10 h-10 rounded-xl flex items-center justify-center mb-3 mt-1"
             :style="{ background: item.tape }"
@@ -127,7 +116,7 @@ onMounted(async () => {
     <div class="dash-divider h-0.5" />
 
     <!-- POPULAR PRODUCTS -->
-    <section class="max-w-[1100px] mx-auto px-6 md:px-10 py-[52px]">
+    <section class="max-w-275 mx-auto px-6 md:px-10 py-13">
       <div class="flex items-baseline justify-between mb-8">
         <h2 class="sec-title font-bold text-[26px]">인기 상품 🔥</h2>
         <RouterLink

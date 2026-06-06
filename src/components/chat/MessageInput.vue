@@ -12,19 +12,36 @@ function sendMessage() {
 </script>
 
 <template>
-  <div class="flex gap-2 px-4 py-3 border-t border-border bg-white shrink-0">
+  <div class="flex gap-2 px-4 py-3 border-t-2 border-ink bg-[#eef7f2] shrink-0">
     <input
       v-model="newMessage"
       type="text"
       placeholder="메시지를 입력하세요"
-      class="flex-1 px-3.5 py-2.5 border border-border rounded-3xl text-sm outline-none focus:border-primary"
+      class="flex-1 px-4 py-2.5 border-2 border-[#c8bca8] rounded-2xl text-sm text-ink placeholder:text-[#c8bca8] outline-none focus:border-ink bg-white transition-colors"
       @keyup.enter="sendMessage"
     />
     <button
-      class="px-5 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-3xl text-sm font-semibold cursor-pointer transition-colors"
+      :disabled="!newMessage.trim()"
+      :class="[
+        'send-btn px-5 py-2.5 border-2 rounded-2xl text-sm font-bold transition-all',
+        newMessage.trim()
+          ? 'bg-[#ffe066] border-ink text-ink cursor-pointer shadow-[2px_2px_0_#1c1712]'
+          : 'bg-[#c8bca8] border-[#c8bca8] text-white cursor-not-allowed shadow-none',
+      ]"
       @click="sendMessage"
     >
       전송
     </button>
   </div>
 </template>
+
+<style scoped>
+.send-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 #1c1712;
+}
+.send-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+</style>

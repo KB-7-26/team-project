@@ -1,17 +1,20 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import ChatRoomCard from '@/components/chat/ChatRoomCard.vue'
 import { chatApi } from '@/api/chatApi'
 import { useChatStore } from '@/stores/chat'
 
+const route = useRoute()
 const chatStore = useChatStore()
 
+const activeChatRoomId = computed(() => Number(route.params.chatRoomId) || null)
 const searchQuery = ref('')
 const chatRooms = ref([])
 const isLoading = ref(false)
 const errorMessage = ref('')
 
-// 시간 포맷 함수: "2026-05-31T10:30:00" → "오전 10:30" or "어제" 등
 function formatTime(dateStr) {
   if (!dateStr) return ''
   const date = new Date(dateStr)
@@ -34,7 +37,6 @@ function formatTime(dateStr) {
   }
 }
 
-// 검색어로 필터링
 const filteredRooms = computed(() => {
   if (!searchQuery.value) return chatRooms.value
   return chatRooms.value.filter(room =>
@@ -63,53 +65,61 @@ async function loadChatRooms() {
   }
 }
 
-// unreadCount 바뀌면 목록 다시 로드 (markAsRead 후 자동 갱신)
 watch(() => chatStore.unreadCount, loadChatRooms)
-
 onMounted(loadChatRooms)
 </script>
 
 <template>
-  <div class="p-4">
-    <h1 class="text-xl font-bold text-text-main mb-4">채팅</h1>
-
-    <div class="flex items-center gap-2 bg-gray-100 border border-border rounded-xl px-3.5 py-2.5 mb-4">
-      <span class="text-base">🔍</span>
-      <input
-        v-model="searchQuery"
-        type="text"
-        placeholder="채팅 검색"
-        class="flex-1 bg-transparent border-none outline-none text-sm text-text-main"
-      />
-    </div>
-
-    <!-- 로딩 중 -->
-    <div v-if="isLoading" class="text-center text-text-sub text-sm py-10">
-      불러오는 중...
-    </div>
-
-    <!-- 에러 -->
-    <div v-else-if="errorMessage" class="text-center text-red-400 text-sm py-10">
-      {{ errorMessage }}
-    </div>
-
-    <!-- 채팅방 없을 때 -->
-    <div v-else-if="filteredRooms.length === 0" class="text-center text-text-sub text-sm py-10">
-      채팅방이 없습니다.
+  <div class="flex flex-col h-full">
+    <!-- 헤더 -->
+    <div class="px-5 pt-6 pb-4 border-b-2 border-[#c8bca8]">
+      <h1 class="font-bold text-xl text-ink mb-4">채팅 목록</h1>
+      <!-- 검색바 -->
+      <div class="flex items-center gap-2 bg-paper/60 border-2 border-[#c8bca8] rounded-xl px-3.5 py-2.5 focus-within:border-ink transition-colors">
+        <MagnifyingGlassIcon class="w-4 h-4 text-[#8c7e6e] shrink-0" />
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="이름이나 상품으로 검색"
+          class="flex-1 bg-transparent outline-none text-sm text-ink placeholder:text-[#c8bca8]"
+        />
+      </div>
     </div>
 
     <!-- 채팅방 목록 -->
-    <ChatRoomCard
-      v-else
-      v-for="room in filteredRooms"
-      :key="room.chatRoomId"
-      :productImage="room.productImage"
-      :opponentName="room.opponentName"
-      :lastMessageTime="room.lastMessageTime"
-      :productTitle="room.productTitle"
-      :lastMessage="room.lastMessage"
-      :unreadCount="room.unreadCount"
-      @click="$router.push(`/chats/${room.chatRoomId}`)"
-    />
+    <div class="flex-1 overflow-y-auto">
+      <!-- 로딩 -->
+      <div v-if="isLoading" class="flex flex-col items-center justify-center py-16 gap-2 text-[#8c7e6e]">
+        <span class="text-3xl animate-pulse">💬</span>
+        <p class="text-sm">불러오는 중...</p>
+      </div>
+
+      <!-- 에러 -->
+      <div v-else-if="errorMessage" class="text-center text-red-400 text-sm py-16 px-4">
+        {{ errorMessage }}
+      </div>
+
+      <!-- 비어있을 때 -->
+      <div v-else-if="filteredRooms.length === 0" class="flex flex-col items-center justify-center py-16 gap-2 text-[#8c7e6e]">
+        <span class="text-4xl opacity-40">✉️</span>
+        <p class="text-sm font-bold">채팅방이 없습니다</p>
+        <p class="text-xs">거래 상품 페이지에서 채팅을 시작해보세요</p>
+      </div>
+
+      <!-- 목록 -->
+      <ChatRoomCard
+        v-else
+        v-for="room in filteredRooms"
+        :key="room.chatRoomId"
+        :productImage="room.productImage"
+        :opponentName="room.opponentName"
+        :lastMessageTime="room.lastMessageTime"
+        :productTitle="room.productTitle"
+        :lastMessage="room.lastMessage"
+        :unreadCount="room.unreadCount"
+        :isActive="room.chatRoomId === activeChatRoomId"
+        @click="$router.push(`/chats/${room.chatRoomId}`)"
+      />
+    </div>
   </div>
 </template>

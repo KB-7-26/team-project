@@ -1,13 +1,12 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { CameraIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { productApi, categoryApi } from '@/api/productApi'
+import { conditions, useProductForm } from '@/composables/useProductForm'
 
 const router = useRouter()
 
-const images = ref([])
-const fileInput = ref(null)
 const isSubmitting = ref(false)
 const errorMessage = ref('')
 const categories = ref([])
@@ -22,57 +21,19 @@ const productForm = ref({
   description: '',
 })
 
-const conditions = [
-  { label: '새상품', value: 'NEW' },
-  { label: '중고', value: 'USED' },
-]
+const { images, fileInput, priceDisplay, toggleFree, addPrice, handleFileChange, removeImage } = useProductForm(productForm)
 
 onMounted(async () => {
   try {
     const res = await categoryApi.getCategories()
-categories.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
+    categories.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
   } catch (e) {
     console.error('카테고리 로드 실패:', e)
   }
 })
 
-const priceDisplay = computed({
-  get() {
-    if (productForm.value.isFree) return '0'
-    if (!productForm.value.price) return ''
-    return Number(productForm.value.price).toLocaleString('ko-KR')
-  },
-  set(val) {
-    productForm.value.price = val.replace(/[^0-9]/g, '')
-  },
-})
-
-function toggleFree() {
-  productForm.value.isFree = !productForm.value.isFree
-  if (productForm.value.isFree) productForm.value.price = '0'
-}
-
-function handleFileChange(event) {
-  const files = Array.from(event.target.files)
-  files.forEach((file) => {
-    if (images.value.length >= 10) return
-    images.value.push({ file, url: URL.createObjectURL(file) })
-  })
-  event.target.value = ''
-}
-
-function removeImage(index) {
-  URL.revokeObjectURL(images.value[index].url)
-  images.value.splice(index, 1)
-}
-
-function addPrice(amount) {
-  if (productForm.value.isFree) return
-  const current = Number(productForm.value.price) || 0
-  productForm.value.price = String(current + amount)
-}
-
 async function submitForm() {
+  if (isSubmitting.value) return
   if (!productForm.value.title.trim()) {
     errorMessage.value = '제목을 입력해주세요'
     return
@@ -114,7 +75,7 @@ async function submitForm() {
       await productApi.uploadImages(productId, formData)
     }
 
-    router.push(`/products/${productId}`)
+    router.replace(`/products/${productId}`)
   } catch (err) {
     console.error('등록 실패 상세:', err)
     console.error('응답 데이터:', err.response?.data)
@@ -127,69 +88,77 @@ async function submitForm() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-sub-bg">
+  <div class="min-h-screen bg-paper-dots">
+
     <!-- 페이지 헤더 -->
-    <div class="bg-yellow-50 px-4 py-10">
-      <div class="max-w-2xl mx-auto">
-        <h1 class="text-2xl font-bold text-text-main">상품 등록</h1>
-        <p class="text-sm text-text-sub mt-1">판매하실 상품 정보를 입력해주세요</p>
-      </div>
+    <div class="max-w-2xl mx-auto px-4 md:px-6 pt-10 pb-6">
+      <span class="inline-block -rotate-1 mb-4 px-3 py-0.5 text-sm text-[#8c7e6e] border-2 border-[#c8bca8] rounded-md">✏️ 새 상품 등록</span>
+      <h1 class="font-bold text-3xl text-ink leading-tight">판매 물품 등록</h1>
+      <p class="text-sm text-[#8c7e6e] mt-1">상품 정보를 꼼꼼하게 작성하면 더 빠르게 거래할 수 있어요</p>
     </div>
 
-    <div class="max-w-2xl mx-auto px-4 py-6">
-      <div class="flex flex-col gap-4">
+    <div class="max-w-2xl mx-auto px-4 md:px-6 pb-10">
+      <div class="flex flex-col gap-5">
+
         <!-- 섹션 1: 상품 사진 -->
-        <div class="bg-white border border-border rounded-2xl p-6">
-          <h2 class="text-base font-semibold text-text-main mb-4">상품 사진</h2>
+        <div class="form-card bg-white border-2 border-ink rounded-2xl p-6 shadow-[4px_4px_0_#1c1712]">
+          <h2 class="sec-title font-bold text-[17px] text-ink mb-5">상품 사진</h2>
           <div class="flex gap-3 flex-wrap">
             <div
               v-if="images.length < 10"
               @click="fileInput.click()"
-              class="w-24 h-24 border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-primary"
+              class="img-add-btn w-24 h-24 border-2 border-dashed border-[#c8bca8] rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-ink hover:bg-[#ffe066]/10 transition-all"
             >
-              <CameraIcon class="w-6 h-6 text-text-sub" />
-              <span class="text-xs text-text-sub">사진 추가</span>
-              <span class="text-xs text-text-sub">{{ images.length }}/10</span>
+              <CameraIcon class="w-6 h-6 text-[#8c7e6e]" />
+              <span class="text-xs text-[#8c7e6e] font-bold">사진 추가</span>
+              <span class="text-xs text-[#c8bca8]">{{ images.length }}/10</span>
             </div>
-            <div v-for="(img, index) in images" :key="index" class="relative w-24 h-24 rounded-xl overflow-hidden">
+            <div
+              v-for="(img, index) in images"
+              :key="index"
+              class="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-ink shadow-[2px_2px_0_#1c1712]"
+            >
               <img :src="img.url" class="w-full h-full object-cover" />
-              <button @click="removeImage(index)" class="absolute top-1 right-1 bg-black/60 rounded-full p-0.5">
-                <XMarkIcon class="w-3 h-3 text-white" />
+              <button
+                @click="removeImage(index)"
+                class="absolute top-1 right-1 bg-ink rounded-full p-0.5 hover:scale-110 transition-transform"
+              >
+                <XMarkIcon class="w-3 h-3 text-paper" />
               </button>
               <span
                 v-if="index === 0"
-                class="absolute bottom-0 left-0 right-0 text-center text-xs text-white bg-black/50 py-0.5"
+                class="absolute bottom-0 left-0 right-0 text-center text-xs font-bold text-paper bg-ink/80 py-0.5"
               >대표</span>
             </div>
             <input ref="fileInput" type="file" accept="image/*" multiple class="hidden" @change="handleFileChange" />
           </div>
-          <p class="text-xs text-text-sub mt-3">* 첫 번째 사진이 대표 사진으로 설정됩니다. (최대 10장)</p>
+          <p class="text-xs text-[#8c7e6e] mt-3">* 첫 번째 사진이 대표 사진으로 설정됩니다. (최대 10장)</p>
         </div>
 
         <!-- 섹션 2: 제목 -->
-        <div class="bg-white border border-border rounded-2xl p-6">
-          <h2 class="text-base font-semibold text-text-main mb-4">제목</h2>
+        <div class="form-card bg-white border-2 border-ink rounded-2xl p-6 shadow-[4px_4px_0_#1c1712]">
+          <h2 class="sec-title font-bold text-[17px] text-ink mb-5">제목</h2>
           <input
             v-model="productForm.title"
             type="text"
             placeholder="상품 제목을 입력해주세요"
-            class="w-full border border-border rounded-xl px-4 py-3 text-sm text-text-main placeholder:text-text-sub focus:outline-none focus:border-primary"
+            class="form-input w-full border-2 border-[#c8bca8] rounded-xl px-4 py-3 text-sm text-ink placeholder:text-[#c8bca8] focus:outline-none focus:border-ink transition-colors bg-paper/40"
           />
         </div>
 
         <!-- 섹션 3: 카테고리 -->
-        <div class="bg-white border border-border rounded-2xl p-6">
-          <h2 class="text-base font-semibold text-text-main mb-4">카테고리</h2>
+        <div class="form-card bg-white border-2 border-ink rounded-2xl p-6 shadow-[4px_4px_0_#1c1712]">
+          <h2 class="sec-title font-bold text-[17px] text-ink mb-5">카테고리</h2>
           <div class="flex flex-wrap gap-2">
             <button
               v-for="cat in categories"
               :key="cat.id"
               @click="productForm.categoryId = cat.id"
               :class="[
-                'px-3 py-1.5 rounded-lg text-sm border transition-colors',
+                'chip-btn px-3.5 py-1.5 rounded-lg text-sm font-bold border-2 transition-all',
                 productForm.categoryId === cat.id
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-white text-text-main border-border hover:border-primary'
+                  ? 'bg-[#ffe066] text-ink border-ink shadow-[2px_2px_0_#1c1712]'
+                  : 'bg-white text-[#8c7e6e] border-[#c8bca8] hover:border-ink hover:text-ink'
               ]"
             >
               {{ cat.name }}
@@ -198,18 +167,18 @@ async function submitForm() {
         </div>
 
         <!-- 섹션 4: 상태 -->
-        <div class="bg-white border border-border rounded-2xl p-6">
-          <h2 class="text-base font-semibold text-text-main mb-4">상태</h2>
-          <div class="flex gap-2 flex-wrap">
+        <div class="form-card bg-white border-2 border-ink rounded-2xl p-6 shadow-[4px_4px_0_#1c1712]">
+          <h2 class="sec-title font-bold text-[17px] text-ink mb-5">상태</h2>
+          <div class="flex gap-3 flex-wrap">
             <button
               v-for="cond in conditions"
               :key="cond.value"
               @click="productForm.productCondition = cond.value"
               :class="[
-                'px-4 py-1.5 rounded-lg text-sm border transition-colors',
+                'chip-btn px-5 py-2 rounded-lg text-sm font-bold border-2 transition-all',
                 productForm.productCondition === cond.value
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-white text-text-main border-border hover:border-primary'
+                  ? 'bg-[#ffe066] text-ink border-ink shadow-[2px_2px_0_#1c1712]'
+                  : 'bg-white text-[#8c7e6e] border-[#c8bca8] hover:border-ink hover:text-ink'
               ]"
             >
               {{ cond.label }}
@@ -217,32 +186,34 @@ async function submitForm() {
           </div>
         </div>
 
-        <!-- 섹션 4: 가격 -->
-        <div class="bg-white border border-border rounded-2xl p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-base font-semibold text-text-main">가격</h2>
+        <!-- 섹션 5: 가격 -->
+        <div class="form-card bg-white border-2 border-ink rounded-2xl p-6 shadow-[4px_4px_0_#1c1712]">
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="sec-title font-bold text-[17px] text-ink">가격</h2>
             <button
               type="button"
               @click="toggleFree"
               :class="[
-                'px-3 py-1 rounded-lg text-xs border transition-colors',
+                'chip-btn px-3.5 py-1 rounded-lg text-xs font-bold border-2 transition-all',
                 productForm.isFree
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-white text-text-main border-border hover:border-primary'
+                  ? 'bg-[#96d4b4] text-ink border-ink shadow-[2px_2px_0_#1c1712]'
+                  : 'bg-white text-[#8c7e6e] border-[#c8bca8] hover:border-ink hover:text-ink'
               ]"
             >무료나눔</button>
           </div>
-          <div class="flex items-center border border-border rounded-xl px-4 py-3 focus-within:border-primary"
-            :class="productForm.isFree ? 'bg-gray-50' : ''">
+          <div
+            class="flex items-center border-2 rounded-xl px-4 py-3 transition-colors"
+            :class="productForm.isFree ? 'bg-paper/60 border-[#c8bca8]' : 'border-[#c8bca8] focus-within:border-ink bg-paper/40'"
+          >
             <input
               v-model="priceDisplay"
               type="text"
               inputmode="numeric"
               placeholder="가격을 입력해주세요"
               :disabled="productForm.isFree"
-              class="flex-1 text-sm text-text-main placeholder:text-text-sub focus:outline-none disabled:text-text-sub bg-transparent"
+              class="flex-1 text-sm text-ink placeholder:text-[#c8bca8] focus:outline-none disabled:text-[#c8bca8] bg-transparent"
             />
-            <span class="text-sm text-text-sub ml-2">원</span>
+            <span class="text-sm font-bold text-[#8c7e6e] ml-2">원</span>
           </div>
           <div class="flex gap-2 mt-3">
             <button
@@ -250,55 +221,95 @@ async function submitForm() {
               :key="amount"
               @click="addPrice(amount)"
               :disabled="productForm.isFree"
-              class="flex-1 py-1.5 text-xs border border-border rounded-lg text-text-main hover:border-primary hover:text-primary disabled:opacity-40"
+              class="quick-btn flex-1 py-1.5 text-xs font-bold border-2 border-[#c8bca8] rounded-lg text-[#8c7e6e] hover:border-ink hover:text-ink hover:bg-[#ffe066]/30 disabled:opacity-30 transition-all"
             >
               +{{ amount.toLocaleString('ko-KR') }}
             </button>
           </div>
         </div>
 
-        <!-- 섹션 4-1: 거래 위치 -->
-        <div class="bg-white border border-border rounded-2xl p-6">
-          <h2 class="text-base font-semibold text-text-main mb-4">거래 위치</h2>
+        <!-- 섹션 6: 거래 위치 -->
+        <div class="form-card bg-white border-2 border-ink rounded-2xl p-6 shadow-[4px_4px_0_#1c1712]">
+          <h2 class="sec-title font-bold text-[17px] text-ink mb-5">거래 위치</h2>
           <input
             v-model="productForm.location"
             type="text"
             placeholder="예) 서울 강남구, 학교 정문 앞"
-            class="w-full border border-border rounded-xl px-4 py-3 text-sm text-text-main placeholder:text-text-sub focus:outline-none focus:border-primary"
+            class="form-input w-full border-2 border-[#c8bca8] rounded-xl px-4 py-3 text-sm text-ink placeholder:text-[#c8bca8] focus:outline-none focus:border-ink transition-colors bg-paper/40"
           />
         </div>
 
-        <!-- 섹션 5: 설명 -->
-        <div class="bg-white border border-border rounded-2xl p-6">
-          <h2 class="text-base font-semibold text-text-main mb-4">설명</h2>
+        <!-- 섹션 7: 설명 -->
+        <div class="form-card bg-white border-2 border-ink rounded-2xl p-6 shadow-[4px_4px_0_#1c1712]">
+          <h2 class="sec-title font-bold text-[17px] text-ink mb-5">설명</h2>
           <textarea
             v-model="productForm.description"
             placeholder="상품 설명을 입력해주세요&#10;&#10;· 상품 상태&#10;· 구매 시기&#10;· 하자 유무 등을 자세히 적어주세요"
             rows="7"
-            class="w-full border border-border rounded-xl px-4 py-3 text-sm text-text-main placeholder:text-text-sub focus:outline-none focus:border-primary resize-none"
+            class="form-input w-full border-2 border-[#c8bca8] rounded-xl px-4 py-3 text-sm text-ink placeholder:text-[#c8bca8] focus:outline-none focus:border-ink transition-colors resize-none bg-paper/40"
           />
-          <p class="text-xs text-text-sub mt-2">* 상품과 관련 없는 내용이나 허위 정보는 제재 대상입니다.</p>
+          <p class="text-xs text-[#8c7e6e] mt-2">* 상품과 관련 없는 내용이나 허위 정보는 제재 대상입니다.</p>
         </div>
 
         <!-- 에러 메시지 -->
-        <p v-if="errorMessage" class="text-sm text-red-500 text-center -mt-2">{{ errorMessage }}</p>
+        <p v-if="errorMessage" class="text-sm text-red-500 font-bold text-center -mt-2 border-2 border-red-300 bg-red-50 rounded-xl py-2 px-4">
+          ⚠️ {{ errorMessage }}
+        </p>
 
         <!-- 버튼 영역 -->
-        <div class="grid grid-cols-2 gap-4 pb-6">
+        <div class="grid grid-cols-2 gap-4 pb-4">
           <button
             type="button"
             :disabled="isSubmitting"
-            class="py-4 rounded-xl border border-border text-text-main font-semibold hover:bg-gray-50 disabled:opacity-50"
+            class="action-btn py-4 rounded-xl border-2 border-ink bg-white text-ink font-bold shadow-[3px_3px_0_#1c1712] hover:shadow-[4px_4px_0_#1c1712] disabled:opacity-50 transition-all"
             @click="router.back()"
           >취소</button>
           <button
             type="button"
             :disabled="isSubmitting"
-            class="py-4 rounded-xl bg-primary text-white font-semibold hover:bg-primary-hover disabled:opacity-50"
+            class="action-btn py-4 rounded-xl border-2 border-ink bg-[#ffe066] text-ink font-bold shadow-[3px_3px_0_#1c1712] hover:shadow-[4px_4px_0_#1c1712] disabled:opacity-50 transition-all"
             @click="submitForm"
-          >{{ isSubmitting ? '등록 중...' : '등록하기' }}</button>
+          >{{ isSubmitting ? '등록 중...' : '등록하기 ✓' }}</button>
         </div>
+
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.sec-title {
+  position: relative;
+  display: inline-block;
+}
+.sec-title::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #ffe066;
+  border-radius: 2px;
+}
+
+.chip-btn:hover {
+  transform: translate(-1px, -1px);
+}
+.chip-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: none !important;
+}
+
+.action-btn:hover {
+  transform: translate(-1px, -1px);
+}
+.action-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none !important;
+}
+
+.img-add-btn:active {
+  transform: scale(0.96);
+}
+</style>

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { productApi } from '@/api/productApi'
 import { chatApi } from '@/api/chatApi'
 import { useAuthStore } from '@/stores/auth'
+import { saleStatusMap } from '@/utils/product'
 import {
   HeartIcon,
   ShareIcon,
@@ -28,7 +29,6 @@ const isLoading = ref(true)
 const recentlyViewed = ref([])
 const showSoldConfirm = ref(false)
 
-const saleStatusMap = { available: '판매중', reserved: '거래중', sold: '거래완료' }
 const conditionMap = { NEW: '새상품', USED: '중고' }
 
 function timeAgo(dateString) {

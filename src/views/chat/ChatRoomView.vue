@@ -172,26 +172,32 @@ watch(chatRoomId, async () => {
   markAsReadAndUpdate()
 })
 
+function handleKeydown(e) {
+  if (e.key === 'Escape') router.push('/chats')
+}
+
 onMounted(async () => {
   await loadRoomInfo()
   await loadMessages()
   connectWebSocket()
   markAsReadAndUpdate()
+  window.addEventListener('keydown', handleKeydown)
 })
 
 onUnmounted(() => {
   stompClient.value?.deactivate()
+  window.removeEventListener('keydown', handleKeydown)
 })
 </script>
 
 <template>
   <div class="flex flex-col h-full">
     <!-- 모바일 헤더 -->
-    <div class="flex items-center px-4 py-3 border-b border-border bg-white shrink-0 md:hidden">
-      <button class="mr-3 cursor-pointer" @click="router.push('/chats')">
-        <ArrowLeftIcon class="w-5 h-5 text-text-main" />
+    <div class="flex items-center px-4 py-3 border-b-2 border-ink bg-[#eef7f2] shrink-0 md:hidden">
+      <button class="mr-3 cursor-pointer hover:opacity-70 transition-opacity" @click="router.push('/chats')">
+        <ArrowLeftIcon class="w-5 h-5 text-ink" />
       </button>
-      <span class="flex-1 text-center font-semibold text-text-main">{{ opponentName }}</span>
+      <span class="flex-1 text-center font-bold text-ink">{{ opponentName }}</span>
       <div class="w-5"></div>
     </div>
 
@@ -204,7 +210,7 @@ onUnmounted(() => {
 
     <!-- 메시지 목록 -->
     <div class="flex-1 relative overflow-hidden">
-      <div ref="messageListRef" class="h-full overflow-y-auto p-4 flex flex-col gap-3">
+      <div ref="messageListRef" class="h-full overflow-y-auto p-4 flex flex-col gap-3 bg-[#eef7f2]">
         <MessageBubble
           v-for="message in messages"
           :key="message.messageId"
@@ -219,7 +225,7 @@ onUnmounted(() => {
       <div
         v-if="showNewMessageBanner"
         @click="scrollToBottom"
-        class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-primary text-white text-sm font-semibold px-4 py-2 rounded-full shadow-lg cursor-pointer hover:bg-primary/90 transition flex items-center gap-2"
+        class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-[#ffe066] border-2 border-ink text-ink text-sm font-bold px-4 py-2 rounded-2xl shadow-[3px_3px_0_#1c1712] cursor-pointer hover:-translate-y-0.5 transition-all flex items-center gap-2"
       >
         <span>새 메시지가 있어요</span>
         <span>↓</span>
