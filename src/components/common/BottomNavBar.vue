@@ -1,8 +1,10 @@
 <script setup>
 import { HomeIcon, ShoppingBagIcon, ChatBubbleLeftRightIcon, ChatBubbleOvalLeftIcon, UserIcon } from '@heroicons/vue/24/outline'
 import { useRoute } from 'vue-router'
+import { useChatStore } from '@/stores/chat'
 
 const route = useRoute()
+const chatStore = useChatStore()
 
 const items = [
   { to: '/', icon: HomeIcon, label: '홈', match: (p) => p === '/' },
@@ -27,7 +29,13 @@ const items = [
             : 'text-[#8c7e6e] border-2 border-transparent hover:text-ink'
         "
       >
-        <component :is="item.icon" class="w-5 h-5" />
+        <div class="relative">
+          <component :is="item.icon" class="w-5 h-5" />
+          <span
+            v-if="item.to === '/chats' && chatStore.unreadCount > 0"
+            class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full border border-white"
+          />
+        </div>
         <span class="text-[10px] font-bold leading-none">{{ item.label }}</span>
       </RouterLink>
     </ul>

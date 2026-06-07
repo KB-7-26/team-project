@@ -46,7 +46,7 @@ const filteredRooms = computed(() => {
 })
 
 async function loadChatRooms() {
-  isLoading.value = true
+  if (chatRooms.value.length === 0) isLoading.value = true
   try {
     const { data } = await chatApi.getChatRooms()
     chatRooms.value = data.data.map(room => ({
