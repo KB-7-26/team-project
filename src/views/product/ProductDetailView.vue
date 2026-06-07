@@ -92,7 +92,7 @@ async function toggleStatus(status) {
 
 async function startChat() {
   const { data } = await chatApi.createChatRoom(product.value.id)
-  router.push(`/chats/${data.chatRoomId}`)
+  router.push(`/chats/${data.data.chatRoomId}`)
 }
 
 const toggleLike = async () => {
