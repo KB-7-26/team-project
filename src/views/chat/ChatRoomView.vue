@@ -22,7 +22,7 @@ const productInfo = ref({})
 const stompClient = ref(null)
 const messageListRef = ref(null)
 const showNewMessageBanner = ref(false)
-const opponentRead = ref(false) // 상대방이 읽었는지
+const opponentLastReadAt = ref(null)
 
 // 스크롤이 맨 아래에 있는지 확인
 function isAtBottom() {
@@ -43,7 +43,11 @@ async function scrollToBottom() {
 
 // 읽음 처리 + 네비바 뱃지 갱신
 async function markAsReadAndUpdate() {
-  await chatApi.markAsRead(chatRoomId.value).catch(() => {})
+  if (!chatRoomId.value) return
+  try {
+    const { data } = await chatApi.markAsRead(chatRoomId.value)
+    opponentLastReadAt.value = data.data?.opponentLastReadAt ?? null
+  } catch {}
   chatStore.fetchUnreadCount()
 }
 
@@ -77,15 +81,16 @@ function formatTime(dateStr) {
 
 // 이전 메시지 불러오기
 async function loadMessages() {
+  if (!chatRoomId.value) return
   try {
     const { data } = await chatApi.getMessages(chatRoomId.value)
-    opponentRead.value = false
     messages.value = data.data.map(msg => ({
       messageId: msg.messageId,
       senderId: msg.senderId,
       senderType: msg.senderId === myId.value ? 'me' : 'other',
       content: msg.content,
       createdAt: formatTime(msg.createdAt),
+      rawCreatedAt: msg.createdAt,
     }))
   } catch (e) {
     console.error('메시지 불러오기 실패', e)
@@ -121,11 +126,11 @@ async function connectWebSocket() {
       console.error('❌ STOMP 에러:', frame)
     },
     onConnect: () => {
-      // 읽음 이벤트 구독 - 상대방이 읽었을 때만 opponentRead = true
+      // 읽음 이벤트 구독 - 상대방이 읽으면 opponentLastReadAt 갱신
       client.subscribe(`/topic/chat/${chatRoomId.value}/read`, (frame) => {
-        const readerId = JSON.parse(frame.body)
+        const { readerId, readAt } = JSON.parse(frame.body)
         if (readerId !== myId.value) {
-          opponentRead.value = true
+          opponentLastReadAt.value = readAt
         }
       })
 
@@ -139,7 +144,9 @@ async function connectWebSocket() {
           senderType: isMyMessage ? 'me' : 'other',
           content: msg.content,
           createdAt: formatTime(msg.createdAt),
+          rawCreatedAt: msg.createdAt,
         })
+        chatStore.triggerListRefresh(chatRoomId.value, formatTime(msg.createdAt))
         // 상대방 메시지이고 현재 맨 아래에서 보고 있으면 즉시 읽음 처리
         if (!isMyMessage && isAtBottom()) {
           markAsReadAndUpdate()
@@ -150,6 +157,22 @@ async function connectWebSocket() {
 
   client.activate()
   stompClient.value = client
+}
+
+// 시간 표시 여부: 다음 메시지가 다른 사람이거나 다른 분이거나 마지막이면 표시
+function shouldShowTime(index) {
+  const current = messages.value[index]
+  const next = messages.value[index + 1]
+  if (!next) return true
+  return current.createdAt !== next.createdAt || current.senderId !== next.senderId
+}
+
+// 프로필 표시 여부: 이전 메시지가 다른 사람이거나 첫 메시지면 표시
+function shouldShowProfile(index) {
+  const current = messages.value[index]
+  const prev = messages.value[index - 1]
+  if (!prev) return true
+  return prev.senderId !== current.senderId
 }
 
 // 메시지 전송
@@ -212,12 +235,14 @@ onUnmounted(() => {
     <div class="flex-1 relative overflow-hidden">
       <div ref="messageListRef" class="h-full overflow-y-auto p-4 flex flex-col gap-3 bg-[#eef7f2]">
         <MessageBubble
-          v-for="message in messages"
+          v-for="(message, index) in messages"
           :key="message.messageId"
           :senderType="message.senderType"
           :content="message.content"
           :createdAt="message.createdAt"
-          :isRead="opponentRead"
+          :isUnread="message.senderType === 'me' && (opponentLastReadAt === null || message.rawCreatedAt > opponentLastReadAt)"
+          :showTime="shouldShowTime(index)"
+          :showProfile="shouldShowProfile(index)"
         />
       </div>
 

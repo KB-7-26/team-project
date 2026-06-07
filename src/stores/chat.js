@@ -4,6 +4,7 @@ import { chatApi } from '@/api/chatApi'
 
 export const useChatStore = defineStore('chat', () => {
   const unreadCount = ref(0)
+  const lastMessageEvent = ref(null) // { chatRoomId, time }
 
   async function fetchUnreadCount() {
     try {
@@ -18,5 +19,9 @@ export const useChatStore = defineStore('chat', () => {
     unreadCount.value = 0
   }
 
-  return { unreadCount, fetchUnreadCount, clearUnread }
+  function triggerListRefresh(chatRoomId, time) {
+    lastMessageEvent.value = { chatRoomId, time }
+  }
+
+  return { unreadCount, lastMessageEvent, fetchUnreadCount, clearUnread, triggerListRefresh }
 })

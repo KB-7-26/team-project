@@ -142,7 +142,9 @@ const visiblePages = computed(() => {
         <p class="font-bold text-3xl text-ink mb-4">중고 거래</p>
         <div class="flex gap-2">
           <!-- 검색바 -->
-          <div class="flex-1 flex items-center bg-white rounded-xl border-2 border-ink px-3 gap-2 shadow-[3px_3px_0_#1c1712]">
+          <div
+            class="flex-1 flex items-center bg-white rounded-xl border-2 border-ink px-3 gap-2 shadow-[3px_3px_0_#1c1712]"
+          >
             <MagnifyingGlassIcon class="w-5 h-5 text-[#8c7e6e] shrink-0" />
             <input
               v-model="searchQuery"
@@ -186,7 +188,11 @@ const visiblePages = computed(() => {
         v-for="category in categories"
         :key="category.id"
         @click="selectedCategoryId = category.id"
-        :class="selectedCategoryId === category.id ? 'bg-primary text-white border-ink shadow-[2px_2px_0_#1c1712]' : 'bg-white text-ink border-[#c8bca8] hover:border-ink'"
+        :class="
+          selectedCategoryId === category.id
+            ? 'bg-primary text-white border-ink shadow-[2px_2px_0_#1c1712]'
+            : 'bg-white text-ink border-[#c8bca8] hover:border-ink'
+        "
         class="shrink-0 px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-all border-2"
       >
         {{ category.name }}
@@ -196,7 +202,9 @@ const visiblePages = computed(() => {
     <!-- 본문 -->
     <div class="flex w-full mx-auto items-start px-4 md:px-6 py-6 md:py-8 gap-6">
       <!-- PC 사이드바 -->
-      <div class="hidden md:block border-2 border-ink rounded-2xl p-4 w-56 shrink-0 sticky top-20 self-start bg-white shadow-[4px_4px_0_#1c1712]">
+      <div
+        class="hidden md:block border-2 border-ink rounded-2xl p-4 w-56 shrink-0 sticky top-20 self-start bg-white shadow-[4px_4px_0_#1c1712]"
+      >
         <p class="font-bold text-lg text-ink px-4 pt-4 pb-2">카테고리</p>
         <!-- 판매완료 포함 토글 -->
         <div class="flex items-center justify-between px-4 py-2">
@@ -251,12 +259,16 @@ const visiblePages = computed(() => {
             @click="currentPage = Math.max(1, currentPage - 5)"
             :disabled="currentPage <= 1"
             class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all"
-          >«</button>
+          >
+            «
+          </button>
           <button
             @click="currentPage = Math.max(1, currentPage - 1)"
             :disabled="currentPage <= 1"
             class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all"
-          >‹</button>
+          >
+            ‹
+          </button>
           <button
             v-for="page in visiblePages"
             :key="page"
@@ -267,17 +279,23 @@ const visiblePages = computed(() => {
                 : 'bg-white border-[#c8bca8] text-ink hover:border-ink hover:shadow-[2px_2px_0_#1c1712]'
             "
             class="min-w-8 h-8 md:min-w-9 md:h-9 px-2 rounded-xl font-bold text-sm border-2 transition-all"
-          >{{ page }}</button>
+          >
+            {{ page }}
+          </button>
           <button
             @click="currentPage = Math.min(totalPages, currentPage + 1)"
             :disabled="currentPage >= totalPages"
             class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all"
-          >›</button>
+          >
+            ›
+          </button>
           <button
             @click="currentPage = Math.min(totalPages, currentPage + 5)"
             :disabled="currentPage >= totalPages"
             class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all"
-          >»</button>
+          >
+            »
+          </button>
         </div>
       </div>
     </div>
@@ -285,11 +303,24 @@ const visiblePages = computed(() => {
 </template>
 
 <style scoped>
-.sort-btn:active { transform: translate(2px, 2px); box-shadow: none; }
+.sort-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
 
-.product-grid > *:nth-child(4n + 1) { transform: rotate(-0.8deg); }
-.product-grid > *:nth-child(4n + 2) { transform: rotate(0.6deg); }
-.product-grid > *:nth-child(4n + 3) { transform: rotate(-0.4deg); }
-.product-grid > *:nth-child(4n + 4) { transform: rotate(1deg); }
-.product-grid > *:hover { transform: translateY(-6px) rotate(0deg); }
+.product-grid > *:nth-child(4n + 1) {
+  transform: rotate(-0.8deg);
+}
+.product-grid > *:nth-child(4n + 2) {
+  transform: rotate(0.6deg);
+}
+.product-grid > *:nth-child(4n + 3) {
+  transform: rotate(-0.4deg);
+}
+.product-grid > *:nth-child(4n + 4) {
+  transform: rotate(1deg);
+}
+.product-grid > *:hover {
+  transform: translateY(-6px) rotate(0deg);
+}
 </style>

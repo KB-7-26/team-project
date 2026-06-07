@@ -46,7 +46,7 @@ const filteredRooms = computed(() => {
 })
 
 async function loadChatRooms() {
-  isLoading.value = true
+  if (chatRooms.value.length === 0) isLoading.value = true
   try {
     const { data } = await chatApi.getChatRooms()
     chatRooms.value = data.data.map(room => ({
@@ -66,6 +66,14 @@ async function loadChatRooms() {
 }
 
 watch(() => chatStore.unreadCount, loadChatRooms)
+watch(() => chatStore.lastMessageEvent, (event) => {
+  if (!event) return
+  const idx = chatRooms.value.findIndex(r => r.chatRoomId === event.chatRoomId)
+  if (idx === -1) return
+  const [room] = chatRooms.value.splice(idx, 1)
+  room.lastMessageTime = event.time
+  chatRooms.value.unshift(room)
+}, { deep: true })
 onMounted(loadChatRooms)
 </script>
 
