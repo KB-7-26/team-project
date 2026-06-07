@@ -51,7 +51,7 @@ onMounted(async () => {
         <span class="hl-word">낙서장</span>
       </h1>
 
-      <p class="text-lg text-[#8c7e6e] mb-9">학생 인증으로 더 믿을 수 있는 거래 환경을 만들어요 ✌️</p>
+      <p class="text-lg text-[#8c7e6e] mb-9">다 같이 믿을 수 있는 거래 환경을 만들어요 ✌️</p>
 
       <div
         class="flex items-center bg-white border-2 border-ink rounded-xl px-4 py-1.5 max-w-140 shadow-[4px_4px_0_#1c1712] gap-2.5"
