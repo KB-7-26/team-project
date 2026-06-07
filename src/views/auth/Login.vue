@@ -127,7 +127,7 @@ const googleLoginHandler = async () => {
         <!-- 타이틀 -->
         <div class="mb-7">
           <h1 class="font-sketch text-5xl font-black text-ink leading-none">낙서장</h1>
-          <div class="w-20 h-2.5 bg-[#ffe066]/85 mt-1 mb-2.5 rounded-sm"></div>
+          <div class="w-32 h-2.5 bg-[#ffe066]/85 mt-1 mb-2.5 rounded-sm"></div>
           <p class="text-[11px] font-bold text-ink/50">캠퍼스 중고거래 플랫폼</p>
         </div>
 
