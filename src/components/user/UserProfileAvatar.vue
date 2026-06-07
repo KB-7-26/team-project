@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
   AcademicCapIcon,
   CalendarDaysIcon,
@@ -89,6 +89,10 @@ const closeProfile = () => {
   reportStatus.value = 'idle'
 }
 
+const handleKeydown = (e) => { if (e.key === 'Escape' && isOpen.value) closeProfile() }
+onMounted(() => window.addEventListener('keydown', handleKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
+
 const handleReportClick = () => {
   if (!props.userId) return
 
@@ -123,6 +127,8 @@ const openProfile = async () => {
     isLoading.value = false
   }
 }
+
+defineExpose({ openProfile })
 </script>
 
 <template>
