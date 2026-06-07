@@ -6,6 +6,7 @@ import {
   CalendarDaysIcon,
   CameraIcon,
   ChatBubbleOvalLeftIcon,
+  ChevronDownIcon,
   Cog6ToothIcon,
   CubeIcon,
   EnvelopeIcon,
@@ -34,6 +35,7 @@ defineOptions({
 const authStore = useAuthStore()
 const router = useRouter()
 const selectedMenu = ref('profile')
+const isMobileMenuOpen = ref(false)
 const selectedSaleStatus = ref('all')
 const likedIds = ref(new Set())
 const isProfileEditModalOpen = ref(false)
@@ -61,12 +63,12 @@ const myFavoriteProducts = ref([])
 const isFavoritesLoading = ref(false)
 const favoritesError = ref('')
 const profileImageInput = ref(null)
+const profileEditImageFile = ref(null)
+const isProfileImageRemoved = ref(false)
 const profileEditImagePreview = ref('')
 const profileEditObjectUrl = ref('')
 const profileEditForm = ref({
   nickname: '',
-  cohort: '',
-  gender: '',
 })
 
 const currentUser = computed(() => authStore.user)
@@ -198,6 +200,10 @@ const activeMenu = computed(() => menuItems.value.find((item) => item.id === sel
 const isBoardActivityMenu = computed(() => boardActivityMenuIds.includes(selectedMenu.value))
 const boardActivityDescription = computed(() => boardActivityDescriptions[selectedMenu.value] || '')
 const boardActivityEmptyMessage = computed(() => boardActivityEmptyMessages[selectedMenu.value] || '표시할 글이 없습니다')
+const selectMenu = (menuId) => {
+  selectedMenu.value = menuId
+  isMobileMenuOpen.value = false
+}
 const mapProductListItem = (product) => ({
   id: product.id,
   title: product.title,
@@ -405,11 +411,11 @@ const fetchMyFavoriteProducts = async () => {
 const openProfileEditModal = () => {
   profileEditForm.value = {
     nickname: profileData.value.nickname,
-    cohort: profileData.value.cohort,
-    gender: profileData.value.gender,
   }
   profileEditError.value = ''
   profileEditSuccess.value = ''
+  profileEditImageFile.value = null
+  isProfileImageRemoved.value = false
   resetProfileEditObjectUrl()
   profileEditImagePreview.value = profileData.value.profileImageUrl
   isProfileEditModalOpen.value = true
@@ -419,6 +425,8 @@ const closeProfileEditModal = () => {
   if (isProfileSaving.value) return
 
   resetProfileEditObjectUrl()
+  profileEditImageFile.value = null
+  isProfileImageRemoved.value = false
   isProfileEditModalOpen.value = false
 }
 
@@ -438,12 +446,16 @@ const handleProfileImageChange = (event) => {
   if (!file) return
 
   resetProfileEditObjectUrl()
+  profileEditImageFile.value = file
+  isProfileImageRemoved.value = false
   profileEditObjectUrl.value = URL.createObjectURL(file)
   profileEditImagePreview.value = profileEditObjectUrl.value
 }
 
 const removeProfileImagePreview = () => {
   resetProfileEditObjectUrl()
+  profileEditImageFile.value = null
+  isProfileImageRemoved.value = Boolean(profileData.value.profileImageUrl)
   profileEditImagePreview.value = ''
 
   if (profileImageInput.value) {
@@ -454,14 +466,6 @@ const removeProfileImagePreview = () => {
 const validateProfileEditForm = () => {
   if (!profileEditForm.value.nickname.trim()) {
     return '닉네임을 입력해주세요.'
-  }
-
-  if (!profileEditForm.value.cohort.trim()) {
-    return '회차를 입력해주세요.'
-  }
-
-  if (!['M', 'F'].includes(profileEditForm.value.gender)) {
-    return '성별을 선택해주세요.'
   }
 
   return ''
@@ -476,14 +480,26 @@ const saveProfileEdit = async () => {
 
   isProfileSaving.value = true
   try {
+    let profileResponse
     const { data } = await userProfileApi.updateMyProfile({
       nickname: profileEditForm.value.nickname.trim(),
-      cohort: profileEditForm.value.cohort.trim(),
-      gender: profileEditForm.value.gender,
     })
+    profileResponse = data.data
 
-    applyProfileResponse(data.data)
+    if (profileEditImageFile.value) {
+      const formData = new FormData()
+      formData.append('image', profileEditImageFile.value)
+      const { data: imageData } = await userProfileApi.uploadProfileImage(formData)
+      profileResponse = imageData.data
+    } else if (isProfileImageRemoved.value) {
+      const { data: imageData } = await userProfileApi.deleteProfileImage()
+      profileResponse = imageData.data
+    }
+
+    applyProfileResponse(profileResponse)
     profileEditSuccess.value = data.message || '프로필이 수정되었습니다.'
+    profileEditImageFile.value = null
+    isProfileImageRemoved.value = false
     resetProfileEditObjectUrl()
     isProfileEditModalOpen.value = false
   } catch (error) {
@@ -537,8 +553,56 @@ watch(selectedSaleStatus, () => {
 
   <main class="bg-sub-bg px-6 py-8 md:py-10">
     <div class="mx-auto flex max-w-7xl flex-col gap-8 lg:flex-row">
-      <aside class="flex w-full flex-col gap-6 lg:w-80 lg:shrink-0">
-        <nav class="rounded-2xl border border-border bg-white p-4 shadow-sm">
+      <aside class="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0 lg:gap-6">
+        <div class="relative lg:hidden">
+          <button
+            type="button"
+            class="flex h-14 w-full items-center justify-between rounded-2xl border border-border bg-white px-4 text-base font-extrabold text-text-main shadow-sm"
+            @click="isMobileMenuOpen = !isMobileMenuOpen"
+          >
+            <span class="flex min-w-0 items-center gap-3">
+              <component :is="activeMenu.icon" class="h-5 w-5 shrink-0 text-primary" />
+              <span class="truncate">{{ activeMenu.label }}</span>
+            </span>
+            <ChevronDownIcon
+              class="h-5 w-5 shrink-0 text-text-sub transition"
+              :class="isMobileMenuOpen ? 'rotate-180' : ''"
+            />
+          </button>
+
+          <nav
+            v-if="isMobileMenuOpen"
+            class="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-2xl border border-border bg-white p-3 shadow-xl"
+          >
+            <div
+              v-for="(section, sectionIndex) in menuSections"
+              :key="section.id"
+              class="border-border pt-3 first:pt-0"
+              :class="sectionIndex === 0 ? '' : 'mt-3 border-t'"
+            >
+              <p v-if="section.title" class="px-3 pb-1.5 text-xs font-extrabold text-text-sub">
+                {{ section.title }}
+              </p>
+              <button
+                v-for="item in section.items"
+                :key="item.id"
+                type="button"
+                class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold transition"
+                :class="
+                  selectedMenu === item.id
+                    ? 'bg-primary text-white'
+                    : 'text-text-main hover:bg-primary/10 hover:text-primary'
+                "
+                @click="selectMenu(item.id)"
+              >
+                <component :is="item.icon" class="h-5 w-5" />
+                {{ item.label }}
+              </button>
+            </div>
+          </nav>
+        </div>
+
+        <nav class="hidden rounded-2xl border border-border bg-white p-4 shadow-sm lg:block">
           <div
             v-for="(section, sectionIndex) in menuSections"
             :key="section.id"
@@ -558,7 +622,7 @@ watch(selectedSaleStatus, () => {
                   ? 'bg-primary text-white'
                   : 'text-text-main hover:bg-primary/10 hover:text-primary'
               "
-              @click="selectedMenu = item.id"
+              @click="selectMenu(item.id)"
             >
               <component :is="item.icon" class="h-6 w-6" />
               {{ item.label }}
@@ -571,69 +635,82 @@ watch(selectedSaleStatus, () => {
         <div v-if="selectedMenu === 'profile'" class="flex flex-col gap-6">
           <section class="overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
             <div class="px-6 py-7 md:px-8">
-              <div>
-                <h2 class="text-3xl font-extrabold text-text-main">내 프로필</h2>
-                <p class="mt-3 max-w-2xl text-sm font-medium leading-6 text-text-sub">
-                  계정과 거래 프로필에 표시될 정보를 확인합니다.
-                </p>
+              <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 class="text-3xl font-extrabold text-text-main">내 프로필</h2>
+                  <p class="mt-3 max-w-2xl text-sm font-medium leading-6 text-text-sub">
+                    계정과 거래 프로필에 표시될 정보를 확인합니다.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="hidden h-11 items-center justify-center gap-2 rounded-xl bg-text-main px-5 text-sm font-extrabold text-white transition hover:bg-text-hover sm:inline-flex"
+                  @click="openProfileEditModal"
+                >
+                  <PencilSquareIcon class="h-5 w-5" />
+                  수정하기
+                </button>
               </div>
 
-              <div class="mt-8 flex flex-col gap-6 rounded-2xl bg-sub-bg p-5 sm:flex-row sm:items-center">
-                <img
-                  v-if="profileImageUrl"
-                  :src="profileImageUrl"
-                  :alt="`${profile.nickname} 프로필 이미지`"
-                  class="h-24 w-24 rounded-full border-4 border-white object-cover shadow-sm"
-                />
-                <div
-                  v-else
-                  class="flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-primary/10 shadow-sm"
-                >
-                  <UserCircleIcon class="h-14 w-14 text-primary" />
-                </div>
+              <div class="mt-8 rounded-2xl bg-sub-bg p-5">
+                <div class="flex items-center gap-4 sm:gap-6">
+                  <img
+                    v-if="profileImageUrl"
+                    :src="profileImageUrl"
+                    :alt="`${profile.nickname} 프로필 이미지`"
+                    class="h-24 w-24 shrink-0 rounded-full border-4 border-white object-cover shadow-sm"
+                  />
+                  <div
+                    v-else
+                    class="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-4 border-white bg-primary/10 shadow-sm"
+                  >
+                    <UserCircleIcon class="h-14 w-14 text-primary" />
+                  </div>
 
-                <div class="min-w-0 flex-1">
-                  <div class="flex flex-col gap-4">
-                    <div class="flex shrink-0 flex-wrap items-center gap-2">
-                      <h3 class="text-2xl font-extrabold text-text-main">{{ profile.nickname }}</h3>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex min-w-0 flex-wrap items-center gap-2">
+                      <h3 class="min-w-0 max-w-full break-words text-xl font-extrabold leading-tight text-text-main sm:text-2xl">
+                        {{ profile.nickname }}
+                      </h3>
                       <span class="rounded-full bg-white px-3 py-1 text-xs font-extrabold text-primary">
                         {{ profile.cohort }}
                       </span>
                     </div>
-
-                    <div class="grid w-full grid-cols-2 gap-2 lg:grid-cols-4">
-                      <div
-                        v-for="stat in profileStats"
-                        :key="stat.label"
-                        class="flex min-h-14 items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm"
-                      >
-                        <div class="flex min-w-0 items-center gap-1.5">
-                          <component :is="stat.icon" class="h-4 w-4 shrink-0 text-primary" />
-                          <p class="truncate text-xs font-bold text-text-sub">{{ stat.label }}</p>
-                        </div>
-                        <p class="shrink-0 text-lg font-extrabold leading-none text-text-main">{{ stat.value }}</p>
-                      </div>
-                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </section>
 
-          <section class="rounded-2xl border border-border bg-white p-6 shadow-sm md:p-8">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h3 class="text-xl font-extrabold text-text-main">기본 정보</h3>
-                <p class="mt-2 text-sm font-medium text-text-sub">프로필 화면에 항상 노출되는 정보입니다</p>
+                <div class="mt-5 grid w-full grid-cols-2 gap-2 lg:grid-cols-4">
+                  <div
+                    v-for="stat in profileStats"
+                    :key="stat.label"
+                    class="flex min-h-14 items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm"
+                  >
+                    <div class="flex min-w-0 items-center gap-1.5">
+                      <component :is="stat.icon" class="h-4 w-4 shrink-0 text-primary" />
+                      <p class="truncate text-xs font-bold text-text-sub">{{ stat.label }}</p>
+                    </div>
+                    <p class="shrink-0 text-lg font-extrabold leading-none text-text-main">{{ stat.value }}</p>
+                  </div>
+                </div>
+
               </div>
               <button
                 type="button"
-                class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-text-main px-5 text-sm font-extrabold text-white transition hover:bg-text-hover"
+                class="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-text-main px-5 text-sm font-extrabold text-white transition hover:bg-text-hover sm:hidden"
                 @click="openProfileEditModal"
               >
                 <PencilSquareIcon class="h-5 w-5" />
                 수정하기
               </button>
+            </div>
+          </section>
+
+          <section class="rounded-2xl border border-border bg-white p-6 shadow-sm md:p-8">
+            <div>
+              <div>
+                <h3 class="text-xl font-extrabold text-text-main">기본 정보</h3>
+                <p class="mt-2 text-sm font-medium text-text-sub">프로필 화면에 항상 노출되는 정보입니다</p>
+              </div>
             </div>
 
             <dl class="mt-6 flex flex-col gap-3">
@@ -877,7 +954,7 @@ watch(selectedSaleStatus, () => {
       <div class="flex items-center justify-between gap-4 border-b border-border px-6 py-5">
         <div>
           <h2 class="text-xl font-extrabold text-text-main">프로필 수정</h2>
-          <p class="mt-1 text-sm font-medium text-text-sub">프로필 사진을 제외한 기본 정보를 수정합니다</p>
+          <p class="mt-1 text-sm font-medium text-text-sub">프로필 사진과 닉네임을 수정합니다</p>
         </div>
         <button
           type="button"
@@ -920,9 +997,6 @@ watch(selectedSaleStatus, () => {
             <TrashIcon class="h-4 w-4" />
             사진 삭제
           </button>
-          <p class="mt-3 text-xs font-medium text-text-sub">
-            프로필 사진 변경은 이미지 업로드 기능이 연결된 뒤 저장됩니다.
-          </p>
           <input
             ref="profileImageInput"
             type="file"
@@ -940,24 +1014,6 @@ watch(selectedSaleStatus, () => {
               type="text"
               class="mt-2 h-12 w-full rounded-xl border border-border px-4 text-sm font-bold text-text-main outline-none focus:border-primary"
             />
-          </label>
-          <label class="block">
-            <span class="text-sm font-bold text-text-sub">회차</span>
-            <input
-              v-model="profileEditForm.cohort"
-              type="text"
-              class="mt-2 h-12 w-full rounded-xl border border-border px-4 text-sm font-bold text-text-main outline-none focus:border-primary"
-            />
-          </label>
-          <label class="block">
-            <span class="text-sm font-bold text-text-sub">성별</span>
-            <select
-              v-model="profileEditForm.gender"
-              class="mt-2 h-12 w-full rounded-xl border border-border bg-white px-4 text-sm font-bold text-text-main outline-none focus:border-primary"
-            >
-              <option value="M">남성</option>
-              <option value="F">여성</option>
-            </select>
           </label>
 
           <p
