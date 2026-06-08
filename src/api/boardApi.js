@@ -49,4 +49,12 @@ export const boardApi = {
     const response = await api.post(`${BASE_URL}/${postId}/comments/${commentId}/likes`)
     return unwrapData(response)
   },
+  async getPopularPosts(limit = 5) {
+    const response = await api.get(`${BASE_URL}/popular`, { params: { limit } })
+    return unwrapData(response)
+  },
+  async getMostViewedPosts(limit = 5) {
+    const response = await api.get(`${BASE_URL}/most-viewed`, { params: { limit } })
+    return unwrapData(response)
+  },
 }
