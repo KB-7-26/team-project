@@ -1,5 +1,5 @@
 <script setup>
-import { EyeIcon } from '@heroicons/vue/24/outline'
+import { EyeIcon, ChatBubbleLeftIcon, HeartIcon } from '@heroicons/vue/24/outline'
 import { formatDate } from '@/utils/formatDate'
 
 defineProps({
@@ -16,10 +16,20 @@ defineProps({
     <div class="flex items-center gap-3 text-xs text-text-sub mt-1">
       <span class="font-medium text-primary">{{ post.displayName }}</span>
       <span>{{ formatDate(post.createdAt) }}</span>
-      <span class="flex items-center gap-1 ml-auto">
-        <EyeIcon class="w-3.5 h-3.5" />
-        {{ post.viewCount }}
-      </span>
+      <div class="flex items-center gap-3 ml-auto">
+        <span class="flex items-center gap-1">
+          <ChatBubbleLeftIcon class="w-3.5 h-3.5" />
+          {{ post.commentCount ?? 0 }}
+        </span>
+        <span class="flex items-center gap-1">
+          <HeartIcon class="w-3.5 h-3.5" />
+          {{ post.likeCount ?? 0 }}
+        </span>
+        <span class="flex items-center gap-1">
+          <EyeIcon class="w-3.5 h-3.5" />
+          {{ post.viewCount }}
+        </span>
+      </div>
     </div>
   </RouterLink>
 </template>

@@ -24,14 +24,13 @@ const { isLoading: isSubmitting, error: submitError, request } = useApiRequest()
 const { isLoading: isSubmittingReply, request: requestReply } = useApiRequest()
 const toast = useToastStore()
 
-// commentLikes: { [commentId]: { liked, likeCount } } — WK-66에서 백엔드 응답에 포함되면 대체 예정
 const commentLikes = ref({})
 
 const initCommentLikes = (list) => {
   list.forEach((c) => {
-    commentLikes.value[c.id] = { liked: false, likeCount: 0 }
+    commentLikes.value[c.id] = { liked: c.liked ?? false, likeCount: c.likeCount ?? 0 }
     c.replies?.forEach((r) => {
-      commentLikes.value[r.id] = { liked: false, likeCount: 0 }
+      commentLikes.value[r.id] = { liked: r.liked ?? false, likeCount: r.likeCount ?? 0 }
     })
   })
 }
