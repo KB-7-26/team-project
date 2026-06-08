@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { PencilSquareIcon } from '@heroicons/vue/24/outline'
+import { ref, computed, onMounted } from 'vue'
+import { MagnifyingGlassIcon, PencilSquareIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 import BoardPostCard from '@/components/board/BoardPostCard.vue'
 import { boardApi } from '@/api/boardApi'
 
@@ -8,16 +8,31 @@ const posts = ref([])
 const currentPage = ref(0)
 const totalPages = ref(0)
 
+const keyword = ref('')
+const searchInput = ref('')
+const searchType = ref('title')
+
 const activeTab = ref('hot')
 const popularPosts = ref([])
 const mostViewedPosts = ref([])
 const rankingLoading = ref(true)
 
 async function fetchPosts(page = 0) {
-  const pageData = await boardApi.getPosts(page, 10)
+  const pageData = await boardApi.getPosts(page, 10, keyword.value || null, searchType.value)
   posts.value = pageData.content
   totalPages.value = pageData.totalPages
   currentPage.value = page
+}
+
+function search() {
+  keyword.value = searchInput.value.trim()
+  fetchPosts(0)
+}
+
+function clearSearch() {
+  searchInput.value = ''
+  keyword.value = ''
+  fetchPosts(0)
 }
 
 async function fetchRanking() {
@@ -31,6 +46,29 @@ async function fetchRanking() {
   } finally {
     rankingLoading.value = false
   }
+}
+
+// 현재 페이지가 속한 블록 (블록 크기 5)
+const currentBlock = computed(() => Math.floor(currentPage.value / 5))
+
+// 현재 블록에 해당하는 페이지 번호 목록
+const visiblePages = computed(() => {
+  const start = currentBlock.value * 5
+  const end = Math.min(start + 4, totalPages.value - 1)
+  const pages = []
+  for (let i = start; i <= end; i++) pages.push(i)
+  return pages
+})
+
+const hasPrevBlock = computed(() => currentBlock.value > 0)
+const hasNextBlock = computed(() => (currentBlock.value + 1) * 5 < totalPages.value)
+
+function goToPrevBlock() {
+  fetchPosts((currentBlock.value - 1) * 5)
+}
+
+function goToNextBlock() {
+  fetchPosts((currentBlock.value + 1) * 5)
 }
 
 onMounted(() => {
@@ -113,15 +151,59 @@ onMounted(() => {
         </template>
       </div>
 
-      <div class="flex justify-end mb-4">
+      <!-- 검색 + 글쓰기 -->
+      <div class="flex items-center gap-2 mb-4">
+        <div class="flex border border-border rounded-xl overflow-hidden text-sm shrink-0">
+          <button
+            @click="searchType = 'title'"
+            class="px-3 py-2 transition-colors cursor-pointer"
+            :class="searchType === 'title' ? 'bg-primary text-white font-semibold' : 'text-text-sub hover:text-text-main'"
+          >
+            제목
+          </button>
+          <button
+            @click="searchType = 'all'"
+            class="px-3 py-2 transition-colors cursor-pointer"
+            :class="searchType === 'all' ? 'bg-primary text-white font-semibold' : 'text-text-sub hover:text-text-main'"
+          >
+            제목+내용
+          </button>
+        </div>
+        <div class="flex flex-1 items-center border border-border rounded-xl overflow-hidden">
+          <input
+            v-model="searchInput"
+            @keyup.enter="search"
+            type="text"
+            placeholder="검색어를 입력하세요"
+            class="flex-1 px-4 py-2 text-sm text-text-main outline-none"
+          />
+          <button
+            v-if="searchInput"
+            @click="clearSearch"
+            class="px-3 text-text-sub hover:text-text-main text-sm cursor-pointer"
+          >
+            ✕
+          </button>
+          <button
+            @click="search"
+            class="px-3 py-2 text-text-sub hover:text-primary transition-colors cursor-pointer"
+          >
+            <MagnifyingGlassIcon class="w-4 h-4" />
+          </button>
+        </div>
         <RouterLink
           to="/board/write"
-          class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors duration-200"
+          class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors duration-200 shrink-0"
         >
           <PencilSquareIcon class="w-4 h-4" />
           글쓰기
         </RouterLink>
       </div>
+
+      <!-- 검색 중 안내 -->
+      <p v-if="keyword" class="text-xs text-text-sub mb-3">
+        "<span class="font-semibold text-text-main">{{ keyword }}</span>" 검색 결과
+      </p>
 
       <ul v-if="posts.length > 0" class="flex flex-col divide-y divide-border">
         <li v-for="post in posts" :key="post.id">
@@ -129,21 +211,34 @@ onMounted(() => {
         </li>
       </ul>
 
-      <p v-else class="text-center text-text-sub py-16">아직 게시글이 없습니다.</p>
+      <p v-else class="text-center text-text-sub py-16">
+        {{ keyword ? '검색 결과가 없습니다.' : '아직 게시글이 없습니다.' }}
+      </p>
 
-      <div v-if="totalPages > 1" class="flex justify-center items-center gap-2 mt-8 mb-4">
+      <!-- 페이지네이션 -->
+      <div v-if="totalPages > 1" class="flex justify-center items-center gap-1.5 mt-8 mb-4">
         <button
-          v-for="page in totalPages"
-          :key="page"
-          @click="fetchPosts(page - 1)"
-          :class="
-            currentPage === page - 1
-              ? 'bg-primary text-white'
-              : 'border border-border text-text-main hover:bg-primary/10'
-          "
-          class="w-10 h-10 rounded-xl font-semibold text-sm transition-colors duration-200"
+          v-if="hasPrevBlock"
+          @click="goToPrevBlock"
+          class="w-9 h-9 flex items-center justify-center border border-border rounded-xl text-text-sub hover:text-text-main hover:bg-primary/10 transition-colors cursor-pointer"
         >
-          {{ page }}
+          <ChevronLeftIcon class="w-4 h-4" />
+        </button>
+        <button
+          v-for="page in visiblePages"
+          :key="page"
+          @click="fetchPosts(page)"
+          :class="currentPage === page ? 'bg-primary text-white' : 'border border-border text-text-main hover:bg-primary/10'"
+          class="w-9 h-9 rounded-xl font-semibold text-sm transition-colors duration-200 cursor-pointer"
+        >
+          {{ page + 1 }}
+        </button>
+        <button
+          v-if="hasNextBlock"
+          @click="goToNextBlock"
+          class="w-9 h-9 flex items-center justify-center border border-border rounded-xl text-text-sub hover:text-text-main hover:bg-primary/10 transition-colors cursor-pointer"
+        >
+          <ChevronRightIcon class="w-4 h-4" />
         </button>
       </div>
     </div>

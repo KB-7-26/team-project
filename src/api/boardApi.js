@@ -5,8 +5,10 @@ const BASE_URL = '/posts'
 const unwrapData = (response) => response.data.data
 
 export const boardApi = {
-  async getPosts(page = 0, size = 10) {
-    const response = await api.get(BASE_URL, { params: { page, size } })
+  async getPosts(page = 0, size = 10, keyword = null, searchType = 'title') {
+    const params = { page, size }
+    if (keyword) { params.keyword = keyword; params.searchType = searchType }
+    const response = await api.get(BASE_URL, { params })
     return unwrapData(response)
   },
   async getPostById(id) {
