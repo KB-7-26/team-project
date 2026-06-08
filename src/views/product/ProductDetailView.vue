@@ -30,9 +30,10 @@ const liked = ref(false)
 const currentIndex = ref(0)
 const isLoading = ref(true)
 const recentlyViewed = ref([])
-const showSoldConfirm = ref(false)
 const showDeleteConfirm = ref(false)
 const isDeleting = ref(false)
+const copied = ref(false)
+const showLoginPrompt = ref(false)
 const pcProfileRef = ref(null)
 const mobileProfileRef = ref(null)
 
@@ -81,22 +82,26 @@ const next = () => {
   startAutoSlide()
 }
 
-async function toggleStatus(status) {
-  try {
-    await productApi.updateStatus(product.value.id, status)
-    product.value.saleStatus = status
-  } catch (e) {
-    console.error('거래 상태 변경 실패', e)
-  }
+function requireAuth() {
+  if (!authStore.isLoggedIn) { showLoginPrompt.value = true; return false }
+  return true
+}
+
+async function shareProduct() {
+  if (!requireAuth()) return
+  await navigator.clipboard.writeText(window.location.href)
+  copied.value = true
+  setTimeout(() => { copied.value = false }, 2000)
 }
 
 async function startChat() {
+  if (!requireAuth()) return
   const { data } = await chatApi.createChatRoom(product.value.id)
   router.push(`/chats/${data.data.chatRoomId}`)
 }
 
 const toggleLike = async () => {
-  if (!authStore.isLoggedIn) return
+  if (!requireAuth()) return
   const prev = liked.value
   liked.value = !liked.value
   try {
@@ -147,7 +152,7 @@ async function loadProduct() {
 function handleKeydown(e) {
   if (e.key !== 'Escape') return
   if (showDeleteConfirm.value) { showDeleteConfirm.value = false; return }
-  if (showSoldConfirm.value) { showSoldConfirm.value = false; return }
+  if (showLoginPrompt.value) { showLoginPrompt.value = false; return }
 }
 
 onMounted(() => {
@@ -180,17 +185,20 @@ watch(() => route.params.id, () => {
           <ChevronLeftIcon class="w-4 h-4" />
           뒤로
         </button>
-        <div v-if="product && authStore.user?.id === product.sellerId" class="flex bg-white border-2 border-ink rounded-xl overflow-hidden shadow-[2px_2px_0_#1c1712] text-sm font-bold">
+        <div v-if="product" class="flex items-center gap-2">
           <button
-            @click="toggleStatus('available')"
-            :class="product.saleStatus === 'available' ? 'bg-[#ffe066] text-ink' : 'text-[#8c7e6e] hover:bg-primary/10'"
-            class="px-3 py-1.5 transition"
-          >판매중</button>
+            @click="toggleLike"
+            class="p-1.5 bg-white border-2 border-ink rounded-full shadow-[2px_2px_0_#1c1712] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+          >
+            <HeartSolidIcon v-if="liked" class="w-5 h-5 text-red-500" />
+            <HeartIcon v-else class="w-5 h-5 text-[#8c7e6e]" />
+          </button>
           <button
-            @click="showSoldConfirm = true"
-            :class="product.saleStatus === 'sold' ? 'bg-[#ffe066] text-ink' : 'text-[#8c7e6e] hover:bg-primary/10'"
-            class="px-3 py-1.5 border-l-2 border-ink transition"
-          >판매완료</button>
+            @click="shareProduct"
+            class="p-1.5 bg-white border-2 border-ink rounded-full shadow-[2px_2px_0_#1c1712] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+          >
+            <ShareIcon class="w-5 h-5 text-[#8c7e6e]" />
+          </button>
         </div>
       </div>
 
@@ -261,7 +269,7 @@ watch(() => route.params.id, () => {
               </template>
               <template v-else>
                 <button
-                  @click="pcProfileRef.openProfile()"
+                  @click="requireAuth() && pcProfileRef.openProfile()"
                   class="action-btn flex items-center justify-center gap-2 bg-white border-2 border-ink text-ink font-bold py-3 rounded-xl text-sm shadow-[3px_3px_0_#1c1712] transition-all"
                 >
                   <UserIcon class="w-5 h-5" />
@@ -304,18 +312,9 @@ watch(() => route.params.id, () => {
         <div class="bg-white border-2 border-ink rounded-2xl p-6 mb-4 shadow-[4px_4px_0_#1c1712]">
           <div class="flex items-start justify-between mb-3">
             <span class="font-bold text-xs bg-[#ffe066] text-ink border border-ink px-3 py-1 rounded-full">{{ product.categoryName }}</span>
-            <div class="flex gap-2">
-              <button
-                @click="toggleLike"
-                class="p-1.5 bg-white border-2 border-ink rounded-full shadow-[2px_2px_0_#1c1712] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
-              >
-                <HeartSolidIcon v-if="liked" class="w-5 h-5 text-red-500" />
-                <HeartIcon v-else class="w-5 h-5 text-[#8c7e6e]" />
-              </button>
-              <button class="p-1.5 bg-white border-2 border-ink rounded-full shadow-[2px_2px_0_#1c1712] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
-                <ShareIcon class="w-5 h-5 text-[#8c7e6e]" />
-              </button>
-            </div>
+            <span :class="['font-bold text-xs px-3 py-1 rounded-full border', product.saleStatus === 'sold' ? 'bg-[#c8bca8]/30 border-[#c8bca8] text-[#8c7e6e]' : 'bg-[#96d4b4]/30 border-[#96d4b4] text-[#3a8a64]']">
+              {{ saleStatusMap[product.saleStatus] ?? product.saleStatus }}
+            </span>
           </div>
 
           <h1 class="font-bold text-2xl text-ink mb-3 leading-snug">{{ product.title }}</h1>
@@ -340,10 +339,6 @@ watch(() => route.params.id, () => {
               <tr class="border-t-2 border-[#c8bca8]">
                 <td class="py-3 text-[#8c7e6e] w-24">상태</td>
                 <td class="py-3 font-bold text-ink">{{ conditionMap[product.productCondition] ?? product.productCondition }}</td>
-              </tr>
-              <tr class="border-t border-[#c8bca8]">
-                <td class="py-3 text-[#8c7e6e]">거래상태</td>
-                <td class="py-3 font-bold text-ink">{{ saleStatusMap[product.saleStatus] ?? product.saleStatus }}</td>
               </tr>
               <tr class="border-t border-[#c8bca8]">
                 <td class="py-3 text-[#8c7e6e]">위치</td>
@@ -386,7 +381,7 @@ watch(() => route.params.id, () => {
           </template>
           <template v-else>
             <button
-              @click="mobileProfileRef.openProfile()"
+              @click="requireAuth() && mobileProfileRef.openProfile()"
               class="action-btn flex items-center justify-center gap-2 bg-white border-2 border-ink text-ink font-bold py-3 rounded-xl text-sm shadow-[3px_3px_0_#1c1712] transition-all"
             >
               <UserIcon class="w-5 h-5" />
@@ -448,25 +443,39 @@ watch(() => route.params.id, () => {
       </div>
     </Teleport>
 
-    <!-- 판매완료 확인 모달 -->
-    <Teleport to="body">
-      <div v-if="showSoldConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-ink/40" @click.self="showSoldConfirm = false">
-        <div class="bg-white border-2 border-ink rounded-2xl shadow-[6px_6px_0_#1c1712] p-6 w-80 flex flex-col gap-4">
-          <p class="font-bold text-ink text-lg">판매완료로 변경할까요?</p>
-          <p class="text-sm text-[#8c7e6e] -mt-2">변경 후에도 다시 판매중으로 되돌릴 수 있어요.</p>
-          <div class="flex gap-3">
-            <button
-              @click="showSoldConfirm = false"
-              class="flex-1 py-2.5 rounded-xl border-2 border-ink font-bold text-sm text-ink hover:bg-gray-50 transition shadow-[2px_2px_0_#1c1712]"
-            >취소</button>
-            <button
-              @click="() => { toggleStatus('sold'); showSoldConfirm = false }"
-              class="flex-1 py-2.5 rounded-xl bg-[#ffe066] border-2 border-ink font-bold text-sm text-ink hover:bg-primary/20 transition shadow-[2px_2px_0_#1c1712]"
-            >확인</button>
-          </div>
+  <!-- 로그인 유도 모달 -->
+  <Teleport to="body">
+    <div v-if="showLoginPrompt" class="fixed inset-0 z-50 flex items-center justify-center bg-ink/40" @click.self="showLoginPrompt = false">
+      <div class="bg-white border-2 border-ink rounded-2xl shadow-[6px_6px_0_#1c1712] p-6 w-80 flex flex-col gap-4">
+        <p class="font-bold text-ink text-lg">로그인이 필요해요</p>
+        <p class="text-sm text-[#8c7e6e] -mt-2">로그인 후 이용할 수 있어요.</p>
+        <div class="flex gap-3">
+          <button
+            @click="showLoginPrompt = false"
+            class="flex-1 py-2.5 rounded-xl border-2 border-ink font-bold text-sm text-ink hover:bg-gray-50 transition shadow-[2px_2px_0_#1c1712]"
+          >취소</button>
+          <button
+            @click="router.push('/login')"
+            class="flex-1 py-2.5 rounded-xl bg-[#ffe066] border-2 border-ink font-bold text-sm text-ink hover:bg-primary/20 transition shadow-[2px_2px_0_#1c1712]"
+          >로그인</button>
         </div>
       </div>
-    </Teleport>
+    </div>
+  </Teleport>
+
+  <!-- URL 복사 토스트 -->
+  <Teleport to="body">
+    <Transition name="toast">
+      <div
+        v-if="copied"
+        class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-ink text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-[3px_3px_0_rgba(0,0,0,0.3)] flex items-center gap-2 whitespace-nowrap"
+      >
+        <span>✓</span>
+        링크가 복사됐어요
+      </div>
+    </Transition>
+  </Teleport>
+
   </div>
 </template>
 
@@ -478,4 +487,9 @@ watch(() => route.params.id, () => {
 .action-btn:active { transform: translate(3px, 3px); }
 
 .slide-btn:active { transform: translateY(-50%) translate(2px, 2px); box-shadow: none; }
+
+.toast-enter-active { transition: all 0.2s ease; }
+.toast-leave-active { transition: all 0.3s ease; }
+.toast-enter-from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+.toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(12px); }
 </style>

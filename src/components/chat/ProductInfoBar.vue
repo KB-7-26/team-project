@@ -3,6 +3,7 @@ defineProps({
   productImage: String,
   productTitle: String,
   price: Number,
+  tradeCompleted: Boolean,
 })
 
 const emit = defineEmits(['complete-trade'])
@@ -24,11 +25,13 @@ const emit = defineEmits(['complete-trade'])
     </div>
     <!-- 거래완료 버튼 -->
     <button
+      v-if="!tradeCompleted"
       class="trade-btn px-4 py-1.5 bg-[#96d4b4] border-2 border-ink text-ink text-xs font-bold rounded-lg shadow-[2px_2px_0_#1c1712] transition-all shrink-0"
       @click="emit('complete-trade')"
     >
       거래완료
     </button>
+    <span v-else class="px-4 py-1.5 bg-white border-2 border-[#96d4b4] text-[#5aaa84] text-xs font-bold rounded-lg shrink-0">거래완료됨</span>
   </div>
 </template>
 

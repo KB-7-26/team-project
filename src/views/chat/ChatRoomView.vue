@@ -23,6 +23,9 @@ const stompClient = ref(null)
 const messageListRef = ref(null)
 const showNewMessageBanner = ref(false)
 const opponentLastReadAt = ref(null)
+const showTradeConfirm = ref(false)
+const isCompleting = ref(false)
+const tradeCompleted = ref(false)
 
 // 스크롤이 맨 아래에 있는지 확인
 function isAtBottom() {
@@ -175,6 +178,21 @@ function shouldShowProfile(index) {
   return prev.senderId !== current.senderId
 }
 
+// 거래완료
+async function completeTrade() {
+  if (isCompleting.value) return
+  isCompleting.value = true
+  try {
+    await chatApi.completeTrade(chatRoomId.value)
+    tradeCompleted.value = true
+    showTradeConfirm.value = false
+  } catch (e) {
+    console.error('거래완료 처리 실패', e)
+  } finally {
+    isCompleting.value = false
+  }
+}
+
 // 메시지 전송
 function handleSend(content) {
   if (!stompClient.value?.connected) return
@@ -196,7 +214,9 @@ watch(chatRoomId, async () => {
 })
 
 function handleKeydown(e) {
-  if (e.key === 'Escape') router.push('/chats')
+  if (e.key !== 'Escape') return
+  if (showTradeConfirm.value) { showTradeConfirm.value = false; return }
+  router.push('/chats')
 }
 
 onMounted(async () => {
@@ -229,6 +249,8 @@ onUnmounted(() => {
       :productImage="productInfo.productImage"
       :productTitle="productInfo.productTitle"
       :price="productInfo.price"
+      :tradeCompleted="tradeCompleted"
+      @complete-trade="showTradeConfirm = true"
     />
 
     <!-- 메시지 목록 -->
@@ -260,4 +282,25 @@ onUnmounted(() => {
     <!-- 입력창 -->
     <MessageInput @send="handleSend" />
   </div>
+
+  <!-- 거래완료 확인 모달 -->
+  <Teleport to="body">
+    <div v-if="showTradeConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-ink/40" @click.self="showTradeConfirm = false">
+      <div class="bg-white border-2 border-ink rounded-2xl shadow-[6px_6px_0_#1c1712] p-6 w-80 flex flex-col gap-4">
+        <p class="font-bold text-ink text-lg">거래를 완료할까요?</p>
+        <p class="text-sm text-[#8c7e6e] -mt-2">상품이 판매완료 상태로 변경돼요.</p>
+        <div class="flex gap-3">
+          <button
+            @click="showTradeConfirm = false"
+            class="flex-1 py-2.5 rounded-xl border-2 border-ink font-bold text-sm text-ink hover:bg-gray-50 transition shadow-[2px_2px_0_#1c1712]"
+          >취소</button>
+          <button
+            @click="completeTrade"
+            :disabled="isCompleting"
+            class="flex-1 py-2.5 rounded-xl bg-[#ffe066] border-2 border-ink font-bold text-sm text-ink hover:bg-primary/20 transition shadow-[2px_2px_0_#1c1712] disabled:opacity-50"
+          >{{ isCompleting ? '처리 중...' : '거래완료' }}</button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
