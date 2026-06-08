@@ -24,12 +24,27 @@ const { isLoading: isSubmitting, error: submitError, request } = useApiRequest()
 const { isLoading: isSubmittingReply, request: requestReply } = useApiRequest()
 const toast = useToastStore()
 
+// commentLikes: { [commentId]: { liked, likeCount } } — WK-66에서 백엔드 응답에 포함되면 대체 예정
+const commentLikes = ref({})
+
+const initCommentLikes = (list) => {
+  list.forEach((c) => {
+    commentLikes.value[c.id] = { liked: false, likeCount: 0 }
+    c.replies?.forEach((r) => {
+      commentLikes.value[r.id] = { liked: false, likeCount: 0 }
+    })
+  })
+}
+
 onMounted(async () => {
   const { ok, data } = await request(
     () => boardApi.getComments(props.postId),
     { errorMessage: '댓글을 불러오지 못했습니다.' },
   )
-  if (ok) comments.value = data
+  if (ok) {
+    comments.value = data
+    initCommentLikes(data)
+  }
 })
 
 const submitComment = async () => {
@@ -94,6 +109,15 @@ const updateComment = async (commentId, content) => {
   }
 }
 
+const toggleCommentLike = async (commentId) => {
+  try {
+    const data = await boardApi.toggleCommentLike(props.postId, commentId)
+    commentLikes.value[commentId] = { liked: data.liked, likeCount: data.likeCount }
+  } catch {
+    // 401은 axios 인터셉터가 /login으로 리다이렉트 처리
+  }
+}
+
 const deleteComment = async (commentId) => {
   if (!confirm('댓글을 삭제하시겠습니까?')) return
   const { ok } = await request(
@@ -131,9 +155,12 @@ const deleteComment = async (commentId) => {
       <li v-for="comment in comments" :key="comment.id">
         <BoardCommentItem
           :comment="comment"
+          :liked="commentLikes[comment.id]?.liked ?? false"
+          :like-count="commentLikes[comment.id]?.likeCount ?? 0"
           @reply-click="toggleReplyInput"
           @update="updateComment"
           @delete="deleteComment"
+          @like="toggleCommentLike"
         />
 
         <ul v-if="comment.replies?.length > 0">
@@ -141,8 +168,11 @@ const deleteComment = async (commentId) => {
             <BoardCommentItem
               :comment="reply"
               :is-reply="true"
+              :liked="commentLikes[reply.id]?.liked ?? false"
+              :like-count="commentLikes[reply.id]?.likeCount ?? 0"
               @update="updateComment"
               @delete="deleteComment"
+              @like="toggleCommentLike"
             />
           </li>
         </ul>

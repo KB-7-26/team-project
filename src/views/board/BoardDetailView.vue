@@ -1,7 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { TrashIcon, PencilSquareIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline'
+import { TrashIcon, PencilSquareIcon, ArrowLeftIcon, HeartIcon } from '@heroicons/vue/24/outline'
+import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 import BoardCommentSection from '@/components/board/BoardCommentSection.vue'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
@@ -14,6 +15,11 @@ const router = useRouter()
 const postId = Number(route.params.id)
 const post = ref(null)
 const loading = ref(true)
+
+// 초기값은 false/0 — WK-66에서 백엔드 응답에 liked/likeCount 추가 후 반영 예정
+const postLiked = ref(false)
+const postLikeCount = ref(0)
+const isLiking = ref(false)
 
 const { isLoading: isDeleting, error: deleteError, request } = useApiRequest()
 const toast = useToastStore()
@@ -29,6 +35,18 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+const togglePostLike = async () => {
+  if (isLiking.value) return
+  isLiking.value = true
+  try {
+    const data = await boardApi.togglePostLike(postId)
+    postLiked.value = data.liked
+    postLikeCount.value = data.likeCount
+  } finally {
+    isLiking.value = false
+  }
+}
 
 const deletePost = async () => {
   if (isDeleting.value) return
@@ -90,6 +108,17 @@ const deletePost = async () => {
           <span>조회 {{ post.viewCount }}</span>
         </div>
         <p class="text-base text-text-main leading-relaxed whitespace-pre-line">{{ post.content }}</p>
+        <div class="flex items-center mt-5 pt-4 border-t border-border">
+          <button
+            @click="togglePostLike"
+            :disabled="isLiking"
+            class="flex items-center gap-1.5 text-sm transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            :class="postLiked ? 'text-red-400 hover:text-red-500' : 'text-text-sub hover:text-red-400'"
+          >
+            <component :is="postLiked ? HeartSolidIcon : HeartIcon" class="w-5 h-5" />
+            <span class="font-medium">{{ postLikeCount }}</span>
+          </button>
+        </div>
       </div>
 
       <!-- 댓글 섹션 -->

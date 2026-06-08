@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
-import { ChatBubbleOvalLeftIcon, PencilSquareIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import { ChatBubbleOvalLeftIcon, PencilSquareIcon, TrashIcon, HeartIcon } from '@heroicons/vue/24/outline'
+import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 import { formatDate } from '@/utils/formatDate'
 
 const props = defineProps({
@@ -9,9 +10,17 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  liked: {
+    type: Boolean,
+    default: false,
+  },
+  likeCount: {
+    type: Number,
+    default: 0,
+  },
 })
 
-const emit = defineEmits(['reply-click', 'update', 'delete'])
+const emit = defineEmits(['reply-click', 'update', 'delete', 'like'])
 
 const isEditing = ref(false)
 const editContent = ref('')
@@ -85,14 +94,24 @@ const submitEdit = () => {
 
     <div v-else class="flex items-center justify-between gap-4">
       <p class="text-sm text-text-main leading-relaxed flex-1">{{ comment.content }}</p>
-      <button
-        v-if="!isReply"
-        @click="emit('reply-click', comment)"
-        class="flex items-center gap-1 text-xs text-text-sub hover:text-primary transition-colors shrink-0 cursor-pointer"
-      >
-        <ChatBubbleOvalLeftIcon class="w-4 h-4" />
-        {{ comment.replies?.length ?? 0 }}
-      </button>
+      <div class="flex items-center gap-2 shrink-0">
+        <button
+          @click="emit('like', comment.id)"
+          class="flex items-center gap-1 text-xs transition-colors cursor-pointer"
+          :class="liked ? 'text-red-400 hover:text-red-500' : 'text-text-sub hover:text-red-400'"
+        >
+          <component :is="liked ? HeartSolidIcon : HeartIcon" class="w-4 h-4" />
+          {{ likeCount }}
+        </button>
+        <button
+          v-if="!isReply"
+          @click="emit('reply-click', comment)"
+          class="flex items-center gap-1 text-xs text-text-sub hover:text-primary transition-colors cursor-pointer"
+        >
+          <ChatBubbleOvalLeftIcon class="w-4 h-4" />
+          {{ comment.replies?.length ?? 0 }}
+        </button>
+      </div>
     </div>
   </div>
 </template>

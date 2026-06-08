@@ -41,4 +41,12 @@ export const boardApi = {
     const response = await api.delete(`${BASE_URL}/${postId}/comments/${commentId}`)
     return unwrapData(response)
   },
+  async togglePostLike(postId) {
+    const response = await api.post(`${BASE_URL}/${postId}/likes`)
+    return unwrapData(response)
+  },
+  async toggleCommentLike(postId, commentId) {
+    const response = await api.post(`${BASE_URL}/${postId}/comments/${commentId}/likes`)
+    return unwrapData(response)
+  },
 }
