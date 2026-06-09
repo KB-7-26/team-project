@@ -16,7 +16,6 @@ const postId = Number(route.params.id)
 const post = ref(null)
 const loading = ref(true)
 
-// 초기값은 false/0 — WK-66에서 백엔드 응답에 liked/likeCount 추가 후 반영 예정
 const postLiked = ref(false)
 const postLikeCount = ref(0)
 const isLiking = ref(false)
@@ -27,6 +26,8 @@ const toast = useToastStore()
 onMounted(async () => {
   try {
     post.value = await boardApi.getPostById(postId)
+    postLiked.value = post.value.liked ?? false
+    postLikeCount.value = post.value.likeCount ?? 0
   } catch (e) {
     if (e.response?.status === 404) {
       router.replace('/board')
