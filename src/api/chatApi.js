@@ -34,4 +34,19 @@ export const chatApi = {
   getUnreadCount() {
     return api.get(`${BASE_URL}/unread-count`)
   },
+
+  // 거래완료 처리 → transactionId 반환
+  createTransaction(chatRoomId) {
+    return api.post('/transactions', { chatRoomId })
+  },
+
+  // 채팅방의 거래 정보 조회
+  getTransaction(chatRoomId) {
+    return api.get(`/transactions/by-room/${chatRoomId}`)
+  },
+
+  // 별점 리뷰 작성
+  createReview(transactionId, rating, content = '') {
+    return api.post('/reviews', { transactionId, rating, content })
+  },
 }

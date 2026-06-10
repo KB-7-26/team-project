@@ -26,6 +26,8 @@ const opponentLastReadAt = ref(null)
 const showTradeConfirm = ref(false)
 const isCompleting = ref(false)
 const tradeCompleted = ref(false)
+const currentTransactionId = ref(null)
+const isSeller = ref(false)
 
 // 스크롤이 맨 아래에 있는지 확인
 function isAtBottom() {
@@ -53,6 +55,15 @@ async function markAsReadAndUpdate() {
   } catch {}
   chatStore.fetchUnreadCount()
 }
+
+// 채팅방 안에 있을 때 pendingReview 감지 → 즉시 말풍선 표시
+watch(() => chatStore.pendingReview, (val) => {
+  if (!val) return
+  currentTransactionId.value = val.transactionId
+  tradeCompleted.value = true
+  chatStore.clearPendingReview()
+  addReviewMessage()
+})
 
 // 메시지 개수 변화를 watch (deep 대신 length 감지로 정확하게)
 watch(() => messages.value.length, (newLen, oldLen) => {
@@ -90,11 +101,19 @@ async function loadMessages() {
     messages.value = data.data.map(msg => ({
       messageId: msg.messageId,
       senderId: msg.senderId,
+      senderNickname: msg.senderNickname,
       senderType: msg.senderId === myId.value ? 'me' : 'other',
       content: msg.content,
       createdAt: formatTime(msg.createdAt),
       rawCreatedAt: msg.createdAt,
     }))
+
+    // 이 방에 대기 중인 별점 있으면 메시지 추가
+    const pendingTxId = chatStore.pendingReviewByRoom[chatRoomId.value]
+    if (pendingTxId) {
+      currentTransactionId.value = pendingTxId
+      addReviewMessage()
+    }
   } catch (e) {
     console.error('메시지 불러오기 실패', e)
   }
@@ -108,6 +127,14 @@ async function loadRoomInfo() {
     if (room) {
       opponentName.value = room.opponentNickname
       productInfo.value = { productTitle: room.productTitle }
+      opponentLastReadAt.value = room.opponentLastReadAt ?? null
+      isSeller.value = room.sellerId === myId.value
+    }
+
+    // 거래완료 여부 확인
+    const txRes = await chatApi.getTransaction(chatRoomId.value).catch(() => null)
+    if (txRes?.data?.data?.status === 'completed') {
+      tradeCompleted.value = true
     }
   } catch (e) {
     console.error('채팅방 정보 불러오기 실패', e)
@@ -116,7 +143,12 @@ async function loadRoomInfo() {
 
 // WebSocket 연결
 async function connectWebSocket() {
-  // Firebase 토큰 가져오기
+  // 기존 연결 먼저 끊기
+  if (stompClient.value) {
+    stompClient.value.deactivate()
+    stompClient.value = null
+  }
+
   const token = await auth.currentUser?.getIdToken()
 
   const client = new Client({
@@ -144,12 +176,13 @@ async function connectWebSocket() {
         messages.value.push({
           messageId: msg.messageId,
           senderId: msg.senderId,
+          senderNickname: msg.senderNickname,
           senderType: isMyMessage ? 'me' : 'other',
           content: msg.content,
           createdAt: formatTime(msg.createdAt),
           rawCreatedAt: msg.createdAt,
         })
-        chatStore.triggerListRefresh(chatRoomId.value, formatTime(msg.createdAt))
+        chatStore.triggerListRefresh(chatRoomId.value, formatTime(msg.createdAt), msg.content)
         // 상대방 메시지이고 현재 맨 아래에서 보고 있으면 즉시 읽음 처리
         if (!isMyMessage && isAtBottom()) {
           markAsReadAndUpdate()
@@ -178,19 +211,67 @@ function shouldShowProfile(index) {
   return prev.senderId !== current.senderId
 }
 
-// 거래완료
+// 별점 메시지 추가
+function addReviewMessage() {
+  messages.value.push({
+    messageId: 'review-' + Date.now(),
+    type: 'review',
+    senderType: 'system',
+    content: null,
+    createdAt: '',
+    rawCreatedAt: '',
+  })
+  scrollToBottom()
+}
+
+// 거래완료 → 별점 말풍선 추가
 async function completeTrade() {
   if (isCompleting.value) return
   isCompleting.value = true
   try {
-    await chatApi.completeTrade(chatRoomId.value)
+    const { data } = await chatApi.createTransaction(chatRoomId.value)
+    currentTransactionId.value = data.data.transactionId
     tradeCompleted.value = true
     showTradeConfirm.value = false
+    // 방별 리뷰 상태 저장 (나갔다 들어와도 유지)
+    chatStore.pendingReviewByRoom[chatRoomId.value] = data.data.transactionId
+    addReviewMessage()
   } catch (e) {
     console.error('거래완료 처리 실패', e)
   } finally {
     isCompleting.value = false
   }
+}
+
+// 별점 제출
+async function handleReviewSubmit(rating) {
+  try {
+    await chatApi.createReview(currentTransactionId.value, rating)
+  } catch (e) {
+    console.error('리뷰 작성 실패', e)
+  } finally {
+    messages.value = messages.value.filter(m => m.type !== 'review')
+    chatStore.clearRoomReview(chatRoomId.value)
+  }
+}
+
+// 별점 건너뛰기
+function handleReviewSkip() {
+  messages.value = messages.value.filter(m => m.type !== 'review')
+  chatStore.clearRoomReview(chatRoomId.value)
+}
+
+// 별점 카드 - 0.5 단위 계산
+function calcStarRating(event, starIndex) {
+  const rect = event.currentTarget.getBoundingClientRect()
+  const x = event.clientX - rect.left
+  return x < rect.width / 2 ? starIndex - 0.5 : starIndex
+}
+
+function getStarState(starIndex, current) {
+  if (current >= starIndex) return 'full'
+  if (current >= starIndex - 0.5) return 'half'
+  return 'empty'
 }
 
 // 메시지 전송
@@ -204,9 +285,7 @@ function handleSend(content) {
 
 // 채팅방 바뀔 때 재연결
 watch(chatRoomId, async () => {
-  if (stompClient.value) {
-    stompClient.value.deactivate()
-  }
+  currentTransactionId.value = null
   await loadRoomInfo()
   await loadMessages()
   connectWebSocket()
@@ -225,6 +304,14 @@ onMounted(async () => {
   connectWebSocket()
   markAsReadAndUpdate()
   window.addEventListener('keydown', handleKeydown)
+
+  // 채팅방 입장 시 대기 중인 별점 요청 확인
+  if (chatStore.pendingReview) {
+    currentTransactionId.value = chatStore.pendingReview.transactionId
+    tradeCompleted.value = true
+    chatStore.clearPendingReview()
+    addReviewMessage()
+  }
 })
 
 onUnmounted(() => {
@@ -250,6 +337,7 @@ onUnmounted(() => {
       :productTitle="productInfo.productTitle"
       :price="productInfo.price"
       :tradeCompleted="tradeCompleted"
+      :isSeller="isSeller"
       @complete-trade="showTradeConfirm = true"
     />
 
@@ -259,12 +347,18 @@ onUnmounted(() => {
         <MessageBubble
           v-for="(message, index) in messages"
           :key="message.messageId"
+          :type="message.type || 'message'"
           :senderType="message.senderType"
+          :senderId="message.senderId"
+          :senderNickname="message.senderNickname"
           :content="message.content"
           :createdAt="message.createdAt"
           :isUnread="message.senderType === 'me' && (opponentLastReadAt === null || message.rawCreatedAt > opponentLastReadAt)"
-          :showTime="shouldShowTime(index)"
-          :showProfile="shouldShowProfile(index)"
+          :showTime="message.type === 'review' ? false : shouldShowTime(index)"
+          :showProfile="message.type === 'review' ? false : shouldShowProfile(index)"
+          :opponentName="opponentName"
+          @review-submit="handleReviewSubmit"
+          @review-skip="handleReviewSkip"
         />
       </div>
 
@@ -280,8 +374,9 @@ onUnmounted(() => {
     </div>
 
     <!-- 입력창 -->
-    <MessageInput @send="handleSend" />
+    <MessageInput :chatRoomId="chatRoomId" @send="handleSend" />
   </div>
+
 
   <!-- 거래완료 확인 모달 -->
   <Teleport to="body">

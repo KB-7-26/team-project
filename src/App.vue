@@ -24,6 +24,11 @@ let notificationClient = null
 
 async function connectNotification() {
   if (!authStore.isLoggedIn || !authStore.user?.id) return
+  // 기존 연결 먼저 끊기
+  if (notificationClient) {
+    notificationClient.deactivate()
+    notificationClient = null
+  }
   const token = await auth.currentUser?.getIdToken()
   if (!token) return
 
@@ -32,8 +37,19 @@ async function connectNotification() {
     reconnectDelay: 5000,
     connectHeaders: { Authorization: `Bearer ${token}` },
     onConnect: () => {
+      // 알림 구독 (네비바 뱃지)
       client.subscribe(`/topic/notification/${authStore.user.id}`, () => {
         chatStore.fetchUnreadCount()
+      })
+      // 별점 요청 구독 - 어디 있든 받을 수 있게 전역 구독
+      client.subscribe(`/topic/review/${authStore.user.id}`, (frame) => {
+        const payload = JSON.parse(frame.body)
+        // payload가 객체면 {transactionId, chatRoomId}, 숫자면 transactionId만
+        if (typeof payload === 'object') {
+          chatStore.setPendingReview(payload.transactionId, payload.chatRoomId)
+        } else {
+          chatStore.setPendingReview(payload, null)
+        }
       })
     },
   })
