@@ -175,7 +175,7 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
               v-model="searchQuery"
               type="text"
               placeholder="검색어를 입력해주세요"
-              class="flex-1 outline-none text-sm bg-transparent text-ink placeholder:text-[#8c7e6e] px-3"
+              class="flex-1 outline-none text-sm bg-transparent text-ink placeholder:text-[#8c7e6e] px-3 appearance-none min-w-0"
               @keyup.enter="searchSubmit"
             />
 
