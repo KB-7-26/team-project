@@ -1,11 +1,13 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   ShoppingBagIcon,
   ChatBubbleLeftRightIcon,
   ChatBubbleOvalLeftIcon,
   UserIcon,
-  MagnifyingGlassIcon,
+  ChevronDownIcon,
+  ArrowRightIcon,
 } from '@heroicons/vue/24/outline'
 import { productApi } from '@/api/productApi'
 import ProductCard from '@/components/product/ProductCard.vue'
@@ -17,6 +19,31 @@ const categories = [
   { icon: ChatBubbleOvalLeftIcon, title: '채팅목록', desc: '실시간 대화', to: '/chats', tape: '#a8c8e8' },
   { icon: UserIcon, title: '마이페이지', desc: '내 정보 관리', to: '/mypage', tape: '#f4a8b8' },
 ]
+
+const router = useRouter()
+const searchQuery = ref('')
+const searchType = ref('중고거래')
+const showTypeDropdown = ref(false)
+const typeDropdownRef = ref(null)
+
+const selectType = (type) => {
+  searchType.value = type
+  showTypeDropdown.value = false
+}
+
+const searchSubmit = () => {
+  const q = searchQuery.value.trim()
+  if (!q) return
+  const path = searchType.value === '중고거래' ? '/products' : '/board'
+  router.push({ path, query: { keyword: q } })
+  searchQuery.value = ''
+}
+
+const handleTypeOutsideClick = (e) => {
+  if (typeDropdownRef.value && !typeDropdownRef.value.contains(e.target)) {
+    showTypeDropdown.value = false
+  }
+}
 
 const popularProducts = ref([])
 // ── 교육 진행 계산 ──────────────────────────────────────────
@@ -78,6 +105,7 @@ const nextEvents = computed(() => upcomingEvents.value.slice(1, 4))
 // ───────────────────────────────────────────────────────────
 
 onMounted(async () => {
+  document.addEventListener('click', handleTypeOutsideClick)
   try {
     const { data } = await productApi.getProducts({ sort: 'favoriteCount,desc', size: 4, saleStatus: 'available' })
     popularProducts.value = data.content.map(mapProduct)
@@ -85,6 +113,8 @@ onMounted(async () => {
     console.error('인기 상품 조회 실패', e)
   }
 })
+
+onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideClick))
 </script>
 
 <template>
@@ -112,31 +142,59 @@ onMounted(async () => {
 
           <p class="text-lg text-[#8c7e6e] mb-9">다 같이 믿을 수 있는 거래 환경을 만들어요 ✌️</p>
 
-          <div
-            class="flex items-center bg-white border-2 border-ink rounded-xl px-4 py-1.5 max-w-140 shadow-[4px_4px_0_#1c1712] gap-2.5"
-          >
-            <MagnifyingGlassIcon class="w-5 h-5 text-[#c8bca8] shrink-0" />
+          <div class="flex items-center bg-white border-2 border-ink rounded-full px-2 h-12 max-w-140 shadow-[4px_4px_0_#1c1712]">
+            <!-- 카테고리 드롭다운 -->
+            <div ref="typeDropdownRef" class="relative shrink-0">
+              <button
+                @click.stop="showTypeDropdown = !showTypeDropdown"
+                class="flex items-center gap-1 font-bold text-sm text-ink whitespace-nowrap px-3 py-1"
+              >
+                {{ searchType }}
+                <ChevronDownIcon class="w-3 h-3 transition-transform duration-150" :class="showTypeDropdown ? 'rotate-180' : ''" />
+              </button>
+              <div
+                v-if="showTypeDropdown"
+                class="absolute left-0 top-full mt-2 bg-white border-2 border-ink rounded-xl shadow-[3px_3px_0_#1c1712] overflow-hidden z-20 min-w-24"
+              >
+                <button
+                  @click="selectType('중고거래')"
+                  :class="searchType === '중고거래' ? 'bg-[#ffe066]' : 'hover:bg-[#ffe066]/60'"
+                  class="block w-full text-left px-4 py-2.5 text-sm font-bold text-ink transition-colors"
+                >중고거래</button>
+                <button
+                  @click="selectType('게시물')"
+                  :class="searchType === '게시물' ? 'bg-[#ffe066]' : 'hover:bg-[#ffe066]/60'"
+                  class="block w-full text-left px-4 py-2.5 text-sm font-bold text-ink transition-colors border-t border-[#c8bca8]"
+                >게시물</button>
+              </div>
+            </div>
+
+            <div class="w-px h-4 bg-[#c8bca8] shrink-0" />
+
             <input
+              v-model="searchQuery"
               type="text"
-              placeholder="물품이나 게시글을 검색해보세요"
-              class="flex-1 outline-none text-sm bg-transparent text-ink placeholder:text-[#c8bca8]"
+              placeholder="검색어를 입력해주세요"
+              class="flex-1 outline-none text-sm bg-transparent text-ink placeholder:text-[#8c7e6e] px-3"
+              @keyup.enter="searchSubmit"
             />
-            <RouterLink
-              to="/products"
-              class="search-btn bg-[#ffe066] border-2 border-ink rounded-[10px] px-5 py-2 font-bold text-sm text-ink whitespace-nowrap"
-              >검색</RouterLink
+
+            <button
+              @click="searchSubmit"
+              class="shrink-0 w-9 h-9 bg-ink text-white rounded-full flex items-center justify-center hover:bg-[#3d3530] transition-colors"
             >
+              <ArrowRightIcon class="w-4 h-4" />
+            </button>
           </div>
 
           <div class="flex flex-wrap items-center gap-2 mt-4">
             <span class="text-sm text-[#8c7e6e]">인기 검색어:</span>
-            <RouterLink
+            <button
               v-for="tag in ['노트북', '모니터', '키보드', '마우스', '도서']"
               :key="tag"
-              to="/products"
+              @click="() => { searchQuery = tag; searchType = '중고거래'; searchSubmit() }"
               class="text-sm bg-white border-[1.5px] border-[#c8bca8] rounded-full px-3.5 py-1 text-[#8c7e6e] transition-all hover:border-ink hover:bg-[#ffe066] hover:text-ink"
-              >{{ tag }}</RouterLink
-            >
+            >{{ tag }}</button>
           </div>
         </div>
 

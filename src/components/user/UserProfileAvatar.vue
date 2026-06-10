@@ -5,7 +5,6 @@ import {
   CalendarDaysIcon,
   CubeIcon,
   ExclamationTriangleIcon,
-  HeartIcon,
   ShieldCheckIcon,
   ShoppingBagIcon,
   UserCircleIcon,
@@ -74,10 +73,10 @@ const genderLabel = (value) => {
 const profileStats = computed(() => [
   { label: '판매중', value: String(profile.value?.stats?.activeProductCount ?? 0), icon: ShoppingBagIcon },
   { label: '판매 완료', value: String(profile.value?.stats?.soldProductCount ?? 0), icon: CubeIcon },
-  { label: '찜', value: String(profile.value?.stats?.favoriteCount ?? 0), icon: HeartIcon },
-  { label: '신뢰도', value: `${profile.value?.trustScore ?? 0}%`, icon: ShieldCheckIcon },
 ])
 
+const trustScore = computed(() => profile.value?.trustScore ?? 0)
+const trustStars = computed(() => Math.round((trustScore.value / 100) * 5))
 const profileRows = computed(() => [
   { label: '회차', value: profile.value?.cohort || '-', icon: AcademicCapIcon },
   { label: '성별', value: genderLabel(profile.value?.gender), icon: UserCircleIcon },
@@ -196,17 +195,34 @@ defineExpose({ openProfile })
               </p>
             </div>
 
-            <div class="mt-6 grid grid-cols-2 gap-2">
-              <div
-                v-for="stat in profileStats"
-                :key="stat.label"
-                class="flex min-h-14 items-center justify-between gap-2 rounded-xl border border-[#c8bca8] bg-sub-bg px-3 py-2"
-              >
-                <div class="flex min-w-0 items-center gap-1.5">
-                  <component :is="stat.icon" class="h-4 w-4 shrink-0 text-primary" />
-                  <span class="truncate text-xs font-bold text-[#8c7e6e]">{{ stat.label }}</span>
+            <div class="mt-6 flex flex-col gap-2">
+              <div class="grid grid-cols-2 gap-2">
+                <div
+                  v-for="stat in profileStats"
+                  :key="stat.label"
+                  class="flex min-h-14 items-center justify-between gap-2 rounded-xl border border-[#c8bca8] bg-sub-bg px-3 py-2"
+                >
+                  <div class="flex min-w-0 items-center gap-1.5">
+                    <component :is="stat.icon" class="h-4 w-4 shrink-0 text-primary" />
+                    <span class="truncate text-xs font-bold text-[#8c7e6e]">{{ stat.label }}</span>
+                  </div>
+                  <span class="shrink-0 text-base font-extrabold text-ink">{{ stat.value }}</span>
                 </div>
-                <span class="shrink-0 text-base font-extrabold text-ink">{{ stat.value }}</span>
+              </div>
+
+              <div class="flex flex-col items-center gap-2 rounded-xl border border-[#c8bca8] bg-sub-bg px-4 py-3">
+                <div class="flex items-center gap-1.5">
+                  <ShieldCheckIcon class="h-3.5 w-3.5 shrink-0 text-primary" />
+                  <span class="text-xs font-bold text-[#8c7e6e]">신뢰도</span>
+                </div>
+                <div class="flex items-center justify-center gap-3">
+                  <span
+                    v-for="i in 5"
+                    :key="i"
+                    class="inline-block text-3xl leading-none transition-transform duration-150 hover:scale-110"
+                    :class="i <= trustStars ? 'text-[#c9a227] drop-shadow-[1px_2px_0_#a07c0a]' : 'text-[#d4c9b5]'"
+                  >★</span>
+                </div>
               </div>
             </div>
           </template>

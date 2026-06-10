@@ -7,7 +7,6 @@ const router = createRouter({
     {
       path: '/',
       component: () => import('@/views/HomeView.vue'),
-      meta: { hideNav: true },
     },
     {
       path: '/product/create',
