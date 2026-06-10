@@ -544,497 +544,490 @@ watch(selectedSaleStatus, () => {
 </script>
 
 <template>
-  <div class="bg-primary/10 px-6 py-12 md:py-14">
-    <div class="mx-auto max-w-7xl">
-      <h1 class="text-4xl font-extrabold text-text-main md:text-5xl">마이페이지</h1>
-      <p class="mt-5 text-lg font-medium text-text-sub">내 정보와 거래 내역을 관리하세요</p>
-    </div>
-  </div>
+  <!-- 그래프 노트지 배경 -->
+  <div class="notebook-bg min-h-screen">
 
-  <main class="bg-sub-bg px-6 py-8 md:py-10">
-    <div class="mx-auto flex max-w-7xl flex-col gap-8 lg:flex-row">
-      <aside class="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0 lg:gap-6">
-        <div class="relative lg:hidden">
-          <button
-            type="button"
-            class="flex h-14 w-full items-center justify-between rounded-2xl border border-border bg-white px-4 text-base font-extrabold text-text-main shadow-sm"
-            @click="isMobileMenuOpen = !isMobileMenuOpen"
-          >
-            <span class="flex min-w-0 items-center gap-3">
-              <component :is="activeMenu.icon" class="h-5 w-5 shrink-0 text-primary" />
-              <span class="truncate">{{ activeMenu.label }}</span>
-            </span>
-            <ChevronDownIcon
-              class="h-5 w-5 shrink-0 text-text-sub transition"
-              :class="isMobileMenuOpen ? 'rotate-180' : ''"
-            />
-          </button>
+    <!-- ── 메인 레이아웃 ── -->
+    <main class="px-4 py-8 md:px-6 md:py-10">
+      <div class="mx-auto flex max-w-7xl flex-col gap-6 lg:flex-row">
 
-          <nav
-            v-if="isMobileMenuOpen"
-            class="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-2xl border border-border bg-white p-3 shadow-xl"
-          >
-            <div
-              v-for="(section, sectionIndex) in menuSections"
-              :key="section.id"
-              class="border-border pt-3 first:pt-0"
-              :class="sectionIndex === 0 ? '' : 'mt-3 border-t'"
-            >
-              <p v-if="section.title" class="px-3 pb-1.5 text-xs font-extrabold text-text-sub">
-                {{ section.title }}
-              </p>
-              <button
-                v-for="item in section.items"
-                :key="item.id"
-                type="button"
-                class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold transition"
-                :class="
-                  selectedMenu === item.id
-                    ? 'bg-primary text-white'
-                    : 'text-text-main hover:bg-primary/10 hover:text-primary'
-                "
-                @click="selectMenu(item.id)"
-              >
-                <component :is="item.icon" class="h-5 w-5" />
-                {{ item.label }}
-              </button>
-            </div>
-          </nav>
-        </div>
+        <!-- ── 사이드바 ── -->
+        <aside class="w-full lg:w-72 lg:shrink-0">
 
-        <nav class="hidden rounded-2xl border border-border bg-white p-4 shadow-sm lg:block">
-          <div
-            v-for="(section, sectionIndex) in menuSections"
-            :key="section.id"
-            class="border-border pt-4 first:pt-0"
-            :class="sectionIndex === 0 ? '' : 'mt-4 border-t'"
-          >
-            <p v-if="section.title" class="px-4 pb-2 text-sm font-extrabold text-text-main">
-              {{ section.title }}
-            </p>
+          <!-- 모바일 드롭다운 -->
+          <div class="relative lg:hidden">
             <button
-              v-for="item in section.items"
-              :key="item.id"
               type="button"
-              class="flex w-full items-center gap-4 rounded-xl px-4 py-4 text-base font-bold transition"
-              :class="
-                selectedMenu === item.id
-                  ? 'bg-primary text-white'
-                  : 'text-text-main hover:bg-primary/10 hover:text-primary'
-              "
-              @click="selectMenu(item.id)"
+              class="flex h-14 w-full items-center justify-between rounded-2xl border-2 border-ink bg-[#f0ebe0] px-4 font-extrabold text-ink shadow-[3px_3px_0_#1c1712] transition active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+              @click="isMobileMenuOpen = !isMobileMenuOpen"
             >
-              <component :is="item.icon" class="h-6 w-6" />
-              {{ item.label }}
+              <span class="flex min-w-0 items-center gap-3">
+                <component :is="activeMenu.icon" class="h-5 w-5 shrink-0" />
+                <span class="truncate">{{ activeMenu.label }}</span>
+              </span>
+              <ChevronDownIcon class="h-5 w-5 shrink-0 transition" :class="isMobileMenuOpen ? 'rotate-180' : ''" />
             </button>
-          </div>
-        </nav>
-      </aside>
 
-      <section class="min-w-0 flex-1">
-        <div v-if="selectedMenu === 'profile'" class="flex flex-col gap-6">
-          <section class="overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
-            <div class="px-6 py-7 md:px-8">
-              <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h2 class="text-3xl font-extrabold text-text-main">내 프로필</h2>
-                  <p class="mt-3 max-w-2xl text-sm font-medium leading-6 text-text-sub">
-                    계정과 거래 프로필에 표시될 정보를 확인합니다.
-                  </p>
-                </div>
+            <nav
+              v-if="isMobileMenuOpen"
+              class="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-2xl border-2 border-ink bg-[#f0ebe0] p-3 shadow-[4px_4px_0_#1c1712]"
+            >
+              <div
+                v-for="(section, si) in menuSections"
+                :key="section.id"
+                :class="['pt-3 first:pt-0', si > 0 ? 'mt-3 border-t-2 border-dashed border-ink/20' : '']"
+              >
+                <p v-if="section.title" class="mb-1.5 px-2 text-xs font-extrabold uppercase tracking-widest text-[#8c7e6e]">
+                  {{ section.title }}
+                </p>
                 <button
+                  v-for="item in section.items"
+                  :key="item.id"
                   type="button"
-                  class="hidden h-11 items-center justify-center gap-2 rounded-xl bg-text-main px-5 text-sm font-extrabold text-white transition hover:bg-text-hover sm:inline-flex"
-                  @click="openProfileEditModal"
+                  class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition"
+                  :class="selectedMenu === item.id
+                    ? 'bg-[#ffe066] border-2 border-ink text-ink shadow-[2px_2px_0_#1c1712]'
+                    : 'text-ink hover:bg-[#ffe066]/40'"
+                  @click="selectMenu(item.id)"
                 >
-                  <PencilSquareIcon class="h-5 w-5" />
-                  수정하기
+                  <component :is="item.icon" class="h-5 w-5 shrink-0" />
+                  {{ item.label }}
                 </button>
               </div>
+            </nav>
+          </div>
 
-              <div class="mt-8 rounded-2xl bg-sub-bg p-5">
-                <div class="flex items-center gap-4 sm:gap-6">
-                  <img
-                    v-if="profileImageUrl"
-                    :src="profileImageUrl"
-                    :alt="`${profile.nickname} 프로필 이미지`"
-                    class="h-24 w-24 shrink-0 rounded-full border-4 border-white object-cover shadow-sm"
-                  />
-                  <div
-                    v-else
-                    class="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-4 border-white bg-primary/10 shadow-sm"
-                  >
-                    <UserCircleIcon class="h-14 w-14 text-primary" />
+          <!-- 데스크탑 링 공책 스타일 사이드바 -->
+          <div class="hidden lg:block">
+            <div class="relative overflow-hidden rounded-2xl border-2 border-ink bg-[#f0ebe0] shadow-[4px_4px_0_#1c1712]">
+              <!-- 링 구멍 좌측 스트립 -->
+              <div class="absolute left-0 top-0 h-full w-9 shrink-0 border-r-2 border-ink bg-[#e0d8c8] flex flex-col items-center justify-evenly py-5">
+                <div v-for="n in 9" :key="n" class="h-4 w-4 rounded-full border-2 border-ink bg-white shadow-inner"></div>
+              </div>
+
+              <!-- 메뉴 항목들 -->
+              <div class="pl-11 pr-3 py-4">
+                <div
+                  v-for="(section, si) in menuSections"
+                  :key="section.id"
+                  :class="['pt-4 first:pt-0', si > 0 ? 'mt-3 border-t-2 border-dashed border-ink/15' : '']"
+                >
+                  <!-- 섹션 타이틀: 와시 테이프 스타일 -->
+                  <div v-if="section.title" class="mb-2 pl-1">
+                    <span
+                      class="inline-block -rotate-1 rounded-sm border border-ink/30 px-2 py-0.5 text-xs font-extrabold text-ink"
+                      :class="section.id === 'board' ? 'bg-[#b3d4ff]' : 'bg-[#96d4b4]'"
+                    >
+                      {{ section.title }}
+                    </span>
                   </div>
 
-                  <div class="min-w-0 flex-1">
-                    <div class="flex min-w-0 flex-wrap items-center gap-2">
-                      <h3 class="min-w-0 max-w-full break-words text-xl font-extrabold leading-tight text-text-main sm:text-2xl">
-                        {{ profile.nickname }}
-                      </h3>
-                      <span class="rounded-full bg-white px-3 py-1 text-xs font-extrabold text-primary">
+                  <button
+                    v-for="item in section.items"
+                    :key="item.id"
+                    type="button"
+                    class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold transition"
+                    :class="selectedMenu === item.id
+                      ? 'bg-[#ffe066] border-2 border-ink text-ink shadow-[2px_2px_0_#1c1712] -translate-x-0.5 -translate-y-0.5'
+                      : 'text-ink hover:bg-[#ffe066]/30'"
+                    @click="selectMenu(item.id)"
+                  >
+                    <component :is="item.icon" class="h-5 w-5 shrink-0" />
+                    {{ item.label }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- ── 콘텐츠 영역 ── -->
+        <section class="min-w-0 flex-1">
+
+          <!-- 프로필 페이지 -->
+          <div v-if="selectedMenu === 'profile'" class="flex flex-col gap-6">
+
+            <!-- 프로필 카드 -->
+            <div class="relative overflow-visible rounded-2xl border-2 border-ink bg-white shadow-[4px_4px_0_#1c1712]">
+              <!-- 와시 테이프 상단 장식 -->
+              <div class="absolute left-1/2 -top-3 -translate-x-1/2 h-6 w-28 -rotate-1 rounded-sm border border-ink/20 bg-[#ffe066]/75"></div>
+
+              <div class="px-6 py-7 md:px-8">
+                <!-- 헤더 -->
+                <div class="flex items-start justify-between">
+                  <h2 class="text-2xl font-extrabold text-ink">내 프로필</h2>
+                  <button
+                    type="button"
+                    class="hidden sm:inline-flex items-center gap-2 h-9 px-4 rounded-xl border-2 border-ink bg-[#ffe066] text-sm font-extrabold text-ink shadow-[2px_2px_0_#1c1712] transition hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_#1c1712] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+                    @click="openProfileEditModal"
+                  >
+                    <PencilSquareIcon class="h-4 w-4" />
+                    수정하기
+                  </button>
+                </div>
+
+                <!-- 프로필 사진 + 이름 -->
+                <div class="mt-6 flex flex-col items-center gap-5 rounded-xl border-2 border-dashed border-ink/20 bg-[#f9f5ee] p-5 sm:flex-row sm:items-center">
+                  <!-- 폴라로이드 프레임 -->
+                  <div class="shrink-0 rotate-2">
+                    <div class="bg-white p-2 pb-6 border-2 border-ink shadow-[3px_3px_0_#1c1712]">
+                      <img
+                        v-if="profileImageUrl"
+                        :src="profileImageUrl"
+                        :alt="`${profile.nickname} 프로필`"
+                        class="h-20 w-20 object-cover"
+                      />
+                      <div v-else class="flex h-20 w-20 items-center justify-center bg-[#ffe066]/20">
+                        <UserCircleIcon class="h-14 w-14 text-ink/30" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex-1 text-center sm:text-left">
+                    <h3 class="text-2xl font-extrabold text-ink">{{ profile.nickname }}</h3>
+                    <div class="mt-2 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
+                      <span class="inline-block -rotate-1 rounded-sm border border-ink/40 bg-[#96d4b4]/60 px-3 py-0.5 text-xs font-bold text-ink">
                         {{ profile.cohort }}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div class="mt-5 grid w-full grid-cols-2 gap-2 lg:grid-cols-4">
+                <!-- 스탯 포스트잇 4개 -->
+                <div class="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
                   <div
-                    v-for="stat in profileStats"
+                    v-for="(stat, i) in profileStats"
                     :key="stat.label"
-                    class="flex min-h-14 items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm"
+                    :class="[
+                      'stat-note flex flex-col items-center gap-1.5 rounded-xl border-2 border-ink p-3 shadow-[2px_2px_0_#1c1712]',
+                      i === 0 ? 'bg-[#ffe066] -rotate-1' :
+                      i === 1 ? 'bg-[#ffb3c6] rotate-1' :
+                      i === 2 ? 'bg-[#b3d4ff] -rotate-1' :
+                      'bg-[#96d4b4] rotate-1'
+                    ]"
                   >
-                    <div class="flex min-w-0 items-center gap-1.5">
-                      <component :is="stat.icon" class="h-4 w-4 shrink-0 text-primary" />
-                      <p class="truncate text-xs font-bold text-text-sub">{{ stat.label }}</p>
-                    </div>
-                    <p class="shrink-0 text-lg font-extrabold leading-none text-text-main">{{ stat.value }}</p>
+                    <component :is="stat.icon" class="h-5 w-5 text-ink" />
+                    <span class="text-xl font-extrabold leading-none text-ink">{{ stat.value }}</span>
+                    <span class="text-xs font-bold text-ink/60">{{ stat.label }}</span>
                   </div>
                 </div>
 
-              </div>
-              <button
-                type="button"
-                class="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-text-main px-5 text-sm font-extrabold text-white transition hover:bg-text-hover sm:hidden"
-                @click="openProfileEditModal"
-              >
-                <PencilSquareIcon class="h-5 w-5" />
-                수정하기
-              </button>
-            </div>
-          </section>
-
-          <section class="rounded-2xl border border-border bg-white p-6 shadow-sm md:p-8">
-            <div>
-              <div>
-                <h3 class="text-xl font-extrabold text-text-main">기본 정보</h3>
-                <p class="mt-2 text-sm font-medium text-text-sub">프로필 화면에 항상 노출되는 정보입니다</p>
+                <!-- 모바일 수정 버튼 -->
+                <button
+                  type="button"
+                  class="mt-5 sm:hidden flex w-full items-center justify-center gap-2 h-11 rounded-xl border-2 border-ink bg-[#ffe066] text-sm font-extrabold text-ink shadow-[2px_2px_0_#1c1712] transition active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+                  @click="openProfileEditModal"
+                >
+                  <PencilSquareIcon class="h-4 w-4" />
+                  수정하기
+                </button>
               </div>
             </div>
 
-            <dl class="mt-6 flex flex-col gap-3">
-              <div
-                v-for="row in accountRows"
-                :key="row.label"
-                class="flex flex-col gap-2 rounded-2xl bg-sub-bg px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <dt class="flex items-center gap-2 text-sm font-bold text-text-sub">
-                  <component :is="row.icon" class="h-4 w-4" />
-                  {{ row.label }}
-                </dt>
-                <dd class="break-words text-base font-extrabold text-text-main sm:text-right">
-                  {{ row.value || '-' }}
-                </dd>
-              </div>
-            </dl>
-          </section>
-        </div>
+            <!-- 기본 정보: 노트 줄 스타일 -->
+            <div class="relative overflow-hidden rounded-2xl border-2 border-ink bg-white shadow-[4px_4px_0_#1c1712]">
+              <!-- 왼쪽 분홍 마진 라인 -->
+              <div class="absolute left-0 top-0 h-full w-1.5 bg-[#ffb3c6]"></div>
 
-        <template v-else-if="isBoardActivityMenu">
-          <div class="rounded-2xl border border-border bg-white p-6 shadow-sm md:p-8">
-            <h2 class="text-2xl font-extrabold text-text-main">{{ activeMenu.label }}</h2>
-            <p class="mt-2 text-sm font-medium text-text-sub">{{ boardActivityDescription }}</p>
+              <div class="px-6 py-6 md:px-8">
+                <h3 class="mb-1 text-xl font-extrabold text-ink">기본 정보</h3>
+                <p class="mb-5 text-sm text-[#8c7e6e]">프로필 화면에 항상 노출되는 정보입니다</p>
+
+                <dl>
+                  <div
+                    v-for="row in accountRows"
+                    :key="row.label"
+                    class="flex flex-col gap-1.5 border-b border-dashed border-ink/15 py-3.5 last:border-0 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <dt class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#8c7e6e]">
+                      <component :is="row.icon" class="h-3.5 w-3.5 shrink-0" />
+                      {{ row.label }}
+                    </dt>
+                    <dd class="pl-5 text-sm font-extrabold text-ink sm:pl-0 sm:text-right">{{ row.value || '-' }}</dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
           </div>
 
-          <div class="mt-6 rounded-2xl border border-border bg-white p-4 shadow-sm md:p-6">
-            <p v-if="isBoardActivityLoading" class="py-12 text-center text-sm font-bold text-text-sub">
-              목록을 불러오는 중입니다
-            </p>
-            <p
-              v-else-if="boardActivityError"
-              class="rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600"
-            >
-              {{ boardActivityError }}
-            </p>
-            <ul v-else-if="boardActivityPosts.length" class="flex flex-col divide-y divide-border">
-              <li v-for="post in boardActivityPosts" :key="post.id">
-                <BoardPostCard :post="post" />
-              </li>
-            </ul>
-            <div v-else class="px-6 py-12 text-center">
-              <ArchiveBoxIcon class="mx-auto h-12 w-12 text-text-sub" />
-              <p class="mt-4 text-lg font-extrabold text-text-main">{{ boardActivityEmptyMessage }}</p>
-              <p class="mt-2 text-sm font-medium text-text-sub">활동이 생기면 이곳에 표시됩니다</p>
+          <!-- 낙서장 활동 (내가 쓴 글 / 댓글 단 글) -->
+          <template v-else-if="isBoardActivityMenu">
+            <div class="relative overflow-hidden rounded-2xl border-2 border-ink bg-white p-6 shadow-[4px_4px_0_#1c1712] md:p-8">
+              <div class="absolute left-0 top-0 h-full w-1.5 bg-[#b3d4ff]"></div>
+              <h2 class="text-2xl font-extrabold text-ink">{{ activeMenu.label }}</h2>
+              <p class="mt-2 text-sm text-[#8c7e6e]">{{ boardActivityDescription }}</p>
             </div>
 
-            <div v-if="boardActivityTotalPages > 1" class="mt-6 flex justify-center gap-2">
+            <div class="mt-5 rounded-2xl border-2 border-ink bg-white p-4 shadow-[4px_4px_0_#1c1712] md:p-6">
+              <p v-if="isBoardActivityLoading" class="py-12 text-center text-sm font-bold text-[#8c7e6e]">
+                목록을 불러오는 중입니다
+              </p>
+              <p v-else-if="boardActivityError" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
+                {{ boardActivityError }}
+              </p>
+              <ul v-else-if="boardActivityPosts.length" class="flex flex-col divide-y-2 divide-dashed divide-ink/15">
+                <li v-for="post in boardActivityPosts" :key="post.id">
+                  <BoardPostCard :post="post" />
+                </li>
+              </ul>
+              <div v-else class="px-6 py-12 text-center">
+                <ArchiveBoxIcon class="mx-auto h-12 w-12 text-[#8c7e6e]" />
+                <p class="mt-4 text-lg font-extrabold text-ink">{{ boardActivityEmptyMessage }}</p>
+                <p class="mt-2 text-sm text-[#8c7e6e]">활동이 생기면 이곳에 표시됩니다</p>
+              </div>
+
+              <div v-if="boardActivityTotalPages > 1" class="mt-6 flex justify-center gap-2">
+                <button
+                  v-for="page in boardActivityTotalPages"
+                  :key="page"
+                  type="button"
+                  class="h-10 w-10 rounded-lg border-2 border-ink text-sm font-extrabold transition shadow-[2px_2px_0_#1c1712]"
+                  :class="boardActivityCurrentPage === page - 1
+                    ? 'bg-[#ffe066] text-ink -translate-x-0.5 -translate-y-0.5 shadow-[3px_3px_0_#1c1712]'
+                    : 'bg-white text-ink hover:bg-[#ffe066]/30'"
+                  @click="fetchBoardActivityPosts(page - 1)"
+                >
+                  {{ page }}
+                </button>
+              </div>
+            </div>
+          </template>
+
+          <!-- 판매 목록 -->
+          <template v-else-if="selectedMenu === 'sales'">
+            <div class="relative overflow-hidden rounded-2xl border-2 border-ink bg-white p-6 shadow-[4px_4px_0_#1c1712] md:p-8">
+              <div class="absolute left-0 top-0 h-full w-1.5 bg-[#96d4b4]"></div>
+              <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 class="text-2xl font-extrabold text-ink">내 판매목록</h2>
+                  <p class="mt-1 text-sm text-[#8c7e6e]">판매 상태별로 내 상품을 확인하세요</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="status in saleStatusTabs"
+                    :key="status.value"
+                    type="button"
+                    class="h-10 rounded-lg border-2 border-ink px-5 text-sm font-extrabold transition"
+                    :class="selectedSaleStatus === status.value
+                      ? 'bg-[#ffe066] shadow-[2px_2px_0_#1c1712] -translate-x-0.5 -translate-y-0.5'
+                      : 'bg-white text-ink hover:bg-[#ffe066]/30 shadow-[2px_2px_0_#1c1712]'"
+                    @click="selectedSaleStatus = status.value"
+                  >
+                    {{ status.label }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <p v-if="isSalesLoading" class="mt-5 rounded-2xl border-2 border-ink bg-white py-12 text-center text-sm font-bold text-[#8c7e6e] shadow-[4px_4px_0_#1c1712]">
+              판매 목록을 불러오는 중입니다
+            </p>
+            <p v-else-if="salesError" class="mt-5 rounded-2xl border-2 border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-600">
+              {{ salesError }}
+            </p>
+            <div v-else-if="mySaleProducts.length" class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <ProductCard
+                v-for="product in mySaleProducts"
+                :key="product.id"
+                :product="product"
+                :liked="likedIds.has(product.id)"
+                @toggle-like="toggleLike"
+              />
+            </div>
+            <div v-else class="mt-5 rounded-2xl border-2 border-ink bg-white px-6 py-14 text-center shadow-[4px_4px_0_#1c1712]">
+              <ArchiveBoxIcon class="mx-auto h-12 w-12 text-[#8c7e6e]" />
+              <p class="mt-4 text-lg font-extrabold text-ink">표시할 상품이 없습니다</p>
+              <p class="mt-2 text-sm text-[#8c7e6e]">다른 판매 상태를 선택해보세요</p>
+            </div>
+
+            <div v-if="!isSalesLoading && !salesError && saleTotalPages > 1" class="mt-5 flex justify-center gap-2">
               <button
-                v-for="page in boardActivityTotalPages"
+                v-for="page in saleTotalPages"
                 :key="page"
                 type="button"
-                class="h-10 w-10 rounded-xl text-sm font-extrabold transition"
-                :class="
-                  boardActivityCurrentPage === page - 1
-                    ? 'bg-primary text-white'
-                    : 'border border-border text-text-main hover:bg-primary/10 hover:text-primary'
-                "
-                @click="fetchBoardActivityPosts(page - 1)"
+                class="h-10 w-10 rounded-lg border-2 border-ink text-sm font-extrabold transition shadow-[2px_2px_0_#1c1712]"
+                :class="saleCurrentPage === page - 1
+                  ? 'bg-[#ffe066] text-ink -translate-x-0.5 -translate-y-0.5 shadow-[3px_3px_0_#1c1712]'
+                  : 'bg-white text-ink hover:bg-[#ffe066]/30'"
+                @click="fetchMySaleProducts(page - 1)"
               >
                 {{ page }}
               </button>
             </div>
-          </div>
-        </template>
+          </template>
 
-        <template v-else-if="selectedMenu === 'sales'">
-          <div class="rounded-2xl border border-border bg-white p-6 shadow-sm md:p-8">
-            <div class="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h2 class="text-2xl font-extrabold text-text-main">내 판매목록</h2>
-                <p class="mt-2 text-sm font-medium text-text-sub">판매 상태별로 내 상품을 확인하세요</p>
-              </div>
-              <div class="flex flex-wrap gap-3">
-                <button
-                  v-for="status in saleStatusTabs"
-                  :key="status.value"
-                  type="button"
-                  class="h-12 rounded-full px-6 text-sm font-extrabold transition"
-                  :class="
-                    selectedSaleStatus === status.value
-                      ? 'bg-primary text-white shadow-[0_8px_18px_rgba(255,184,0,0.35)]'
-                      : 'bg-sub-bg text-text-main hover:bg-primary/10 hover:text-primary'
-                  "
-                  @click="selectedSaleStatus = status.value"
-                >
-                  {{ status.label }}
-                </button>
-              </div>
+          <!-- 찜 목록 -->
+          <template v-else-if="selectedMenu === 'favorites'">
+            <div class="relative overflow-hidden rounded-2xl border-2 border-ink bg-white p-6 shadow-[4px_4px_0_#1c1712] md:p-8">
+              <div class="absolute left-0 top-0 h-full w-1.5 bg-[#ffb3c6]"></div>
+              <h2 class="text-2xl font-extrabold text-ink">찜 목록</h2>
+              <p class="mt-1 text-sm text-[#8c7e6e]">내가 찜한 낙서장터 상품을 확인하세요</p>
             </div>
+
+            <p v-if="isFavoritesLoading" class="mt-5 rounded-2xl border-2 border-ink bg-white py-12 text-center text-sm font-bold text-[#8c7e6e] shadow-[4px_4px_0_#1c1712]">
+              찜 목록을 불러오는 중입니다
+            </p>
+            <p v-else-if="favoritesError" class="mt-5 rounded-2xl border-2 border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-600">
+              {{ favoritesError }}
+            </p>
+            <div v-else-if="myFavoriteProducts.length" class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <ProductCard
+                v-for="product in myFavoriteProducts"
+                :key="product.id"
+                :product="product"
+                :liked="likedIds.has(product.id)"
+                @toggle-like="toggleLike"
+              />
+            </div>
+            <div v-else class="mt-5 rounded-2xl border-2 border-ink bg-white px-6 py-14 text-center shadow-[4px_4px_0_#1c1712]">
+              <ArchiveBoxIcon class="mx-auto h-12 w-12 text-[#8c7e6e]" />
+              <p class="mt-4 text-lg font-extrabold text-ink">찜한 상품이 없습니다</p>
+              <p class="mt-2 text-sm text-[#8c7e6e]">관심 있는 상품을 찜하면 이곳에 표시됩니다</p>
+            </div>
+          </template>
+
+          <!-- 구매 목록 -->
+          <template v-else-if="selectedMenu === 'purchases'">
+            <div class="relative overflow-hidden rounded-2xl border-2 border-ink bg-white p-6 shadow-[4px_4px_0_#1c1712] md:p-8">
+              <div class="absolute left-0 top-0 h-full w-1.5 bg-[#ffe066]"></div>
+              <h2 class="text-2xl font-extrabold text-ink">구매 목록</h2>
+              <p class="mt-1 text-sm text-[#8c7e6e]">거래 완료된 구매 상품을 확인하세요</p>
+            </div>
+
+            <p v-if="isPurchasesLoading" class="mt-5 rounded-2xl border-2 border-ink bg-white py-12 text-center text-sm font-bold text-[#8c7e6e] shadow-[4px_4px_0_#1c1712]">
+              구매 목록을 불러오는 중입니다
+            </p>
+            <p v-else-if="purchasesError" class="mt-5 rounded-2xl border-2 border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-600">
+              {{ purchasesError }}
+            </p>
+            <div v-else-if="myPurchaseProducts.length" class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <ProductCard
+                v-for="product in myPurchaseProducts"
+                :key="product.id"
+                :product="product"
+                :liked="likedIds.has(product.id)"
+                @toggle-like="toggleLike"
+              />
+            </div>
+            <div v-else class="mt-5 rounded-2xl border-2 border-ink bg-white px-6 py-14 text-center shadow-[4px_4px_0_#1c1712]">
+              <ArchiveBoxIcon class="mx-auto h-12 w-12 text-[#8c7e6e]" />
+              <p class="mt-4 text-lg font-extrabold text-ink">구매 완료된 상품이 없습니다</p>
+              <p class="mt-2 text-sm text-[#8c7e6e]">거래 완료 내역이 생기면 이곳에 표시됩니다</p>
+            </div>
+
+            <div v-if="!isPurchasesLoading && !purchasesError && purchaseTotalPages > 1" class="mt-5 flex justify-center gap-2">
+              <button
+                v-for="page in purchaseTotalPages"
+                :key="page"
+                type="button"
+                class="h-10 w-10 rounded-lg border-2 border-ink text-sm font-extrabold transition shadow-[2px_2px_0_#1c1712]"
+                :class="purchaseCurrentPage === page - 1
+                  ? 'bg-[#ffe066] text-ink -translate-x-0.5 -translate-y-0.5 shadow-[3px_3px_0_#1c1712]'
+                  : 'bg-white text-ink hover:bg-[#ffe066]/30'"
+                @click="fetchMyPurchaseProducts(page - 1)"
+              >
+                {{ page }}
+              </button>
+            </div>
+          </template>
+
+          <!-- 환경설정 / 기타 -->
+          <div v-else class="rounded-2xl border-2 border-ink bg-white px-6 py-16 text-center shadow-[4px_4px_0_#1c1712]">
+            <component :is="activeMenu.icon" class="mx-auto h-12 w-12 text-[#8c7e6e]" />
+            <h2 class="mt-5 text-2xl font-extrabold text-ink">{{ activeMenu.label }}</h2>
+            <p class="mt-3 text-sm text-[#8c7e6e]">이 영역은 추후 구현 예정입니다</p>
           </div>
 
-          <p v-if="isSalesLoading" class="mt-6 rounded-2xl border border-border bg-white py-12 text-center text-sm font-bold text-text-sub shadow-sm">
-            판매 목록을 불러오는 중입니다
-          </p>
-          <p
-            v-else-if="salesError"
-            class="mt-6 rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-bold text-red-600 shadow-sm"
-          >
-            {{ salesError }}
-          </p>
-          <div v-else-if="mySaleProducts.length" class="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            <ProductCard
-              v-for="product in mySaleProducts"
-              :key="product.id"
-              :product="product"
-              :liked="likedIds.has(product.id)"
-              @toggle-like="toggleLike"
-            />
-          </div>
+        </section>
+      </div>
+    </main>
+  </div>
 
-          <div v-else class="mt-6 rounded-2xl border border-border bg-white px-6 py-16 text-center shadow-sm">
-            <ArchiveBoxIcon class="mx-auto h-12 w-12 text-text-sub" />
-            <p class="mt-4 text-lg font-extrabold text-text-main">표시할 상품이 없습니다</p>
-            <p class="mt-2 text-sm font-medium text-text-sub">다른 판매 상태를 선택해보세요</p>
-          </div>
-
-          <div v-if="!isSalesLoading && !salesError && saleTotalPages > 1" class="mt-6 flex justify-center gap-2">
-            <button
-              v-for="page in saleTotalPages"
-              :key="page"
-              type="button"
-              class="h-10 w-10 rounded-xl text-sm font-extrabold transition"
-              :class="
-                saleCurrentPage === page - 1
-                  ? 'bg-primary text-white'
-                  : 'border border-border bg-white text-text-main hover:bg-primary/10 hover:text-primary'
-              "
-              @click="fetchMySaleProducts(page - 1)"
-            >
-              {{ page }}
-            </button>
-          </div>
-        </template>
-
-        <template v-else-if="selectedMenu === 'favorites'">
-          <div class="rounded-2xl border border-border bg-white p-6 shadow-sm md:p-8">
-            <h2 class="text-2xl font-extrabold text-text-main">찜 목록</h2>
-            <p class="mt-2 text-sm font-medium text-text-sub">내가 찜한 낙서장터 상품을 확인하세요</p>
-          </div>
-
-          <p
-            v-if="isFavoritesLoading"
-            class="mt-6 rounded-2xl border border-border bg-white py-12 text-center text-sm font-bold text-text-sub shadow-sm"
-          >
-            찜 목록을 불러오는 중입니다
-          </p>
-          <p
-            v-else-if="favoritesError"
-            class="mt-6 rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-bold text-red-600 shadow-sm"
-          >
-            {{ favoritesError }}
-          </p>
-          <div v-else-if="myFavoriteProducts.length" class="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            <ProductCard
-              v-for="product in myFavoriteProducts"
-              :key="product.id"
-              :product="product"
-              :liked="likedIds.has(product.id)"
-              @toggle-like="toggleLike"
-            />
-          </div>
-
-          <div v-else class="mt-6 rounded-2xl border border-border bg-white px-6 py-16 text-center shadow-sm">
-            <ArchiveBoxIcon class="mx-auto h-12 w-12 text-text-sub" />
-            <p class="mt-4 text-lg font-extrabold text-text-main">찜한 상품이 없습니다</p>
-            <p class="mt-2 text-sm font-medium text-text-sub">관심 있는 상품을 찜하면 이곳에 표시됩니다</p>
-          </div>
-        </template>
-
-        <template v-else-if="selectedMenu === 'purchases'">
-          <div class="rounded-2xl border border-border bg-white p-6 shadow-sm md:p-8">
-            <h2 class="text-2xl font-extrabold text-text-main">구매 목록</h2>
-            <p class="mt-2 text-sm font-medium text-text-sub">거래 완료된 구매 상품을 확인하세요</p>
-          </div>
-
-          <p
-            v-if="isPurchasesLoading"
-            class="mt-6 rounded-2xl border border-border bg-white py-12 text-center text-sm font-bold text-text-sub shadow-sm"
-          >
-            구매 목록을 불러오는 중입니다
-          </p>
-          <p
-            v-else-if="purchasesError"
-            class="mt-6 rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-bold text-red-600 shadow-sm"
-          >
-            {{ purchasesError }}
-          </p>
-          <div v-else-if="myPurchaseProducts.length" class="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            <ProductCard
-              v-for="product in myPurchaseProducts"
-              :key="product.id"
-              :product="product"
-              :liked="likedIds.has(product.id)"
-              @toggle-like="toggleLike"
-            />
-          </div>
-
-          <div v-else class="mt-6 rounded-2xl border border-border bg-white px-6 py-16 text-center shadow-sm">
-            <ArchiveBoxIcon class="mx-auto h-12 w-12 text-text-sub" />
-            <p class="mt-4 text-lg font-extrabold text-text-main">구매 완료된 상품이 없습니다</p>
-            <p class="mt-2 text-sm font-medium text-text-sub">거래 완료 내역이 생기면 이곳에 표시됩니다</p>
-          </div>
-
-          <div
-            v-if="!isPurchasesLoading && !purchasesError && purchaseTotalPages > 1"
-            class="mt-6 flex justify-center gap-2"
-          >
-            <button
-              v-for="page in purchaseTotalPages"
-              :key="page"
-              type="button"
-              class="h-10 w-10 rounded-xl text-sm font-extrabold transition"
-              :class="
-                purchaseCurrentPage === page - 1
-                  ? 'bg-primary text-white'
-                  : 'border border-border bg-white text-text-main hover:bg-primary/10 hover:text-primary'
-              "
-              @click="fetchMyPurchaseProducts(page - 1)"
-            >
-              {{ page }}
-            </button>
-          </div>
-        </template>
-
-        <div v-else class="rounded-2xl border border-border bg-white px-6 py-16 text-center shadow-sm">
-          <component :is="activeMenu.icon" class="mx-auto h-12 w-12 text-primary" />
-          <h2 class="mt-5 text-2xl font-extrabold text-text-main">{{ activeMenu.label }}</h2>
-          <p class="mt-3 text-sm font-medium text-text-sub">이 영역은 추후 구현 예정입니다</p>
-        </div>
-      </section>
-    </div>
-  </main>
-
+  <!-- ── 프로필 수정 모달 ── -->
   <div
     v-if="isProfileEditModalOpen"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4 py-8"
     @click.self="closeProfileEditModal"
   >
-    <section class="max-h-full w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
-      <div class="flex items-center justify-between gap-4 border-b border-border px-6 py-5">
+    <section class="max-h-full w-full max-w-2xl overflow-y-auto rounded-2xl border-2 border-ink bg-white shadow-[6px_6px_0_#1c1712]">
+      <!-- 모달 헤더 -->
+      <div class="relative flex items-center justify-between gap-4 border-b-2 border-ink px-6 py-5">
+        <div class="absolute left-1/2 -top-3 -translate-x-1/2 h-5 w-20 rounded-sm border border-ink/20 bg-[#ffe066]/70"></div>
         <div>
-          <h2 class="text-xl font-extrabold text-text-main">프로필 수정</h2>
-          <p class="mt-1 text-sm font-medium text-text-sub">프로필 사진과 닉네임을 수정합니다</p>
+          <h2 class="text-xl font-extrabold text-ink">프로필 수정</h2>
+          <p class="mt-1 text-sm text-[#8c7e6e]">프로필 사진과 닉네임을 수정합니다</p>
         </div>
         <button
           type="button"
-          class="flex h-10 w-10 items-center justify-center rounded-xl text-text-sub transition hover:bg-sub-bg hover:text-text-main"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border-2 border-ink bg-white text-ink shadow-[2px_2px_0_#1c1712] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
           @click="closeProfileEditModal"
         >
-          <XMarkIcon class="h-6 w-6" />
+          <XMarkIcon class="h-5 w-5" />
         </button>
       </div>
 
       <div class="px-6 py-6">
-        <div class="flex flex-col items-center border-b border-border pb-6">
+        <!-- 사진 영역 -->
+        <div class="flex flex-col items-center border-b-2 border-dashed border-ink/20 pb-6">
           <div class="relative">
-            <img
-              v-if="profileEditImagePreview"
-              :src="profileEditImagePreview"
-              :alt="`${profile.nickname} 프로필 이미지 미리보기`"
-              class="h-32 w-32 rounded-full border-4 border-white object-cover shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
-            />
-            <div
-              v-else
-              class="flex h-32 w-32 items-center justify-center rounded-full border-4 border-white bg-primary/10 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
-            >
-              <UserCircleIcon class="h-20 w-20 text-primary" />
+            <!-- 폴라로이드 프레임 -->
+            <div class="rotate-1 bg-white p-2 pb-7 border-2 border-ink shadow-[3px_3px_0_#1c1712]">
+              <img
+                v-if="profileEditImagePreview"
+                :src="profileEditImagePreview"
+                :alt="`${profile.nickname} 프로필 미리보기`"
+                class="h-28 w-28 object-cover"
+              />
+              <div v-else class="flex h-28 w-28 items-center justify-center bg-[#ffe066]/10">
+                <UserCircleIcon class="h-20 w-20 text-ink/20" />
+              </div>
             </div>
+            <!-- 카메라 버튼 -->
             <button
               type="button"
-              class="absolute bottom-1 right-1 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-white text-primary shadow-md transition hover:bg-primary hover:text-white"
+              class="absolute -bottom-2 -right-2 flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink bg-[#ffe066] text-ink shadow-[2px_2px_0_#1c1712] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
               @click="openProfileImagePicker"
             >
-              <CameraIcon class="h-5 w-5" />
+              <CameraIcon class="h-4 w-4" />
             </button>
           </div>
 
           <button
             type="button"
-            class="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-extrabold text-text-sub transition hover:bg-sub-bg hover:text-text-main"
+            class="mt-6 inline-flex items-center gap-2 h-9 rounded-lg border-2 border-ink px-4 text-sm font-bold text-[#8c7e6e] transition hover:bg-red-50 hover:text-red-500 hover:border-red-300"
             @click="removeProfileImagePreview"
           >
             <TrashIcon class="h-4 w-4" />
             사진 삭제
           </button>
-          <input
-            ref="profileImageInput"
-            type="file"
-            accept="image/*"
-            class="hidden"
-            @change="handleProfileImageChange"
-          />
+          <input ref="profileImageInput" type="file" accept="image/*" class="hidden" @change="handleProfileImageChange" />
         </div>
 
+        <!-- 닉네임 입력 -->
         <div class="mt-6 flex flex-col gap-4">
           <label class="block">
-            <span class="text-sm font-bold text-text-sub">닉네임</span>
+            <span class="text-sm font-extrabold text-ink">닉네임</span>
             <input
               v-model="profileEditForm.nickname"
               type="text"
-              class="mt-2 h-12 w-full rounded-xl border border-border px-4 text-sm font-bold text-text-main outline-none focus:border-primary"
+              class="mt-2 h-12 w-full rounded-xl border-2 border-ink px-4 text-sm font-bold text-ink outline-none transition focus:border-[#ffe066] focus:shadow-[0_0_0_3px_rgba(255,224,102,0.25)]"
             />
           </label>
 
-          <p
-            v-if="profileEditError"
-            class="rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600"
-          >
+          <p v-if="profileEditError" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
             {{ profileEditError }}
           </p>
-          <p
-            v-else-if="profileEditSuccess"
-            class="rounded-xl bg-green-50 px-4 py-3 text-sm font-bold text-green-600"
-          >
+          <p v-else-if="profileEditSuccess" class="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-bold text-green-600">
             {{ profileEditSuccess }}
           </p>
         </div>
       </div>
 
-      <div class="flex justify-end gap-3 border-t border-border px-6 py-5">
+      <!-- 모달 푸터 -->
+      <div class="flex justify-end gap-3 border-t-2 border-ink px-6 py-5">
         <button
           type="button"
-          class="h-11 rounded-xl border border-border px-5 text-sm font-extrabold text-text-main transition hover:bg-sub-bg disabled:cursor-not-allowed disabled:opacity-60"
+          class="h-10 rounded-xl border-2 border-ink bg-white px-5 text-sm font-extrabold text-ink shadow-[2px_2px_0_#1c1712] transition hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_#1c1712] hover:bg-[#f0ebe0] disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="isProfileSaving"
           @click="closeProfileEditModal"
         >
@@ -1042,13 +1035,36 @@ watch(selectedSaleStatus, () => {
         </button>
         <button
           type="button"
-          class="h-11 rounded-xl bg-primary px-5 text-sm font-extrabold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-primary/50"
+          class="h-10 rounded-xl border-2 border-ink bg-[#ffe066] px-5 text-sm font-extrabold text-ink shadow-[2px_2px_0_#1c1712] transition hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_#1c1712] disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="isProfileSaving"
           @click="saveProfileEdit"
         >
-          {{ isProfileSaving ? '저장 중' : '저장하기' }}
+          {{ isProfileSaving ? '저장 중...' : '저장하기' }}
         </button>
       </div>
     </section>
   </div>
 </template>
+
+<style scoped>
+/* 그래프 노트지 배경 */
+.notebook-bg {
+  background-color: #f5f0e8;
+  background-image:
+    linear-gradient(rgba(139, 126, 110, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139, 126, 110, 0.12) 1px, transparent 1px),
+    linear-gradient(rgba(139, 126, 110, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139, 126, 110, 0.05) 1px, transparent 1px);
+  background-size: 80px 80px, 80px 80px, 20px 20px, 20px 20px;
+  background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+}
+
+/* 포스트잇 호버 효과 */
+.stat-note {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.stat-note:hover {
+  transform: rotate(0deg) translateY(-2px) !important;
+  box-shadow: 3px 3px 0 #1c1712;
+}
+</style>
