@@ -58,7 +58,7 @@ onBeforeUnmount(() => document.removeEventListener('click', handleOutsideClick))
             <RouterLink to="/chats" class="nav-link relative inline-flex items-center text-base text-[#8c7e6e] hover:text-ink transition-colors">
               채팅
               <span
-                v-if="chatStore.unreadCount > 0"
+                v-if="chatStore.unreadCount > 0 || chatStore.pendingReview"
                 class="absolute -top-1.5 -right-3 w-2 h-2 bg-red-500 rounded-full"
               ></span>
             </RouterLink>

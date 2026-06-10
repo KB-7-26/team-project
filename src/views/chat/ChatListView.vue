@@ -54,7 +54,7 @@ async function loadChatRooms() {
       productTitle: room.productTitle,
       productImage: null,
       opponentName: room.opponentNickname,
-      lastMessage: '',
+      lastMessage: room.lastMessage ?? '',
       lastMessageTime: formatTime(room.lastMessageAt ?? room.createdAt),
       unreadCount: room.unreadCount ?? 0,
     }))
@@ -65,15 +65,20 @@ async function loadChatRooms() {
   }
 }
 
+// unreadCount 변경 시 → 전체 목록 새로고침 (lastMessage, 순서 포함)
 watch(() => chatStore.unreadCount, loadChatRooms)
+
+// 새 메시지 이벤트 → 해당 방 맨 위로 + lastMessage/lastMessageTime 업데이트
 watch(() => chatStore.lastMessageEvent, (event) => {
   if (!event) return
   const idx = chatRooms.value.findIndex(r => r.chatRoomId === event.chatRoomId)
   if (idx === -1) return
   const [room] = chatRooms.value.splice(idx, 1)
   room.lastMessageTime = event.time
+  if (event.message) room.lastMessage = event.message
   chatRooms.value.unshift(room)
 }, { deep: true })
+
 onMounted(loadChatRooms)
 </script>
 
@@ -126,6 +131,7 @@ onMounted(loadChatRooms)
         :lastMessage="room.lastMessage"
         :unreadCount="room.unreadCount"
         :isActive="room.chatRoomId === activeChatRoomId"
+        :hasPendingReview="chatStore.pendingReview?.chatRoomId === room.chatRoomId"
         @click="$router.push(`/chats/${room.chatRoomId}`)"
       />
     </div>

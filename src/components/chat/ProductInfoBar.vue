@@ -4,6 +4,7 @@ defineProps({
   productTitle: String,
   price: Number,
   tradeCompleted: Boolean,
+  isSeller: Boolean,
 })
 
 const emit = defineEmits(['complete-trade'])
@@ -23,15 +24,19 @@ const emit = defineEmits(['complete-trade'])
       <p class="text-sm font-bold text-ink truncate">{{ productTitle ?? '상품 정보 없음' }}</p>
       <p v-if="price" class="text-xs text-[#8c7e6e] mt-0.5">{{ price.toLocaleString() }}원</p>
     </div>
-    <!-- 거래완료 버튼 -->
+    <!-- 판매자 && 미완료 → 거래완료 버튼 -->
     <button
-      v-if="!tradeCompleted"
+      v-if="isSeller && !tradeCompleted"
       class="trade-btn px-4 py-1.5 bg-[#96d4b4] border-2 border-ink text-ink text-xs font-bold rounded-lg shadow-[2px_2px_0_#1c1712] transition-all shrink-0"
       @click="emit('complete-trade')"
     >
       거래완료
     </button>
-    <span v-else class="px-4 py-1.5 bg-white border-2 border-[#96d4b4] text-[#5aaa84] text-xs font-bold rounded-lg shrink-0">거래완료됨</span>
+    <!-- 거래 완료된 경우에만 거래완료됨 표시 -->
+    <span
+      v-else-if="tradeCompleted"
+      class="px-4 py-1.5 bg-white border-2 border-[#96d4b4] text-[#5aaa84] text-xs font-bold rounded-lg shrink-0"
+    >거래완료됨</span>
   </div>
 </template>
 

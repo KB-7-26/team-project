@@ -7,6 +7,7 @@ defineProps({
   lastMessage: String,
   unreadCount: Number,
   isActive: Boolean,
+  hasPendingReview: Boolean,
 })
 </script>
 
@@ -39,7 +40,12 @@ defineProps({
       <div class="flex justify-between items-center gap-2">
         <span class="text-[13px] text-[#8c7e6e] truncate">{{ lastMessage }}</span>
         <span
-          v-if="unreadCount > 0"
+          v-if="hasPendingReview"
+          class="text-base shrink-0"
+          title="별점을 남겨주세요!"
+        >⭐</span>
+        <span
+          v-else-if="unreadCount > 0"
           class="bg-[#ffe066] border-2 border-ink text-ink text-[11px] font-bold min-w-5 h-5 px-1 rounded-full flex items-center justify-center shrink-0 shadow-[1px_1px_0_#1c1712]"
         >
           {{ unreadCount }}
