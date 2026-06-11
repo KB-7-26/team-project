@@ -204,6 +204,18 @@ const selectMenu = (menuId) => {
   selectedMenu.value = menuId
   isMobileMenuOpen.value = false
 }
+
+const navigateFromStat = (index) => {
+  if (index === 0) {
+    selectedSaleStatus.value = 'available'
+    selectMenu('sales')
+  } else if (index === 1) {
+    selectedSaleStatus.value = 'sold'
+    selectMenu('sales')
+  } else if (index === 2) {
+    selectMenu('favorites')
+  }
+}
 const mapProductListItem = (product) => ({
   id: product.id,
   title: product.title,
@@ -703,8 +715,10 @@ watch(selectedSaleStatus, () => {
                       i === 0 ? 'bg-[#ffe066] -rotate-1' :
                       i === 1 ? 'bg-[#ffb3c6] rotate-1' :
                       i === 2 ? 'bg-[#b3d4ff] -rotate-1' :
-                      'bg-[#96d4b4] rotate-1'
+                      'bg-[#96d4b4] rotate-1',
+                      i < 3 ? 'cursor-pointer' : ''
                     ]"
+                    @click="navigateFromStat(i)"
                   >
                     <component :is="stat.icon" class="h-5 w-5 text-ink" />
                     <span class="text-xl font-extrabold leading-none text-ink">{{ stat.value }}</span>

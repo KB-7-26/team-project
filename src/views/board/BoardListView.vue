@@ -80,11 +80,67 @@ onMounted(() => {
     <!-- 히어로 배너 -->
     <div class="board-hero px-6 py-10">
       <div class="max-w-6xl mx-auto">
-        <span class="inline-block rotate-[-1.2deg] mb-4 px-3 py-0.5 font-sketch text-sm text-[#d4f5e4] border-2 border-[#d4f5e4] rounded-md opacity-80">✦ 익명 커뮤니티</span>
-        <h1 class="font-sketch font-bold text-4xl text-white leading-tight mb-2">
+        <span class="inline-block mb-4 px-3 py-0.5 text-sm font-bold text-[#d4f5e4] border-2 border-[#d4f5e4] rounded-md opacity-80 tracking-widest">✦ 익명 커뮤니티</span>
+        <h1 class="font-bold text-4xl text-white leading-tight mb-2 tracking-tight">
           낙서장 <span class="text-[#ffe066]">게시판</span>
         </h1>
         <p class="text-[#d4f5e4] text-sm mt-2">자유롭게 이야기를 나눠보세요 ✌️</p>
+      </div>
+    </div>
+
+    <!-- 모바일 전용 인기글 -->
+    <div class="block md:hidden max-w-6xl mx-auto px-6 pt-6">
+      <div class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
+        <div class="h-1.5 bg-[#ffe066]" />
+        <div class="p-4">
+          <div class="flex gap-2 mb-3">
+            <button
+              @click="activeTab = 'hot'"
+              class="flex-1 py-1.5 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer"
+              :class="activeTab === 'hot'
+                ? 'bg-[#ffe066] border-ink text-ink shadow-[2px_2px_0_#1c1712]'
+                : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-ink hover:text-ink'"
+            >
+              🔥 인기글
+            </button>
+            <button
+              @click="activeTab = 'mostViewed'"
+              class="flex-1 py-1.5 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer"
+              :class="activeTab === 'mostViewed'
+                ? 'bg-[#96d4b4] border-ink text-ink shadow-[2px_2px_0_#1c1712]'
+                : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-ink hover:text-ink'"
+            >
+              👁 조회순
+            </button>
+          </div>
+          <div v-if="rankingLoading" class="text-center py-4 text-sm text-[#8c7e6e]">불러오는 중...</div>
+          <template v-else>
+            <ul v-if="activeTab === 'hot'">
+              <li v-if="popularPosts.length === 0" class="text-center py-4 text-sm text-[#8c7e6e]">인기글이 없습니다.</li>
+              <li
+                v-for="(post, index) in popularPosts"
+                :key="post.id"
+                class="flex items-center gap-3 py-2 border-b border-dashed border-[#c8bca8] last:border-b-0"
+              >
+                <span class="w-5 text-center text-sm font-bold font-sketch shrink-0" :class="index < 3 ? 'text-[#2d5a48]' : 'text-[#8c7e6e]'">{{ index + 1 }}</span>
+                <RouterLink :to="`/board/${post.id}`" class="flex-1 text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors">{{ post.title }}</RouterLink>
+                <span class="text-xs text-[#8c7e6e] shrink-0">♥ {{ post.likeCount ?? 0 }}</span>
+              </li>
+            </ul>
+            <ul v-else>
+              <li v-if="mostViewedPosts.length === 0" class="text-center py-4 text-sm text-[#8c7e6e]">게시글이 없습니다.</li>
+              <li
+                v-for="(post, index) in mostViewedPosts"
+                :key="post.id"
+                class="flex items-center gap-3 py-2 border-b border-dashed border-[#c8bca8] last:border-b-0"
+              >
+                <span class="w-5 text-center text-sm font-bold font-sketch shrink-0" :class="index < 3 ? 'text-[#2d5a48]' : 'text-[#8c7e6e]'">{{ index + 1 }}</span>
+                <RouterLink :to="`/board/${post.id}`" class="flex-1 text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors">{{ post.title }}</RouterLink>
+                <span class="text-xs text-[#8c7e6e] shrink-0">👁 {{ post.viewCount }}</span>
+              </li>
+            </ul>
+          </template>
+        </div>
       </div>
     </div>
 
@@ -191,8 +247,8 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- 사이드바 (sticky) -->
-      <div class="w-72 shrink-0 sticky top-8">
+      <!-- 사이드바 (sticky) - 데스크탑 전용 -->
+      <div class="hidden md:block w-72 shrink-0 sticky top-8">
         <div class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
           <div class="h-1.5 bg-[#ffe066]" />
           <div class="p-5">
@@ -204,7 +260,7 @@ onMounted(() => {
                   ? 'bg-[#ffe066] border-ink text-ink shadow-[2px_2px_0_#1c1712]'
                   : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-ink hover:text-ink'"
               >
-                🔥 Hot
+                🔥 인기글
               </button>
               <button
                 @click="activeTab = 'mostViewed'"
@@ -213,7 +269,7 @@ onMounted(() => {
                   ? 'bg-[#96d4b4] border-ink text-ink shadow-[2px_2px_0_#1c1712]'
                   : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-ink hover:text-ink'"
               >
-                👁 Most Viewed
+                👁 조회순
               </button>
             </div>
 
