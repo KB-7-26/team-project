@@ -60,8 +60,27 @@ const purchaseTotalPages = ref(0)
 const isPurchasesLoading = ref(false)
 const purchasesError = ref('')
 const myFavoriteProducts = ref([])
+const favCurrentPage = ref(0)
 const isFavoritesLoading = ref(false)
 const favoritesError = ref('')
+
+const FAV_PAGE_SIZE = 6
+const favTotalPages = computed(() => Math.ceil(myFavoriteProducts.value.length / FAV_PAGE_SIZE))
+const paginatedFavoriteProducts = computed(() => {
+  const start = favCurrentPage.value * FAV_PAGE_SIZE
+  return myFavoriteProducts.value.slice(start, start + FAV_PAGE_SIZE)
+})
+
+const makeVisiblePages = (currentPage, totalPages) => {
+  const blockStart = Math.floor(currentPage / 5) * 5 + 1
+  const blockEnd = Math.min(blockStart + 4, totalPages)
+  const pages = []
+  for (let i = blockStart; i <= blockEnd; i++) pages.push(i)
+  return pages
+}
+const saleVisiblePages = computed(() => makeVisiblePages(saleCurrentPage.value, saleTotalPages.value))
+const purchaseVisiblePages = computed(() => makeVisiblePages(purchaseCurrentPage.value, purchaseTotalPages.value))
+const favVisiblePages = computed(() => makeVisiblePages(favCurrentPage.value, favTotalPages.value))
 const profileImageInput = ref(null)
 const profileEditImageFile = ref(null)
 const isProfileImageRemoved = ref(false)
@@ -204,6 +223,23 @@ const selectMenu = (menuId) => {
   selectedMenu.value = menuId
   isMobileMenuOpen.value = false
 }
+
+const logout = async () => {
+  await authStore.logout()
+  router.push('/login')
+}
+
+const navigateFromStat = (index) => {
+  if (index === 0) {
+    selectedSaleStatus.value = 'available'
+    selectMenu('sales')
+  } else if (index === 1) {
+    selectedSaleStatus.value = 'sold'
+    selectMenu('sales')
+  } else if (index === 2) {
+    selectMenu('favorites')
+  }
+}
 const mapProductListItem = (product) => ({
   id: product.id,
   title: product.title,
@@ -339,7 +375,7 @@ const fetchMySaleProducts = async (page = 0) => {
   try {
     const { data } = await productApi.getMyProducts({
       page,
-      size: 10,
+      size: 6,
       saleStatus: selectedSaleStatus.value,
     })
 
@@ -367,7 +403,7 @@ const fetchMyPurchaseProducts = async (page = 0) => {
   try {
     const { data } = await productApi.getMyPurchases({
       page,
-      size: 10,
+      size: 6,
     })
 
     myPurchaseProducts.value = data.content.map(mapProductListItem)
@@ -396,6 +432,7 @@ const fetchMyFavoriteProducts = async () => {
     const products = Array.isArray(data) ? data : (data.content ?? [])
 
     myFavoriteProducts.value = products.map(mapProductListItem)
+    favCurrentPage.value = 0
     syncLikedIdsFromProducts(products)
   } catch (error) {
     if (await redirectIfProfileRequired(error)) return
@@ -703,8 +740,10 @@ watch(selectedSaleStatus, () => {
                       i === 0 ? 'bg-[#ffe066] -rotate-1' :
                       i === 1 ? 'bg-[#ffb3c6] rotate-1' :
                       i === 2 ? 'bg-[#b3d4ff] -rotate-1' :
-                      'bg-[#96d4b4] rotate-1'
+                      'bg-[#96d4b4] rotate-1',
+                      i < 3 ? 'cursor-pointer' : ''
                     ]"
+                    @click="navigateFromStat(i)"
                   >
                     <component :is="stat.icon" class="h-5 w-5 text-ink" />
                     <span class="text-xl font-extrabold leading-none text-ink">{{ stat.value }}</span>
@@ -840,19 +879,17 @@ watch(selectedSaleStatus, () => {
               <p class="mt-2 text-sm text-[#8c7e6e]">다른 판매 상태를 선택해보세요</p>
             </div>
 
-            <div v-if="!isSalesLoading && !salesError && saleTotalPages > 1" class="mt-5 flex justify-center gap-2">
+            <div v-if="!isSalesLoading && !salesError && saleTotalPages > 1" class="flex justify-center items-center gap-1 mt-5">
+              <button @click="fetchMySaleProducts(Math.max(0, saleCurrentPage - 5))" :disabled="saleCurrentPage <= 0" class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all">«</button>
+              <button @click="fetchMySaleProducts(Math.max(0, saleCurrentPage - 1))" :disabled="saleCurrentPage <= 0" class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all">‹</button>
               <button
-                v-for="page in saleTotalPages"
-                :key="page"
-                type="button"
-                class="h-10 w-10 rounded-lg border-2 border-ink text-sm font-extrabold transition shadow-[2px_2px_0_#1c1712]"
-                :class="saleCurrentPage === page - 1
-                  ? 'bg-[#ffe066] text-ink -translate-x-0.5 -translate-y-0.5 shadow-[3px_3px_0_#1c1712]'
-                  : 'bg-white text-ink hover:bg-[#ffe066]/30'"
+                v-for="page in saleVisiblePages" :key="page"
                 @click="fetchMySaleProducts(page - 1)"
-              >
-                {{ page }}
-              </button>
+                :class="saleCurrentPage === page - 1 ? 'bg-[#ffe066] border-ink shadow-[2px_2px_0_#1c1712] text-ink' : 'bg-white border-[#c8bca8] text-ink hover:border-ink hover:shadow-[2px_2px_0_#1c1712]'"
+                class="min-w-8 h-8 md:min-w-9 md:h-9 px-2 rounded-xl font-bold text-sm border-2 transition-all"
+              >{{ page }}</button>
+              <button @click="fetchMySaleProducts(Math.min(saleTotalPages - 1, saleCurrentPage + 1))" :disabled="saleCurrentPage >= saleTotalPages - 1" class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all">›</button>
+              <button @click="fetchMySaleProducts(Math.min(saleTotalPages - 1, saleCurrentPage + 5))" :disabled="saleCurrentPage >= saleTotalPages - 1" class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all">»</button>
             </div>
           </template>
 
@@ -872,7 +909,7 @@ watch(selectedSaleStatus, () => {
             </p>
             <div v-else-if="myFavoriteProducts.length" class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               <ProductCard
-                v-for="product in myFavoriteProducts"
+                v-for="product in paginatedFavoriteProducts"
                 :key="product.id"
                 :product="product"
                 :liked="likedIds.has(product.id)"
@@ -883,6 +920,18 @@ watch(selectedSaleStatus, () => {
               <ArchiveBoxIcon class="mx-auto h-12 w-12 text-[#8c7e6e]" />
               <p class="mt-4 text-lg font-extrabold text-ink">찜한 상품이 없습니다</p>
               <p class="mt-2 text-sm text-[#8c7e6e]">관심 있는 상품을 찜하면 이곳에 표시됩니다</p>
+            </div>
+            <div v-if="!isFavoritesLoading && !favoritesError && favTotalPages > 1" class="flex justify-center items-center gap-1 mt-5">
+              <button @click="favCurrentPage = Math.max(0, favCurrentPage - 5)" :disabled="favCurrentPage <= 0" class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all">«</button>
+              <button @click="favCurrentPage = Math.max(0, favCurrentPage - 1)" :disabled="favCurrentPage <= 0" class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all">‹</button>
+              <button
+                v-for="page in favVisiblePages" :key="page"
+                @click="favCurrentPage = page - 1"
+                :class="favCurrentPage === page - 1 ? 'bg-[#ffe066] border-ink shadow-[2px_2px_0_#1c1712] text-ink' : 'bg-white border-[#c8bca8] text-ink hover:border-ink hover:shadow-[2px_2px_0_#1c1712]'"
+                class="min-w-8 h-8 md:min-w-9 md:h-9 px-2 rounded-xl font-bold text-sm border-2 transition-all"
+              >{{ page }}</button>
+              <button @click="favCurrentPage = Math.min(favTotalPages - 1, favCurrentPage + 1)" :disabled="favCurrentPage >= favTotalPages - 1" class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all">›</button>
+              <button @click="favCurrentPage = Math.min(favTotalPages - 1, favCurrentPage + 5)" :disabled="favCurrentPage >= favTotalPages - 1" class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all">»</button>
             </div>
           </template>
 
@@ -915,23 +964,46 @@ watch(selectedSaleStatus, () => {
               <p class="mt-2 text-sm text-[#8c7e6e]">거래 완료 내역이 생기면 이곳에 표시됩니다</p>
             </div>
 
-            <div v-if="!isPurchasesLoading && !purchasesError && purchaseTotalPages > 1" class="mt-5 flex justify-center gap-2">
+            <div v-if="!isPurchasesLoading && !purchasesError && purchaseTotalPages > 1" class="flex justify-center items-center gap-1 mt-5">
+              <button @click="fetchMyPurchaseProducts(Math.max(0, purchaseCurrentPage - 5))" :disabled="purchaseCurrentPage <= 0" class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all">«</button>
+              <button @click="fetchMyPurchaseProducts(Math.max(0, purchaseCurrentPage - 1))" :disabled="purchaseCurrentPage <= 0" class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all">‹</button>
               <button
-                v-for="page in purchaseTotalPages"
-                :key="page"
-                type="button"
-                class="h-10 w-10 rounded-lg border-2 border-ink text-sm font-extrabold transition shadow-[2px_2px_0_#1c1712]"
-                :class="purchaseCurrentPage === page - 1
-                  ? 'bg-[#ffe066] text-ink -translate-x-0.5 -translate-y-0.5 shadow-[3px_3px_0_#1c1712]'
-                  : 'bg-white text-ink hover:bg-[#ffe066]/30'"
+                v-for="page in purchaseVisiblePages" :key="page"
                 @click="fetchMyPurchaseProducts(page - 1)"
-              >
-                {{ page }}
-              </button>
+                :class="purchaseCurrentPage === page - 1 ? 'bg-[#ffe066] border-ink shadow-[2px_2px_0_#1c1712] text-ink' : 'bg-white border-[#c8bca8] text-ink hover:border-ink hover:shadow-[2px_2px_0_#1c1712]'"
+                class="min-w-8 h-8 md:min-w-9 md:h-9 px-2 rounded-xl font-bold text-sm border-2 transition-all"
+              >{{ page }}</button>
+              <button @click="fetchMyPurchaseProducts(Math.min(purchaseTotalPages - 1, purchaseCurrentPage + 1))" :disabled="purchaseCurrentPage >= purchaseTotalPages - 1" class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all">›</button>
+              <button @click="fetchMyPurchaseProducts(Math.min(purchaseTotalPages - 1, purchaseCurrentPage + 5))" :disabled="purchaseCurrentPage >= purchaseTotalPages - 1" class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all">»</button>
             </div>
           </template>
 
-          <!-- 환경설정 / 기타 -->
+          <!-- 환경설정 -->
+          <template v-else-if="selectedMenu === 'settings'">
+            <div class="relative overflow-hidden rounded-2xl border-2 border-ink bg-white p-6 shadow-[4px_4px_0_#1c1712] md:p-8">
+              <div class="absolute left-0 top-0 h-full w-1.5 bg-[#c8bca8]"></div>
+              <h2 class="text-2xl font-extrabold text-ink">환경설정</h2>
+              <p class="mt-1 text-sm text-[#8c7e6e]">계정 및 앱 설정을 관리합니다</p>
+            </div>
+            <div class="mt-5 rounded-2xl border-2 border-ink bg-white p-6 shadow-[4px_4px_0_#1c1712]">
+              <h3 class="text-base font-extrabold text-ink mb-4">계정</h3>
+              <div class="flex items-center justify-between py-3 border-b border-dashed border-ink/15">
+                <div>
+                  <p class="text-sm font-bold text-ink">로그아웃</p>
+                  <p class="text-xs text-[#8c7e6e] mt-0.5">현재 기기에서 로그아웃합니다</p>
+                </div>
+                <button
+                  type="button"
+                  class="h-9 rounded-xl border-2 border-ink bg-white px-4 text-sm font-extrabold text-ink shadow-[2px_2px_0_#1c1712] transition hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_#1c1712] hover:bg-red-50 hover:border-red-400 hover:text-red-500"
+                  @click="logout"
+                >
+                  로그아웃
+                </button>
+              </div>
+            </div>
+          </template>
+
+          <!-- 기타 -->
           <div v-else class="rounded-2xl border-2 border-ink bg-white px-6 py-16 text-center shadow-[4px_4px_0_#1c1712]">
             <component :is="activeMenu.icon" class="mx-auto h-12 w-12 text-[#8c7e6e]" />
             <h2 class="mt-5 text-2xl font-extrabold text-ink">{{ activeMenu.label }}</h2>
@@ -1050,13 +1122,6 @@ watch(selectedSaleStatus, () => {
 /* 그래프 노트지 배경 */
 .notebook-bg {
   background-color: #f5f0e8;
-  background-image:
-    linear-gradient(rgba(139, 126, 110, 0.12) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(139, 126, 110, 0.12) 1px, transparent 1px),
-    linear-gradient(rgba(139, 126, 110, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(139, 126, 110, 0.05) 1px, transparent 1px);
-  background-size: 80px 80px, 80px 80px, 20px 20px, 20px 20px;
-  background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
 }
 
 /* 포스트잇 호버 효과 */

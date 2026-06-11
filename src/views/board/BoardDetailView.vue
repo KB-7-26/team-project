@@ -68,62 +68,69 @@ const deletePost = async () => {
 </script>
 
 <template>
-  <div class="max-w-4xl mx-auto px-6 py-8">
-    <button
-      @click="router.push('/board')"
-      class="flex items-center gap-1.5 text-sm text-text-sub hover:text-text-main mb-6 transition-colors cursor-pointer"
-    >
-      <ArrowLeftIcon class="w-4 h-4" />
-      목록으로
-    </button>
+  <div class="bg-paper-dots min-h-screen">
+    <div class="max-w-4xl mx-auto px-6 py-8">
+      <button
+        @click="router.push('/board')"
+        class="flex items-center gap-1.5 text-sm text-[#8c7e6e] hover:text-ink mb-6 transition-colors cursor-pointer font-medium group"
+      >
+        <ArrowLeftIcon class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+        목록으로
+      </button>
 
-    <div v-if="loading" class="text-center py-20 text-sm text-text-sub">불러오는 중...</div>
+      <div v-if="loading" class="text-center py-20 text-sm text-[#8c7e6e]">불러오는 중...</div>
 
-    <template v-else-if="post">
-      <!-- 게시글 -->
-      <div class="border border-border rounded-2xl p-6 mb-6">
-        <div class="flex items-start justify-between gap-4 mb-4">
-          <h1 class="text-2xl font-extrabold text-text-main leading-snug">{{ post.title }}</h1>
-          <div v-if="post.isOwner" class="flex items-center gap-2 shrink-0">
-            <RouterLink
-              :to="`/board/${post.id}/edit`"
-              class="flex items-center gap-1 text-xs text-text-sub hover:text-text-main border border-border px-2.5 py-1.5 rounded-lg transition-colors"
-            >
-              <PencilSquareIcon class="w-3.5 h-3.5" />
-              수정
-            </RouterLink>
-            <button
-              @click="deletePost"
-              :disabled="isDeleting"
-              class="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <TrashIcon class="w-3.5 h-3.5" />
-              {{ isDeleting ? '삭제 중' : '삭제' }}
-            </button>
+      <template v-else-if="post">
+        <!-- 게시글 카드 -->
+        <div class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden mb-6">
+          <div class="h-1.5 bg-[#ffe066]" />
+          <div class="p-6">
+            <div class="flex items-start justify-between gap-4 mb-4">
+              <h1 class="font-sketch font-bold text-2xl text-ink leading-snug">{{ post.title }}</h1>
+              <div v-if="post.isOwner" class="flex items-center gap-2 shrink-0">
+                <RouterLink
+                  :to="`/board/${post.id}/edit`"
+                  class="flex items-center gap-1 text-xs text-[#8c7e6e] hover:text-ink border-2 border-[#c8bca8] hover:border-ink px-2.5 py-1.5 rounded-lg transition-all font-bold"
+                >
+                  <PencilSquareIcon class="w-3.5 h-3.5" />
+                  수정
+                </RouterLink>
+                <button
+                  @click="deletePost"
+                  :disabled="isDeleting"
+                  class="flex items-center gap-1 text-xs text-red-500 hover:text-white hover:bg-red-400 border-2 border-red-300 hover:border-red-400 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer disabled:opacity-50 font-bold"
+                >
+                  <TrashIcon class="w-3.5 h-3.5" />
+                  {{ isDeleting ? '삭제 중' : '삭제' }}
+                </button>
+              </div>
+            </div>
+            <p v-if="deleteError" class="text-sm text-red-400 mb-3">{{ deleteError }}</p>
+            <div class="flex items-center gap-3 text-xs text-[#8c7e6e] mb-6">
+              <span class="font-bold text-[#2d5a48] bg-[#96d4b4]/30 px-2 py-0.5 rounded-full">{{ post.displayName }}</span>
+              <span>{{ formatDate(post.createdAt) }}</span>
+              <span>👁 {{ post.viewCount }}</span>
+            </div>
+            <p class="text-base text-ink leading-relaxed whitespace-pre-line">{{ post.content }}</p>
+            <div class="flex items-center mt-6 pt-4 border-t-2 border-dashed border-[#e8e0d4]">
+              <button
+                @click="togglePostLike"
+                :disabled="isLiking"
+                class="flex items-center gap-1.5 text-sm font-bold transition-all cursor-pointer disabled:opacity-50 px-4 py-2 rounded-xl border-2"
+                :class="postLiked
+                  ? 'text-red-500 border-red-300 bg-red-50 hover:bg-red-100'
+                  : 'text-[#8c7e6e] border-[#c8bca8] hover:border-red-300 hover:text-red-400 hover:bg-red-50'"
+              >
+                <component :is="postLiked ? HeartSolidIcon : HeartIcon" class="w-5 h-5" />
+                <span>{{ postLikeCount }}</span>
+              </button>
+            </div>
           </div>
         </div>
-        <p v-if="deleteError" class="text-sm text-red-400 mb-3">{{ deleteError }}</p>
-        <div class="flex items-center gap-3 text-xs text-text-sub mb-6">
-          <span class="font-medium text-primary">{{ post.displayName }}</span>
-          <span>{{ formatDate(post.createdAt) }}</span>
-          <span>조회 {{ post.viewCount }}</span>
-        </div>
-        <p class="text-base text-text-main leading-relaxed whitespace-pre-line">{{ post.content }}</p>
-        <div class="flex items-center mt-5 pt-4 border-t border-border">
-          <button
-            @click="togglePostLike"
-            :disabled="isLiking"
-            class="flex items-center gap-1.5 text-sm transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            :class="postLiked ? 'text-red-400 hover:text-red-500' : 'text-text-sub hover:text-red-400'"
-          >
-            <component :is="postLiked ? HeartSolidIcon : HeartIcon" class="w-5 h-5" />
-            <span class="font-medium">{{ postLikeCount }}</span>
-          </button>
-        </div>
-      </div>
 
-      <!-- 댓글 섹션 -->
-      <BoardCommentSection :post-id="postId" />
-    </template>
+        <!-- 댓글 섹션 -->
+        <BoardCommentSection :post-id="postId" />
+      </template>
+    </div>
   </div>
 </template>

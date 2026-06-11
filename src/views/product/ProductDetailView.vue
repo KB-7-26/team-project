@@ -206,6 +206,7 @@ watch(() => route.params.id, () => {
       <p v-else-if="!product" class="text-center text-[#8c7e6e] py-20">상품을 찾을 수 없습니다.</p>
 
       <template v-else>
+
         <!-- 이미지 + 판매자 카드 -->
         <div class="lg:flex lg:gap-6 mb-6">
 
@@ -308,6 +309,51 @@ watch(() => route.params.id, () => {
           </div>
         </div>
 
+        <!-- 판매자 카드 (모바일) -->
+        <div class="lg:hidden bg-white border-2 border-ink rounded-2xl p-5 shadow-[4px_4px_0_#1c1712] flex flex-col gap-4 mb-4">
+          <div class="flex items-center gap-3">
+            <UserProfileAvatar
+              ref="mobileProfileRef"
+              :userId="product.sellerId"
+              :nickname="product.sellerNickname"
+              :imageUrl="product.sellerProfileImageUrl"
+            />
+            <p class="font-bold text-ink">{{ product.sellerNickname }}</p>
+          </div>
+          <template v-if="authStore.user?.id === product.sellerId">
+            <button
+              @click="router.replace(`/product/edit/${product.id}`)"
+              class="action-btn flex items-center justify-center gap-2 bg-primary border-2 border-ink text-white font-bold py-3 rounded-xl text-sm shadow-[3px_3px_0_#1c1712] transition-all"
+            >
+              <PencilSquareIcon class="w-5 h-5" />
+              상품 수정
+            </button>
+            <button
+              @click="showDeleteConfirm = true"
+              class="action-btn flex items-center justify-center gap-2 bg-white border-2 border-red-400 text-red-500 font-bold py-3 rounded-xl text-sm shadow-[3px_3px_0_rgba(239,68,68,0.35)] transition-all"
+            >
+              <TrashIcon class="w-5 h-5" />
+              상품 삭제
+            </button>
+          </template>
+          <template v-else>
+            <button
+              @click="requireAuth() && mobileProfileRef.openProfile()"
+              class="action-btn flex items-center justify-center gap-2 bg-white border-2 border-ink text-ink font-bold py-3 rounded-xl text-sm shadow-[3px_3px_0_#1c1712] transition-all"
+            >
+              <UserIcon class="w-5 h-5" />
+              프로필 보기
+            </button>
+            <button
+              @click="startChat"
+              class="action-btn flex items-center justify-center gap-2 bg-[#ffe066] border-2 border-ink text-ink font-bold py-3 rounded-xl text-sm shadow-[3px_3px_0_#1c1712] transition-all"
+            >
+              <ChatBubbleOvalLeftEllipsisIcon class="w-5 h-5" />
+              채팅하기
+            </button>
+          </template>
+        </div>
+
         <!-- 상품 정보 카드 -->
         <div class="bg-white border-2 border-ink rounded-2xl p-6 mb-4 shadow-[4px_4px_0_#1c1712]">
           <div class="flex items-start justify-between mb-3">
@@ -350,51 +396,6 @@ watch(() => route.params.id, () => {
           </table>
           <p class="font-bold text-ink mb-3">상품 설명</p>
           <p class="text-sm text-ink whitespace-pre-line leading-relaxed">{{ product.description }}</p>
-        </div>
-
-        <!-- 판매자 카드 (모바일) -->
-        <div class="lg:hidden bg-white border-2 border-ink rounded-2xl p-5 shadow-[4px_4px_0_#1c1712] flex flex-col gap-4 mb-6">
-          <div class="flex items-center gap-3">
-            <UserProfileAvatar
-              ref="mobileProfileRef"
-              :userId="product.sellerId"
-              :nickname="product.sellerNickname"
-              :imageUrl="product.sellerProfileImageUrl"
-            />
-            <p class="font-bold text-ink">{{ product.sellerNickname }}</p>
-          </div>
-          <template v-if="authStore.user?.id === product.sellerId">
-            <button
-              @click="router.replace(`/product/edit/${product.id}`)"
-              class="action-btn flex items-center justify-center gap-2 bg-primary border-2 border-ink text-white font-bold py-3 rounded-xl text-sm shadow-[3px_3px_0_#1c1712] transition-all"
-            >
-              <PencilSquareIcon class="w-5 h-5" />
-              상품 수정
-            </button>
-            <button
-              @click="showDeleteConfirm = true"
-              class="action-btn flex items-center justify-center gap-2 bg-white border-2 border-red-400 text-red-500 font-bold py-3 rounded-xl text-sm shadow-[3px_3px_0_rgba(239,68,68,0.35)] transition-all"
-            >
-              <TrashIcon class="w-5 h-5" />
-              상품 삭제
-            </button>
-          </template>
-          <template v-else>
-            <button
-              @click="requireAuth() && mobileProfileRef.openProfile()"
-              class="action-btn flex items-center justify-center gap-2 bg-white border-2 border-ink text-ink font-bold py-3 rounded-xl text-sm shadow-[3px_3px_0_#1c1712] transition-all"
-            >
-              <UserIcon class="w-5 h-5" />
-              프로필 보기
-            </button>
-            <button
-              @click="startChat"
-              class="action-btn flex items-center justify-center gap-2 bg-[#ffe066] border-2 border-ink text-ink font-bold py-3 rounded-xl text-sm shadow-[3px_3px_0_#1c1712] transition-all"
-            >
-              <ChatBubbleOvalLeftEllipsisIcon class="w-5 h-5" />
-              채팅하기
-            </button>
-          </template>
         </div>
 
         <!-- 최근 본 상품 (모바일) -->

@@ -55,65 +55,70 @@ const submit = async () => {
 </script>
 
 <template>
-  <div class="max-w-4xl mx-auto px-6 py-8">
-    <button
-      @click="router.push(`/board/${postId}`)"
-      class="flex items-center gap-1.5 text-sm text-text-sub hover:text-text-main mb-6 transition-colors cursor-pointer"
-    >
-      <ArrowLeftIcon class="w-4 h-4" />
-      돌아가기
-    </button>
+  <div class="bg-paper-dots min-h-screen">
+    <div class="max-w-4xl mx-auto px-6 py-8">
+      <button
+        @click="router.push(`/board/${postId}`)"
+        class="flex items-center gap-1.5 text-sm text-[#8c7e6e] hover:text-ink mb-6 transition-colors cursor-pointer font-medium group"
+      >
+        <ArrowLeftIcon class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+        돌아가기
+      </button>
 
-    <div v-if="loading" class="text-center py-20 text-sm text-text-sub">불러오는 중...</div>
+      <div v-if="loading" class="text-center py-20 text-sm text-[#8c7e6e]">불러오는 중...</div>
 
-    <template v-else>
-      <h1 class="text-2xl font-extrabold text-text-main mb-8">게시글 수정</h1>
+      <div v-else class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
+        <div class="h-1.5 bg-[#96d4b4]" />
+        <div class="p-6">
+          <h1 class="font-sketch font-bold text-2xl text-ink mb-7">✏️ 게시글 수정</h1>
 
-      <div class="flex flex-col gap-5">
-        <div class="flex flex-col gap-1.5">
-          <label class="text-sm font-semibold text-text-main">제목</label>
-          <input
-            v-model="title"
-            @input="titleError = false"
-            type="text"
-            placeholder="제목을 입력하세요"
-            class="px-4 py-3 border rounded-xl text-sm text-text-main outline-none transition-colors"
-            :class="titleError ? 'border-red-400 focus:border-red-400' : 'border-border focus:border-primary'"
-          />
-          <p v-if="titleError" class="text-xs text-red-400">제목을 입력해주세요</p>
-        </div>
+          <div class="flex flex-col gap-5">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-bold text-ink">제목</label>
+              <input
+                v-model="title"
+                @input="titleError = false"
+                type="text"
+                placeholder="제목을 입력하세요"
+                class="px-4 py-3 border-2 rounded-xl text-sm text-ink outline-none transition-colors placeholder:text-[#8c7e6e]"
+                :class="titleError ? 'border-red-400 focus:border-red-400' : 'border-[#c8bca8] focus:border-ink'"
+              />
+              <p v-if="titleError" class="text-xs text-red-400 font-medium">제목을 입력해주세요</p>
+            </div>
 
-        <div class="flex flex-col gap-1.5">
-          <label class="text-sm font-semibold text-text-main">내용</label>
-          <textarea
-            v-model="content"
-            @input="contentError = false"
-            placeholder="내용을 입력하세요"
-            rows="12"
-            class="px-4 py-3 border rounded-xl text-sm text-text-main outline-none transition-colors resize-none"
-            :class="contentError ? 'border-red-400 focus:border-red-400' : 'border-border focus:border-primary'"
-          />
-          <p v-if="contentError" class="text-xs text-red-400">내용을 입력해주세요</p>
-        </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-bold text-ink">내용</label>
+              <textarea
+                v-model="content"
+                @input="contentError = false"
+                placeholder="내용을 입력하세요"
+                rows="12"
+                class="px-4 py-3 border-2 rounded-xl text-sm text-ink outline-none transition-colors resize-none placeholder:text-[#8c7e6e]"
+                :class="contentError ? 'border-red-400 focus:border-red-400' : 'border-[#c8bca8] focus:border-ink'"
+              />
+              <p v-if="contentError" class="text-xs text-red-400 font-medium">내용을 입력해주세요</p>
+            </div>
 
-        <p v-if="submitError" class="text-sm text-red-400">{{ submitError }}</p>
+            <p v-if="submitError" class="text-sm text-red-400">{{ submitError }}</p>
 
-        <div class="flex justify-end gap-3">
-          <button
-            @click="router.push(`/board/${postId}`)"
-            class="px-5 py-2.5 border border-border text-sm font-semibold text-text-main rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
-          >
-            취소
-          </button>
-          <button
-            @click="submit"
-            :disabled="isSubmitting"
-            class="px-5 py-2.5 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {{ isSubmitting ? '수정 중...' : '수정' }}
-          </button>
+            <div class="flex justify-end gap-3 pt-2 border-t-2 border-dashed border-[#e8e0d4]">
+              <button
+                @click="router.push(`/board/${postId}`)"
+                class="px-5 py-2.5 border-2 border-[#c8bca8] text-sm font-bold text-[#8c7e6e] rounded-xl hover:border-ink hover:text-ink transition-all cursor-pointer"
+              >
+                취소
+              </button>
+              <button
+                @click="submit"
+                :disabled="isSubmitting"
+                class="px-5 py-2.5 bg-[#96d4b4] border-2 border-ink text-ink text-sm font-bold rounded-xl shadow-[3px_3px_0_#1c1712] hover:-translate-y-0.5 hover:shadow-[4px_4px_0_#1c1712] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {{ isSubmitting ? '수정 중...' : '수정하기' }}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    </template>
+    </div>
   </div>
 </template>

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon } from '@heroicons/vue/24/outline'
+import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import ProductCard from '@/components/product/ProductCard.vue'
 import { productApi } from '@/api/productApi'
 import { categoryApi } from '@/api/categoryApi'
@@ -63,7 +63,10 @@ const fetchProducts = async () => {
       params.saleStatus = 'available'
     }
     if (sortParamMap[sortBy.value]) params.sort = sortParamMap[sortBy.value]
-    if (searchQuery.value.trim()) params.keyword = searchQuery.value.trim()
+    if (searchQuery.value.trim()) {
+      params.keyword = searchQuery.value.trim()
+      params.searchType = 'all'
+    }
 
     const { data } = await productApi.getProducts(params)
     products.value = data.content.map((p) => ({ ...mapProduct(p), favoriteCount: p.favoriteCount }))
@@ -135,44 +138,58 @@ const visiblePages = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-col bg-paper-dots">
-    <!-- 히어로 -->
+  <div class="flex flex-col bg-paper-dots min-h-screen">
+    <!-- 검색 + 정렬 -->
     <div class="px-4 md:px-6 py-6 md:py-8">
       <div class="max-w-2xl mx-auto">
         <p class="font-bold text-3xl text-ink mb-4">중고 거래</p>
-        <div class="flex gap-2">
+        <div class="flex items-center gap-2">
           <!-- 검색바 -->
-          <div
-            class="flex-1 flex items-center bg-white rounded-xl border-2 border-ink px-3 gap-2 shadow-[3px_3px_0_#1c1712]"
-          >
-            <MagnifyingGlassIcon class="w-5 h-5 text-[#8c7e6e] shrink-0" />
+          <div class="flex flex-1 items-center bg-white border-2 border-ink rounded-xl overflow-hidden shadow-[2px_2px_0_#1c1712]">
             <input
               v-model="searchQuery"
               type="text"
               placeholder="검색어를 입력해주세요"
-              class="flex-1 py-3 text-sm outline-none bg-transparent text-ink placeholder:text-[#8c7e6e]"
+              class="flex-1 px-4 py-2 text-sm text-ink outline-none placeholder:text-[#8c7e6e]"
               @keyup.enter="searchSubmit"
             />
+            <button
+              v-if="searchQuery"
+              @click="searchQuery = ''; searchSubmit()"
+              class="px-3 text-[#8c7e6e] hover:text-ink text-sm cursor-pointer"
+            >
+              ✕
+            </button>
+            <button
+              @click="searchSubmit"
+              class="px-3 py-2 text-[#8c7e6e] hover:text-ink transition-colors cursor-pointer"
+            >
+              <MagnifyingGlassIcon class="w-4 h-4" />
+            </button>
           </div>
           <!-- 정렬 필터 -->
-          <div ref="dropdownRef" class="relative">
+          <div ref="dropdownRef" class="relative shrink-0">
             <button
               @click="showSortDropdown = !showSortDropdown"
-              class="sort-btn h-full px-4 bg-white rounded-xl border-2 border-ink font-bold text-sm flex items-center gap-1.5 shadow-[3px_3px_0_#1c1712] whitespace-nowrap transition-all"
+              class="flex items-center gap-2 bg-[#ffe066] border-2 border-ink text-ink text-sm font-bold px-4 py-2 rounded-xl shadow-[3px_3px_0_#1c1712] hover:-translate-y-0.5 hover:shadow-[4px_4px_0_#1c1712] transition-all whitespace-nowrap cursor-pointer"
             >
               <AdjustmentsHorizontalIcon class="w-4 h-4" />
               {{ sortBy }}
+              <ChevronDownIcon
+                class="w-3 h-3 transition-transform duration-150"
+                :class="showSortDropdown ? 'rotate-180' : ''"
+              />
             </button>
             <div
               v-if="showSortDropdown"
-              class="absolute right-0 top-full mt-1 bg-white border-2 border-ink rounded-xl shadow-[3px_3px_0_#1c1712] z-10 overflow-hidden"
+              class="absolute right-0 top-full mt-2 bg-white border-2 border-ink rounded-xl shadow-[3px_3px_0_#1c1712] z-10 overflow-hidden"
             >
               <button
                 v-for="option in sortOptions"
                 :key="option"
                 @click="selectSort(option)"
-                :class="sortBy === option ? 'bg-[#ffe066] text-ink font-bold' : 'text-ink hover:bg-primary/10'"
-                class="block w-full text-left px-5 py-3 text-sm whitespace-nowrap"
+                :class="sortBy === option ? 'bg-[#ffe066] font-bold' : 'hover:bg-[#ffe066]/60'"
+                class="block w-full text-left px-5 py-2.5 text-sm text-ink whitespace-nowrap cursor-pointer border-b border-[#c8bca8] last:border-b-0"
               >
                 {{ option }}
               </button>

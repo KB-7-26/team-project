@@ -103,7 +103,7 @@ const googleLoginHandler = async () => {
                   background:rgba(242,182,178,0.83);
                   border-radius:3px;
                   box-shadow:0 2px 6px rgba(0,0,0,0.09);
-                  transform:translateX(-50%) rotate(-1.2deg);">
+                  transform:translateX(-50%);">
       </div>
 
       <!-- 파란 포스트잇 배경 (찢긴 가장자리 필터) -->
@@ -228,11 +228,11 @@ const googleLoginHandler = async () => {
 
 /* 포스트잇이 벽에 붙으며 흔들리는 애니메이션 */
 @keyframes note-stick {
-  0%   { opacity: 0; transform: rotate(-14deg) translateY(-48px) scale(0.9); }
-  55%  { opacity: 1; transform: rotate(-1deg) translateY(7px) scale(1.01); }
-  72%  { transform: rotate(-3.5deg) translateY(-3px) scale(1); }
-  86%  { transform: rotate(-2deg) translateY(1.5px); }
-  100% { transform: rotate(-2.5deg) translateY(0); }
+  0%   { opacity: 0; transform: rotate(-10deg) translateY(-44px) scale(0.9); }
+  52%  { opacity: 1; transform: rotate(1.5deg) translateY(6px) scale(1.01); }
+  70%  { transform: rotate(-0.8deg) translateY(-2px) scale(1); }
+  85%  { transform: rotate(0.4deg) translateY(0.5px); }
+  100% { transform: rotate(0deg) translateY(0); }
 }
 
 .note-wrapper {

@@ -142,7 +142,9 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
 
           <p class="text-lg text-[#8c7e6e] mb-9">다 같이 믿을 수 있는 거래 환경을 만들어요 ✌️</p>
 
-          <div class="flex items-center bg-white border-2 border-ink rounded-full px-2 h-12 max-w-140 shadow-[4px_4px_0_#1c1712]">
+          <div
+            class="flex items-center bg-white border-2 border-ink rounded-full px-2 h-12 max-w-140 shadow-[4px_4px_0_#1c1712]"
+          >
             <!-- 카테고리 드롭다운 -->
             <div ref="typeDropdownRef" class="relative shrink-0">
               <button
@@ -150,7 +152,10 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
                 class="flex items-center gap-1 font-bold text-sm text-ink whitespace-nowrap px-3 py-1"
               >
                 {{ searchType }}
-                <ChevronDownIcon class="w-3 h-3 transition-transform duration-150" :class="showTypeDropdown ? 'rotate-180' : ''" />
+                <ChevronDownIcon
+                  class="w-3 h-3 transition-transform duration-150"
+                  :class="showTypeDropdown ? 'rotate-180' : ''"
+                />
               </button>
               <div
                 v-if="showTypeDropdown"
@@ -160,12 +165,16 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
                   @click="selectType('중고거래')"
                   :class="searchType === '중고거래' ? 'bg-[#ffe066]' : 'hover:bg-[#ffe066]/60'"
                   class="block w-full text-left px-4 py-2.5 text-sm font-bold text-ink transition-colors"
-                >중고거래</button>
+                >
+                  중고거래
+                </button>
                 <button
                   @click="selectType('게시물')"
                   :class="searchType === '게시물' ? 'bg-[#ffe066]' : 'hover:bg-[#ffe066]/60'"
                   class="block w-full text-left px-4 py-2.5 text-sm font-bold text-ink transition-colors border-t border-[#c8bca8]"
-                >게시물</button>
+                >
+                  게시물
+                </button>
               </div>
             </div>
 
@@ -192,9 +201,17 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
             <button
               v-for="tag in ['노트북', '모니터', '키보드', '마우스', '도서']"
               :key="tag"
-              @click="() => { searchQuery = tag; searchType = '중고거래'; searchSubmit() }"
+              @click="
+                () => {
+                  searchQuery = tag
+                  searchType = '중고거래'
+                  searchSubmit()
+                }
+              "
               class="text-sm bg-white border-[1.5px] border-[#c8bca8] rounded-full px-3.5 py-1 text-[#8c7e6e] transition-all hover:border-ink hover:bg-[#ffe066] hover:text-ink"
-            >{{ tag }}</button>
+            >
+              {{ tag }}
+            </button>
           </div>
         </div>
 
@@ -203,14 +220,14 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
           <!-- hanger wire -->
           <div class="relative w-56 h-10 flex justify-center items-start">
             <div
-              class="absolute top-0 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-gradient-to-br from-[#d4a84b] to-[#9a7220] border-2 border-[#6a4a0a] z-10 shadow-md"
+              class="absolute top-0 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-linear-to-br from-[#d4a84b] to-[#9a7220] border-2 border-[#6a4a0a] z-10 shadow-md"
             ></div>
             <div
-              class="wire-left absolute top-[6px] left-[calc(50%+2px)] w-[88px] h-px bg-[#9a7830] origin-left"
+              class="wire-left absolute top-1.5 left-[calc(50%+2px)] w-22 h-px bg-[#9a7830] origin-left"
               style="transform: rotate(28deg)"
             ></div>
             <div
-              class="wire-right absolute top-[6px] right-[calc(50%+2px)] w-[88px] h-px bg-[#9a7830] origin-right"
+              class="wire-right absolute top-1.5 right-[calc(50%+2px)] w-22 h-px bg-[#9a7830] origin-right"
               style="transform: rotate(-28deg)"
             ></div>
           </div>
@@ -220,14 +237,14 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
             <!-- mounting screws -->
             <div class="flex justify-between px-1 mb-2.5">
               <div
-                class="screw w-3.5 h-3.5 rounded-full bg-gradient-to-br from-[#d4a84b] to-[#8a6418] border border-[#6a4a0a] relative shadow"
+                class="screw w-3.5 h-3.5 rounded-full bg-linear-to-br from-[#d4a84b] to-[#8a6418] border border-[#6a4a0a] relative shadow"
               >
-                <div class="absolute inset-[3px] rounded-full border border-[#c49a3c] opacity-50"></div>
+                <div class="absolute inset-0.75 rounded-full border border-[#c49a3c] opacity-50"></div>
               </div>
               <div
-                class="screw w-3.5 h-3.5 rounded-full bg-gradient-to-br from-[#d4a84b] to-[#8a6418] border border-[#6a4a0a] relative shadow"
+                class="screw w-3.5 h-3.5 rounded-full bg-linear-to-br from-[#d4a84b] to-[#8a6418] border border-[#6a4a0a] relative shadow"
               >
-                <div class="absolute inset-[3px] rounded-full border border-[#c49a3c] opacity-50"></div>
+                <div class="absolute inset-0.75 rounded-full border border-[#c49a3c] opacity-50"></div>
               </div>
             </div>
 
@@ -238,14 +255,11 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
                 <div class="pushpin"></div>
                 <p class="text-[11px] font-bold text-[#9a8060] mb-2 tracking-wide">📅 교육 진행 현황</p>
                 <div class="flex items-baseline gap-1 mb-2">
-                  <span class="font-sketch font-bold text-[32px] text-[#1c1712] leading-none">{{ currentDay }}</span>
+                  <span class="font-sketch font-bold text-[32px] text-ink leading-none">{{ currentDay }}</span>
                   <span class="text-[13px] text-[#8c7e6e] font-bold">/ {{ TOTAL_DAYS }}일차</span>
                 </div>
-                <div class="h-2 bg-[#1c1712] bg-opacity-10 rounded-full overflow-hidden mb-1.5">
-                  <div
-                    class="h-full bg-[#1c1712] rounded-full transition-all"
-                    :style="{ width: progressPct + '%' }"
-                  ></div>
+                <div class="h-2 bg-ink bg-opacity-10 rounded-full overflow-hidden mb-1.5">
+                  <div class="h-full bg-ink rounded-full transition-all" :style="{ width: progressPct + '%' }"></div>
                 </div>
                 <p class="text-[10px] text-[#8c7e6e]">{{ progressPct }}% 완료 · {{ remainingDays }}일 남음</p>
               </div>
@@ -257,7 +271,7 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
                   <div class="pushpin"></div>
                   <template v-if="nearestEvent">
                     <p class="text-[10px] font-bold text-[#9a4060] mb-1">⚠️ 다음 일정</p>
-                    <p class="text-[11px] font-bold text-[#1c1712] leading-tight mb-1">{{ nearestEvent.label }}</p>
+                    <p class="text-[11px] font-bold text-ink leading-tight mb-1">{{ nearestEvent.label }}</p>
                     <p class="font-sketch font-bold text-[22px] text-[#c02040] leading-none">
                       {{ formatDday(nearestDiff) }}
                     </p>
@@ -265,7 +279,7 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
                   </template>
                   <template v-else>
                     <p class="text-[10px] font-bold text-[#9a4060] mb-1">✅ 다음 일정</p>
-                    <p class="text-[11px] font-bold text-[#1c1712]">모든 일정<br />완료!</p>
+                    <p class="text-[11px] font-bold text-ink">모든 일정<br />완료!</p>
                   </template>
                 </div>
 
@@ -276,7 +290,7 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
                   <template v-if="nextEvents.length">
                     <ul class="space-y-1">
                       <li v-for="ev in nextEvents" :key="ev.date + ev.label" class="flex items-center justify-between">
-                        <span class="text-[10px] text-[#1c1712] font-bold truncate mr-1"
+                        <span class="text-[10px] text-ink font-bold truncate mr-1"
                           >{{ shortDate(ev.date) }} {{ TYPE_ICON[ev.type] }}</span
                         >
                         <span class="text-[10px] text-[#3d6b52] shrink-0">D-{{ diffDays(ev.date) }}</span>

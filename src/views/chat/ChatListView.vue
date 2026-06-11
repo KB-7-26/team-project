@@ -88,14 +88,23 @@ onMounted(loadChatRooms)
     <div class="px-5 pt-6 pb-4 border-b-2 border-[#c8bca8]">
       <h1 class="font-bold text-xl text-ink mb-4">채팅 목록</h1>
       <!-- 검색바 -->
-      <div class="flex items-center gap-2 bg-paper/60 border-2 border-[#c8bca8] rounded-xl px-3.5 py-2.5 focus-within:border-ink transition-colors">
-        <MagnifyingGlassIcon class="w-4 h-4 text-[#8c7e6e] shrink-0" />
+      <div class="flex items-center bg-white border-2 border-ink rounded-xl overflow-hidden shadow-[2px_2px_0_#1c1712]">
         <input
           v-model="searchQuery"
           type="text"
           placeholder="이름이나 상품으로 검색"
-          class="flex-1 bg-transparent outline-none text-sm text-ink placeholder:text-[#c8bca8]"
+          class="flex-1 px-4 py-2 text-sm text-ink outline-none placeholder:text-[#8c7e6e]"
         />
+        <button
+          v-if="searchQuery"
+          @click="searchQuery = ''"
+          class="px-3 text-[#8c7e6e] hover:text-ink text-sm cursor-pointer"
+        >
+          ✕
+        </button>
+        <div class="px-3 py-2 text-[#8c7e6e]">
+          <MagnifyingGlassIcon class="w-4 h-4" />
+        </div>
       </div>
     </div>
 

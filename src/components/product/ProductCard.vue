@@ -19,6 +19,7 @@ defineEmits(['toggle-like'])
           :src="product.image"
           :alt="product.title"
           class="w-full h-36 md:h-48 object-cover"
+          :class="product.status === '판매완료' ? 'filter-[grayscale(40%)]' : ''"
           @error="(e) => { e.target.onerror = null; e.target.src = `https://picsum.photos/seed/${product.id}/400/300` }"
         />
       </div>
@@ -45,6 +46,9 @@ defineEmits(['toggle-like'])
         </p>
       </div>
     </RouterLink>
+
+    <!-- 판매완료 오버레이 -->
+    <div v-if="product.status === '판매완료'" class="absolute inset-0 bg-white/20 pointer-events-none z-10" />
 
     <!-- 하트 버튼 -->
     <button
