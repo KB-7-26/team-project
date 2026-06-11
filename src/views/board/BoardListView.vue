@@ -129,7 +129,7 @@ onMounted(() => {
             </button>
             <button
               @click="search"
-              class="px-3 py-2 text-[#8c7e6e] hover:text-ink transition-colors cursor-pointer border-l-2 border-ink"
+              class="px-3 py-2 text-[#8c7e6e] hover:text-ink transition-colors cursor-pointer"
             >
               <MagnifyingGlassIcon class="w-4 h-4" />
             </button>
