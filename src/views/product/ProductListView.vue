@@ -10,7 +10,6 @@ import { mapProduct } from '@/utils/product'
 const likedIds = ref([])
 const currentPage = ref(1)
 const searchQuery = ref('')
-const searchType = ref('title')
 const sortBy = ref('최신순')
 const showSortDropdown = ref(false)
 const selectedCategoryId = ref(null)
@@ -66,7 +65,7 @@ const fetchProducts = async () => {
     if (sortParamMap[sortBy.value]) params.sort = sortParamMap[sortBy.value]
     if (searchQuery.value.trim()) {
       params.keyword = searchQuery.value.trim()
-      params.searchType = searchType.value
+      params.searchType = 'all'
     }
 
     const { data } = await productApi.getProducts(params)
@@ -140,29 +139,11 @@ const visiblePages = computed(() => {
 
 <template>
   <div class="flex flex-col bg-paper-dots min-h-screen">
-    <!-- 히어로 -->
+    <!-- 검색 + 정렬 -->
     <div class="px-4 md:px-6 py-6 md:py-8">
       <div class="max-w-2xl mx-auto">
         <p class="font-bold text-3xl text-ink mb-4">중고 거래</p>
         <div class="flex items-center gap-2">
-          <!-- 검색 타입 토글 -->
-          <div class="flex border-2 border-ink rounded-xl overflow-hidden text-sm shrink-0 shadow-[2px_2px_0_#1c1712]">
-            <button
-              @click="searchType = 'title'"
-              class="px-3 py-2 transition-colors cursor-pointer font-bold"
-              :class="searchType === 'title' ? 'bg-[#ffe066] text-ink' : 'bg-white text-[#8c7e6e] hover:text-ink'"
-            >
-              제목
-            </button>
-            <div class="w-px bg-ink" />
-            <button
-              @click="searchType = 'all'"
-              class="px-3 py-2 transition-colors cursor-pointer font-bold"
-              :class="searchType === 'all' ? 'bg-[#ffe066] text-ink' : 'bg-white text-[#8c7e6e] hover:text-ink'"
-            >
-              제목+내용
-            </button>
-          </div>
           <!-- 검색바 -->
           <div class="flex flex-1 items-center bg-white border-2 border-ink rounded-xl overflow-hidden shadow-[2px_2px_0_#1c1712]">
             <input

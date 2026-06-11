@@ -224,6 +224,11 @@ const selectMenu = (menuId) => {
   isMobileMenuOpen.value = false
 }
 
+const logout = async () => {
+  await authStore.logout()
+  router.push('/login')
+}
+
 const navigateFromStat = (index) => {
   if (index === 0) {
     selectedSaleStatus.value = 'available'
@@ -973,7 +978,32 @@ watch(selectedSaleStatus, () => {
             </div>
           </template>
 
-          <!-- 환경설정 / 기타 -->
+          <!-- 환경설정 -->
+          <template v-else-if="selectedMenu === 'settings'">
+            <div class="relative overflow-hidden rounded-2xl border-2 border-ink bg-white p-6 shadow-[4px_4px_0_#1c1712] md:p-8">
+              <div class="absolute left-0 top-0 h-full w-1.5 bg-[#c8bca8]"></div>
+              <h2 class="text-2xl font-extrabold text-ink">환경설정</h2>
+              <p class="mt-1 text-sm text-[#8c7e6e]">계정 및 앱 설정을 관리합니다</p>
+            </div>
+            <div class="mt-5 rounded-2xl border-2 border-ink bg-white p-6 shadow-[4px_4px_0_#1c1712]">
+              <h3 class="text-base font-extrabold text-ink mb-4">계정</h3>
+              <div class="flex items-center justify-between py-3 border-b border-dashed border-ink/15">
+                <div>
+                  <p class="text-sm font-bold text-ink">로그아웃</p>
+                  <p class="text-xs text-[#8c7e6e] mt-0.5">현재 기기에서 로그아웃합니다</p>
+                </div>
+                <button
+                  type="button"
+                  class="h-9 rounded-xl border-2 border-ink bg-white px-4 text-sm font-extrabold text-ink shadow-[2px_2px_0_#1c1712] transition hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_#1c1712] hover:bg-red-50 hover:border-red-400 hover:text-red-500"
+                  @click="logout"
+                >
+                  로그아웃
+                </button>
+              </div>
+            </div>
+          </template>
+
+          <!-- 기타 -->
           <div v-else class="rounded-2xl border-2 border-ink bg-white px-6 py-16 text-center shadow-[4px_4px_0_#1c1712]">
             <component :is="activeMenu.icon" class="mx-auto h-12 w-12 text-[#8c7e6e]" />
             <h2 class="mt-5 text-2xl font-extrabold text-ink">{{ activeMenu.label }}</h2>
@@ -1092,13 +1122,6 @@ watch(selectedSaleStatus, () => {
 /* 그래프 노트지 배경 */
 .notebook-bg {
   background-color: #f5f0e8;
-  background-image:
-    linear-gradient(rgba(139, 126, 110, 0.12) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(139, 126, 110, 0.12) 1px, transparent 1px),
-    linear-gradient(rgba(139, 126, 110, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(139, 126, 110, 0.05) 1px, transparent 1px);
-  background-size: 80px 80px, 80px 80px, 20px 20px, 20px 20px;
-  background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
 }
 
 /* 포스트잇 호버 효과 */

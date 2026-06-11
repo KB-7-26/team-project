@@ -4,13 +4,16 @@ import { MagnifyingGlassIcon, PencilSquareIcon, ChevronLeftIcon, ChevronRightIco
 import BoardPostCard from '@/components/board/BoardPostCard.vue'
 import { boardApi } from '@/api/boardApi'
 
+const notices = [
+  { id: 1, tag: '공지', title: '학교 축제 부스 모집합니다', date: '6/10' },
+]
+
 const posts = ref([])
 const currentPage = ref(0)
 const totalPages = ref(0)
 
 const keyword = ref('')
 const searchInput = ref('')
-const searchType = ref('title')
 
 const activeTab = ref('hot')
 const popularPosts = ref([])
@@ -18,7 +21,7 @@ const mostViewedPosts = ref([])
 const rankingLoading = ref(true)
 
 async function fetchPosts(page = 0) {
-  const pageData = await boardApi.getPosts(page, 10, keyword.value || null, searchType.value)
+  const pageData = await boardApi.getPosts(page, 10, keyword.value || null, 'all')
   posts.value = pageData.content
   totalPages.value = pageData.totalPages
   currentPage.value = page
@@ -78,13 +81,12 @@ onMounted(() => {
 <template>
   <div class="bg-paper-dots min-h-screen">
     <!-- 히어로 배너 -->
-    <div class="board-hero px-6 py-10">
-      <div class="max-w-6xl mx-auto">
-        <span class="inline-block mb-4 px-3 py-0.5 text-sm font-bold text-[#d4f5e4] border-2 border-[#d4f5e4] rounded-md opacity-80 tracking-widest">✦ 익명 커뮤니티</span>
-        <h1 class="font-bold text-4xl text-white leading-tight mb-2 tracking-tight">
+    <div class="board-hero px-6 py-4">
+      <div class="max-w-6xl mx-auto flex items-center gap-3">
+        <h1 class="font-bold text-2xl text-white tracking-tight">
           낙서장 <span class="text-[#ffe066]">게시판</span>
         </h1>
-        <p class="text-[#d4f5e4] text-sm mt-2">자유롭게 이야기를 나눠보세요 ✌️</p>
+        <span class="text-xs font-bold text-[#d4f5e4] opacity-70 tracking-widest">✦ 익명 커뮤니티</span>
       </div>
     </div>
 
@@ -151,23 +153,6 @@ onMounted(() => {
       <div class="flex-1 min-w-0">
         <!-- 검색 + 글쓰기 -->
         <div class="flex items-center gap-2 mb-4">
-          <div class="flex border-2 border-ink rounded-xl overflow-hidden text-sm shrink-0 shadow-[2px_2px_0_#1c1712]">
-            <button
-              @click="searchType = 'title'"
-              class="px-3 py-2 transition-colors cursor-pointer font-bold"
-              :class="searchType === 'title' ? 'bg-[#ffe066] text-ink' : 'bg-white text-[#8c7e6e] hover:text-ink'"
-            >
-              제목
-            </button>
-            <div class="w-px bg-ink" />
-            <button
-              @click="searchType = 'all'"
-              class="px-3 py-2 transition-colors cursor-pointer font-bold"
-              :class="searchType === 'all' ? 'bg-[#ffe066] text-ink' : 'bg-white text-[#8c7e6e] hover:text-ink'"
-            >
-              제목+내용
-            </button>
-          </div>
           <div class="flex flex-1 items-center bg-white border-2 border-ink rounded-xl overflow-hidden shadow-[2px_2px_0_#1c1712]">
             <input
               v-model="searchInput"
@@ -199,6 +184,25 @@ onMounted(() => {
           </RouterLink>
         </div>
 
+        <!-- 공지사항 -->
+        <div v-if="!keyword" class="mb-4 flex flex-col gap-2">
+          <div
+            v-for="(notice, i) in notices"
+            :key="notice.id"
+            class="notice-pin relative bg-[#fff9c4] border-2 border-ink rounded-xl px-4 py-3 shadow-[2px_2px_0_#1c1712]"
+            :style="`transform: rotate(${i % 2 === 0 ? '-0.4deg' : '0.3deg'})`"
+          >
+            <div class="pushpin-dot" />
+            <div class="flex items-center gap-2.5">
+              <span class="shrink-0 inline-flex items-center gap-1 text-[11px] font-bold text-[#7a6010] bg-[#ffe066] border border-[#c8aa40] px-2 py-0.5 rounded-full">
+                📌 {{ notice.tag }}
+              </span>
+              <p class="text-sm font-bold text-ink flex-1">{{ notice.title }}</p>
+              <span class="text-[11px] text-[#8c7e6e] shrink-0">{{ notice.date }}</span>
+            </div>
+          </div>
+        </div>
+
         <!-- 검색 안내 -->
         <p v-if="keyword" class="text-xs text-[#8c7e6e] mb-3">
           "<span class="font-bold text-ink">{{ keyword }}</span>" 검색 결과
@@ -213,7 +217,7 @@ onMounted(() => {
             </li>
           </ul>
           <p v-else class="text-center text-[#8c7e6e] py-16">
-            {{ keyword ? '검색 결과가 없습니다.' : '아직 게시글이 없어요. 첫 글을 남겨보세요 ✏️' }}
+            {{ keyword ? '검색 결과가 없습니다.' : '오늘 첫 글을 작성해보세요 ✏️' }}
           </p>
         </div>
 
@@ -330,5 +334,18 @@ onMounted(() => {
 .board-hero {
   background-color: #2d5a48;
   box-shadow: 0 4px 0 #1c1712;
+}
+
+.pushpin-dot {
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+  background: radial-gradient(circle at 38% 38%, #90bce8, #2860b8 60%, #1a3f80);
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.3);
+  z-index: 10;
 }
 </style>

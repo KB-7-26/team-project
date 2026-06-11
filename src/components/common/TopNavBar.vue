@@ -84,12 +84,6 @@ onBeforeUnmount(() => document.removeEventListener('click', handleOutsideClick))
             to="/signup/profile"
             class="nav-btn font-bold text-sm border-2 border-ink bg-primary text-white px-4 py-1.5 rounded-lg shadow-[2px_2px_0_#1c1712] transition-all"
           >프로필 입력</RouterLink>
-          <button
-            v-else
-            type="button"
-            class="nav-btn font-bold text-sm border-2 border-ink bg-white text-ink px-4 py-1.5 rounded-lg shadow-[2px_2px_0_#1c1712] transition-all"
-            @click="logout"
-          >로그아웃</button>
         </div>
 
         <!-- 모바일 -->
@@ -120,10 +114,6 @@ onBeforeUnmount(() => document.removeEventListener('click', handleOutsideClick))
                 @click="showMobileMenu = false"
                 class="block px-4 py-3 font-bold text-sm text-ink hover:bg-[#ffe066] transition-colors"
               >상품등록</RouterLink>
-              <button
-                @click="logout"
-                class="block w-full text-left px-4 py-3 font-bold text-sm text-ink hover:bg-[#ffe066] transition-colors border-t-2 border-[#c8bca8]"
-              >로그아웃</button>
             </div>
           </div>
         </div>
