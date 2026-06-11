@@ -13,7 +13,6 @@ import {
   HeartIcon,
   IdentificationIcon,
   PencilSquareIcon,
-  ShieldCheckIcon,
   ShoppingBagIcon,
   TrashIcon,
   UserCircleIcon,
@@ -22,6 +21,8 @@ import {
 } from '@heroicons/vue/24/outline'
 import ProductCard from '@/components/product/ProductCard.vue'
 import BoardPostCard from '@/components/board/BoardPostCard.vue'
+import ReauthModal from '@/components/user/ReauthModal.vue'
+import TrustStars from '@/components/user/TrustStars.vue'
 import { productApi } from '@/api/productApi'
 import { useAuthStore } from '@/stores/auth'
 import { userBoardActivityApi } from '@/api/userBoardActivityApi'
@@ -44,6 +45,8 @@ const isProfileLoading = ref(false)
 const isProfileSaving = ref(false)
 const profileEditError = ref('')
 const profileEditSuccess = ref('')
+const isPasswordChangeModalOpen = ref(false)
+const passwordChangeSuccess = ref('')
 const boardActivityPosts = ref([])
 const boardActivityCurrentPage = ref(0)
 const boardActivityTotalPages = ref(0)
@@ -92,6 +95,14 @@ const profileEditForm = ref({
 
 const currentUser = computed(() => authStore.user)
 const firebaseUser = computed(() => authStore.firebaseUser)
+const firebaseProviderIds = computed(() => firebaseUser.value?.providerData?.map((provider) => provider.providerId) ?? [])
+const isEmailPasswordAccount = computed(() => firebaseProviderIds.value.includes('password'))
+const isGoogleAccount = computed(() => firebaseProviderIds.value.includes('google.com'))
+const passwordActionLabel = computed(() => {
+  if (isEmailPasswordAccount.value) return '변경하기'
+  if (isGoogleAccount.value) return '구글로 가입한 계정'
+  return '비밀번호 변경 불가'
+})
 
 const fallbackProfile = {
   name: '김민수',
@@ -151,7 +162,8 @@ const profileStats = computed(() => [
   { label: '판매중', value: String(profileData.value.stats?.activeProductCount ?? 3), icon: ShoppingBagIcon },
   { label: '판매 완료', value: String(profileData.value.stats?.soldProductCount ?? 12), icon: CubeIcon },
   { label: '찜', value: String(profileData.value.stats?.favoriteCount ?? 24), icon: HeartIcon },
-  { label: '신뢰도', value: `${profileData.value.trustScore}%`, icon: ShieldCheckIcon },
+  { label: '게시글', value: String(profileData.value.stats?.postCount ?? 0), icon: PencilSquareIcon },
+  { label: '댓글', value: String(profileData.value.stats?.commentCount ?? 0), icon: ChatBubbleOvalLeftIcon },
 ])
 
 const accountRows = computed(() => [
@@ -229,6 +241,22 @@ const logout = async () => {
   router.push('/login')
 }
 
+const openPasswordChangeModal = () => {
+  if (!isEmailPasswordAccount.value) return
+
+  passwordChangeSuccess.value = ''
+  isPasswordChangeModalOpen.value = true
+}
+
+const closePasswordChangeModal = () => {
+  isPasswordChangeModalOpen.value = false
+}
+
+const handlePasswordChanged = () => {
+  passwordChangeSuccess.value = '비밀번호가 변경되었습니다.'
+  closePasswordChangeModal()
+}
+
 const navigateFromStat = (index) => {
   if (index === 0) {
     selectedSaleStatus.value = 'available'
@@ -238,6 +266,10 @@ const navigateFromStat = (index) => {
     selectMenu('sales')
   } else if (index === 2) {
     selectMenu('favorites')
+  } else if (index === 3) {
+    selectMenu('myPosts')
+  } else if (index === 4) {
+    selectMenu('commentedPosts')
   }
 }
 const mapProductListItem = (product) => ({
@@ -721,7 +753,14 @@ watch(selectedSaleStatus, () => {
                   </div>
 
                   <div class="flex-1 text-center sm:text-left">
-                    <h3 class="text-2xl font-extrabold text-ink">{{ profile.nickname }}</h3>
+                    <h3 class="flex flex-wrap items-center justify-center gap-3 text-2xl font-extrabold text-ink sm:justify-start">
+                      <span>{{ profile.nickname }}</span>
+                      <TrustStars
+                        :score="profileData.trustScore"
+                        size="sm"
+                        class="rounded-full border border-ink/30 bg-white/80 px-2 py-1"
+                      />
+                    </h3>
                     <div class="mt-2 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
                       <span class="inline-block -rotate-1 rounded-sm border border-ink/40 bg-[#96d4b4]/60 px-3 py-0.5 text-xs font-bold text-ink">
                         {{ profile.cohort }}
@@ -730,24 +769,24 @@ watch(selectedSaleStatus, () => {
                   </div>
                 </div>
 
-                <!-- 스탯 포스트잇 4개 -->
-                <div class="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <!-- 스탯 포스트잇 5개 -->
+                <div class="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
                   <div
                     v-for="(stat, i) in profileStats"
                     :key="stat.label"
                     :class="[
-                      'stat-note flex flex-col items-center gap-1.5 rounded-xl border-2 border-ink p-3 shadow-[2px_2px_0_#1c1712]',
+                      'stat-note flex min-h-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-ink p-2.5 shadow-[2px_2px_0_#1c1712]',
                       i === 0 ? 'bg-[#ffe066] -rotate-1' :
                       i === 1 ? 'bg-[#ffb3c6] rotate-1' :
                       i === 2 ? 'bg-[#b3d4ff] -rotate-1' :
-                      'bg-[#96d4b4] rotate-1',
-                      i < 3 ? 'cursor-pointer' : ''
+                      i === 3 ? 'bg-[#96d4b4] rotate-1' :
+                      'bg-[#f0ebe0] -rotate-1'
                     ]"
                     @click="navigateFromStat(i)"
                   >
-                    <component :is="stat.icon" class="h-5 w-5 text-ink" />
-                    <span class="text-xl font-extrabold leading-none text-ink">{{ stat.value }}</span>
-                    <span class="text-xs font-bold text-ink/60">{{ stat.label }}</span>
+                    <component :is="stat.icon" class="h-4 w-4 text-ink" />
+                    <span class="text-lg font-extrabold leading-none text-ink">{{ stat.value }}</span>
+                    <span class="whitespace-nowrap text-[11px] font-bold text-ink/60">{{ stat.label }}</span>
                   </div>
                 </div>
 
@@ -987,7 +1026,42 @@ watch(selectedSaleStatus, () => {
             </div>
             <div class="mt-5 rounded-2xl border-2 border-ink bg-white p-6 shadow-[4px_4px_0_#1c1712]">
               <h3 class="text-base font-extrabold text-ink mb-4">계정</h3>
-              <div class="flex items-center justify-between py-3 border-b border-dashed border-ink/15">
+              <div class="flex flex-col gap-3 border-b border-dashed border-ink/15 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p class="text-sm font-bold text-ink">비밀번호 변경</p>
+                  <p class="text-xs text-[#8c7e6e] mt-0.5">이메일 계정의 로그인 비밀번호를 변경합니다</p>
+                  <p v-if="passwordChangeSuccess" class="mt-2 text-xs font-bold text-green-600">
+                    {{ passwordChangeSuccess }}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="h-9 rounded-xl border-2 border-ink px-4 text-sm font-extrabold shadow-[2px_2px_0_#1c1712] transition"
+                  :class="isEmailPasswordAccount
+                    ? 'bg-white text-ink hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_#1c1712] hover:bg-[#ffe066]/30'
+                    : 'cursor-not-allowed bg-[#f0ebe0] text-[#8c7e6e] opacity-70'"
+                  :disabled="!isEmailPasswordAccount"
+                  @click="openPasswordChangeModal"
+                >
+                  {{ passwordActionLabel }}
+                </button>
+              </div>
+
+              <div class="flex flex-col gap-3 border-b border-dashed border-ink/15 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p class="text-sm font-bold text-ink">회원 탈퇴</p>
+                  <p class="text-xs text-[#8c7e6e] mt-0.5">!!!!!!!!!선행 작업 중!!!!!!!!!!!</p>
+                </div>
+                <button
+                  type="button"
+                  class="h-9 cursor-not-allowed rounded-xl border-2 border-ink bg-[#f0ebe0] px-4 text-sm font-extrabold text-[#8c7e6e] opacity-70 shadow-[2px_2px_0_#1c1712]"
+                  disabled
+                >
+                  탈퇴하기
+                </button>
+              </div>
+
+              <div class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p class="text-sm font-bold text-ink">로그아웃</p>
                   <p class="text-xs text-[#8c7e6e] mt-0.5">현재 기기에서 로그아웃합니다</p>
@@ -1014,6 +1088,12 @@ watch(selectedSaleStatus, () => {
       </div>
     </main>
   </div>
+
+  <ReauthModal
+    :is-open="isPasswordChangeModalOpen"
+    @close="closePasswordChangeModal"
+    @changed="handlePasswordChanged"
+  />
 
   <!-- ── 프로필 수정 모달 ── -->
   <div
