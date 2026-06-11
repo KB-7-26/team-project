@@ -1,8 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
-  AcademicCapIcon,
-  CalendarDaysIcon,
   CubeIcon,
   ExclamationTriangleIcon,
   ShieldCheckIcon,
@@ -11,6 +9,7 @@ import {
   XMarkIcon,
 } from '@heroicons/vue/24/outline'
 import { userProfileApi } from '@/api/userProfileApi'
+import TrustStars from '@/components/user/TrustStars.vue'
 
 const props = defineProps({
   userId: {
@@ -54,33 +53,9 @@ const reportButtonClass = computed(() => [
   reportStatus.value === 'done' ? 'text-primary' : 'text-red-500',
 ])
 
-const formatDate = (value) => {
-  if (!value) return '-'
-
-  return new Intl.DateTimeFormat('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(new Date(value))
-}
-
-const genderLabel = (value) => {
-  if (value === 'M') return '남성'
-  if (value === 'F') return '여성'
-  return value || '-'
-}
-
 const profileStats = computed(() => [
   { label: '판매중', value: String(profile.value?.stats?.activeProductCount ?? 0), icon: ShoppingBagIcon },
   { label: '판매 완료', value: String(profile.value?.stats?.soldProductCount ?? 0), icon: CubeIcon },
-])
-
-const trustScore = computed(() => profile.value?.trustScore ?? 0)
-const trustStars = computed(() => Math.round((trustScore.value / 100) * 5))
-const profileRows = computed(() => [
-  { label: '회차', value: profile.value?.cohort || '-', icon: AcademicCapIcon },
-  { label: '성별', value: genderLabel(profile.value?.gender), icon: UserCircleIcon },
-  { label: '가입일', value: formatDate(profile.value?.createdAt), icon: CalendarDaysIcon },
 ])
 
 const closeProfile = () => {
@@ -215,14 +190,7 @@ defineExpose({ openProfile })
                   <ShieldCheckIcon class="h-3.5 w-3.5 shrink-0 text-primary" />
                   <span class="text-xs font-bold text-[#8c7e6e]">신뢰도</span>
                 </div>
-                <div class="flex items-center justify-center gap-3">
-                  <span
-                    v-for="i in 5"
-                    :key="i"
-                    class="inline-block text-3xl leading-none transition-transform duration-150 hover:scale-110"
-                    :class="i <= trustStars ? 'text-[#c9a227] drop-shadow-[1px_2px_0_#a07c0a]' : 'text-[#d4c9b5]'"
-                  >★</span>
-                </div>
+                <TrustStars :score="profile?.trustScore ?? 0" size="lg" />
               </div>
             </div>
           </template>
