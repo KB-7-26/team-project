@@ -144,85 +144,88 @@ const deleteComment = async (commentId) => {
 </script>
 
 <template>
-  <div class="border border-border rounded-2xl p-6">
-    <p class="text-base font-bold text-text-main mb-4">댓글 {{ totalCommentCount }}</p>
+  <div class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
+    <div class="h-1.5 bg-[#f4b8c8]" />
+    <div class="p-6">
+      <p class="font-sketch font-bold text-lg text-ink mb-5">💬 댓글 {{ totalCommentCount }}</p>
 
-    <ul class="flex flex-col divide-y divide-border mb-6">
-      <li v-if="comments.length === 0" class="py-8 text-center text-sm text-text-sub">
-        첫 번째 댓글을 남겨보세요
-      </li>
-      <li v-for="comment in comments" :key="comment.id">
-        <BoardCommentItem
-          :comment="comment"
-          :liked="commentLikes[comment.id]?.liked ?? false"
-          :like-count="commentLikes[comment.id]?.likeCount ?? 0"
-          @reply-click="toggleReplyInput"
-          @update="updateComment"
-          @delete="deleteComment"
-          @like="toggleCommentLike"
-        />
+      <ul class="flex flex-col divide-y-2 divide-dashed divide-[#e8e0d4] mb-6">
+        <li v-if="comments.length === 0" class="py-8 text-center text-sm text-[#8c7e6e]">
+          첫 번째 댓글을 남겨보세요 ✏️
+        </li>
+        <li v-for="comment in comments" :key="comment.id">
+          <BoardCommentItem
+            :comment="comment"
+            :liked="commentLikes[comment.id]?.liked ?? false"
+            :like-count="commentLikes[comment.id]?.likeCount ?? 0"
+            @reply-click="toggleReplyInput"
+            @update="updateComment"
+            @delete="deleteComment"
+            @like="toggleCommentLike"
+          />
 
-        <ul v-if="comment.replies?.length > 0">
-          <li v-for="reply in comment.replies" :key="reply.id">
-            <BoardCommentItem
-              :comment="reply"
-              :is-reply="true"
-              :liked="commentLikes[reply.id]?.liked ?? false"
-              :like-count="commentLikes[reply.id]?.likeCount ?? 0"
-              @update="updateComment"
-              @delete="deleteComment"
-              @like="toggleCommentLike"
-            />
-          </li>
-        </ul>
+          <ul v-if="comment.replies?.length > 0">
+            <li v-for="reply in comment.replies" :key="reply.id">
+              <BoardCommentItem
+                :comment="reply"
+                :is-reply="true"
+                :liked="commentLikes[reply.id]?.liked ?? false"
+                :like-count="commentLikes[reply.id]?.likeCount ?? 0"
+                @update="updateComment"
+                @delete="deleteComment"
+                @like="toggleCommentLike"
+              />
+            </li>
+          </ul>
 
-        <div v-if="replyingToId === comment.id" class="ml-6 pl-4 border-l-2 border-primary/30 py-3">
-          <div class="flex gap-2">
-            <input
-              v-model="newReply"
-              @keyup.enter="submitReply(comment.id)"
-              type="text"
-              placeholder="답글을 입력하세요"
-              :disabled="isSubmittingReply"
-              class="flex-1 px-4 py-2 border border-border rounded-xl text-sm text-text-main outline-none focus:border-primary transition-colors disabled:opacity-50"
-              autofocus
-            />
-            <button
-              @click="submitReply(comment.id)"
-              :disabled="isSubmittingReply"
-              class="bg-primary hover:bg-primary-hover text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {{ isSubmittingReply ? '등록 중...' : '등록' }}
-            </button>
-            <button
-              @click="toggleReplyInput(comment)"
-              class="text-sm text-text-sub hover:text-text-main px-3 py-2 rounded-xl border border-border transition-colors cursor-pointer"
-            >
-              취소
-            </button>
+          <div v-if="replyingToId === comment.id" class="ml-6 pl-4 border-l-2 border-[#96d4b4] py-3">
+            <div class="flex gap-2">
+              <input
+                v-model="newReply"
+                @keyup.enter="submitReply(comment.id)"
+                type="text"
+                placeholder="답글을 입력하세요"
+                :disabled="isSubmittingReply"
+                class="flex-1 px-4 py-2 border-2 border-[#c8bca8] focus:border-ink rounded-xl text-sm text-ink outline-none transition-colors placeholder:text-[#8c7e6e] disabled:opacity-50"
+                autofocus
+              />
+              <button
+                @click="submitReply(comment.id)"
+                :disabled="isSubmittingReply"
+                class="bg-[#96d4b4] border-2 border-ink text-ink text-sm font-bold px-4 py-2 rounded-xl shadow-[2px_2px_0_#1c1712] hover:-translate-y-0.5 transition-all shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {{ isSubmittingReply ? '등록 중...' : '등록' }}
+              </button>
+              <button
+                @click="toggleReplyInput(comment)"
+                class="text-sm text-[#8c7e6e] hover:text-ink px-3 py-2 rounded-xl border-2 border-[#c8bca8] hover:border-ink transition-all cursor-pointer font-bold"
+              >
+                취소
+              </button>
+            </div>
           </div>
-        </div>
-      </li>
-    </ul>
+        </li>
+      </ul>
 
-    <p v-if="submitError" class="text-sm text-red-400 mb-3">{{ submitError }}</p>
+      <p v-if="submitError" class="text-sm text-red-400 mb-3">{{ submitError }}</p>
 
-    <div class="flex gap-2">
-      <input
-        v-model="newComment"
-        @keyup.enter="submitComment"
-        type="text"
-        placeholder="댓글을 입력하세요"
-        :disabled="isSubmitting"
-        class="flex-1 px-4 py-2.5 border border-border rounded-xl text-sm text-text-main outline-none focus:border-primary transition-colors disabled:opacity-50"
-      />
-      <button
-        @click="submitComment"
-        :disabled="isSubmitting"
-        class="bg-primary hover:bg-primary-hover text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors duration-200 shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {{ isSubmitting ? '등록 중...' : '등록' }}
-      </button>
+      <div class="flex gap-2 pt-4 border-t-2 border-dashed border-[#e8e0d4]">
+        <input
+          v-model="newComment"
+          @keyup.enter="submitComment"
+          type="text"
+          placeholder="댓글을 입력하세요"
+          :disabled="isSubmitting"
+          class="flex-1 px-4 py-2.5 border-2 border-[#c8bca8] focus:border-ink rounded-xl text-sm text-ink outline-none transition-colors placeholder:text-[#8c7e6e] disabled:opacity-50"
+        />
+        <button
+          @click="submitComment"
+          :disabled="isSubmitting"
+          class="bg-[#ffe066] border-2 border-ink text-ink text-sm font-bold px-5 py-2.5 rounded-xl shadow-[3px_3px_0_#1c1712] hover:-translate-y-0.5 hover:shadow-[4px_4px_0_#1c1712] transition-all shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+        >
+          {{ isSubmitting ? '등록 중...' : '등록' }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
