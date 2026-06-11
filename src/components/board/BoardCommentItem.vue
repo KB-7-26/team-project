@@ -93,7 +93,11 @@ const submitEdit = () => {
     </div>
 
     <div v-else class="flex items-center justify-between gap-4">
-      <p class="text-sm text-text-main leading-relaxed flex-1">{{ comment.content }}</p>
+      <p
+        class="text-sm text-text-main leading-relaxed flex-1"
+        :class="{ 'cursor-pointer hover:text-primary transition-colors': !isReply }"
+        @click="!isReply && emit('reply-click', comment)"
+      >{{ comment.content }}</p>
       <div class="flex items-center gap-2 shrink-0">
         <button
           @click="emit('like', comment.id)"
