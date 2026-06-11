@@ -213,6 +213,7 @@ function shouldShowProfile(index) {
 
 // 별점 메시지 추가
 function addReviewMessage() {
+  if (messages.value.some(m => m.type === 'review')) return
   messages.value.push({
     messageId: 'review-' + Date.now(),
     type: 'review',
