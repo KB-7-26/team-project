@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { auth } from '@/firebase'
 
 export function useApiRequest() {
   const router = useRouter()
@@ -14,7 +15,11 @@ export function useApiRequest() {
       return { ok: true, data }
     } catch (e) {
       if (e.response?.status === 401) {
-        router.push('/login')
+        if (!auth.currentUser) {
+          router.push('/login')
+        } else {
+          error.value = errorMessage ?? '오류가 발생했습니다. 다시 시도해주세요.'
+        }
       } else if (e.response?.status === 403) {
         if (on403) on403()
         else error.value = '권한이 없습니다.'
