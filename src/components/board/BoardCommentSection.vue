@@ -147,7 +147,7 @@ const deleteComment = async (commentId) => {
   <div class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
     <div class="h-1.5 bg-[#f4b8c8]" />
     <div class="p-6">
-      <p class="font-sketch font-bold text-lg text-ink mb-5">💬 댓글 {{ totalCommentCount }}</p>
+      <p class="font-sans font-bold text-lg text-ink mb-5">💬 댓글 {{ totalCommentCount }}</p>
 
       <ul class="flex flex-col divide-y-2 divide-dashed divide-[#e8e0d4] mb-6">
         <li v-if="comments.length === 0" class="py-8 text-center text-sm text-[#8c7e6e]">
@@ -180,15 +180,22 @@ const deleteComment = async (commentId) => {
 
           <div v-if="replyingToId === comment.id" class="ml-6 pl-4 border-l-2 border-[#96d4b4] py-3">
             <div class="flex gap-2">
-              <input
-                v-model="newReply"
-                @keyup.enter="submitReply(comment.id)"
-                type="text"
-                placeholder="답글을 입력하세요"
-                :disabled="isSubmittingReply"
-                class="flex-1 px-4 py-2 border-2 border-[#c8bca8] focus:border-ink rounded-xl text-sm text-ink outline-none transition-colors placeholder:text-[#8c7e6e] disabled:opacity-50"
-                autofocus
-              />
+              <div class="flex-1 relative">
+                <input
+                  v-model="newReply"
+                  @keyup.enter="submitReply(comment.id)"
+                  type="text"
+                  placeholder="답글을 입력하세요"
+                  maxlength="500"
+                  :disabled="isSubmittingReply"
+                  class="w-full px-4 py-2 pr-16 border-2 border-[#c8bca8] focus:border-ink rounded-xl text-sm text-ink outline-none transition-colors placeholder:text-[#8c7e6e] disabled:opacity-50"
+                  autofocus
+                />
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] tabular-nums"
+                  :class="newReply.length >= 480 ? 'text-red-400' : 'text-[#8c7e6e]'">
+                  {{ newReply.length }}/500
+                </span>
+              </div>
               <button
                 @click="submitReply(comment.id)"
                 :disabled="isSubmittingReply"
@@ -210,14 +217,21 @@ const deleteComment = async (commentId) => {
       <p v-if="submitError" class="text-sm text-red-400 mb-3">{{ submitError }}</p>
 
       <div class="flex gap-2 pt-4 border-t-2 border-dashed border-[#e8e0d4]">
-        <input
-          v-model="newComment"
-          @keyup.enter="submitComment"
-          type="text"
-          placeholder="댓글을 입력하세요"
-          :disabled="isSubmitting"
-          class="flex-1 px-4 py-2.5 border-2 border-[#c8bca8] focus:border-ink rounded-xl text-sm text-ink outline-none transition-colors placeholder:text-[#8c7e6e] disabled:opacity-50"
-        />
+        <div class="flex-1 relative">
+          <input
+            v-model="newComment"
+            @keyup.enter="submitComment"
+            type="text"
+            placeholder="댓글을 입력하세요"
+            maxlength="500"
+            :disabled="isSubmitting"
+            class="w-full px-4 py-2.5 pr-16 border-2 border-[#c8bca8] focus:border-ink rounded-xl text-sm text-ink outline-none transition-colors placeholder:text-[#8c7e6e] disabled:opacity-50"
+          />
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] tabular-nums"
+            :class="newComment.length >= 480 ? 'text-red-400' : 'text-[#8c7e6e]'">
+            {{ newComment.length }}/500
+          </span>
+        </div>
         <button
           @click="submitComment"
           :disabled="isSubmitting"

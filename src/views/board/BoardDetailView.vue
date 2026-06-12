@@ -86,7 +86,7 @@ const deletePost = async () => {
           <div class="h-1.5 bg-[#ffe066]" />
           <div class="p-6">
             <div class="flex items-start justify-between gap-4 mb-4">
-              <h1 class="font-sketch font-bold text-2xl text-ink leading-snug">{{ post.title }}</h1>
+              <h1 class="font-sans font-bold text-2xl text-ink leading-snug">{{ post.title }}</h1>
               <div v-if="post.isOwner" class="flex items-center gap-2 shrink-0">
                 <RouterLink
                   :to="`/board/${post.id}/edit`"

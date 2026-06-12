@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { MagnifyingGlassIcon, PencilSquareIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
+import { MagnifyingGlassIcon, PencilSquareIcon } from '@heroicons/vue/24/outline'
 import BoardPostCard from '@/components/board/BoardPostCard.vue'
 import { boardApi } from '@/api/boardApi'
 
@@ -11,6 +11,7 @@ const notices = [
 const posts = ref([])
 const currentPage = ref(0)
 const totalPages = ref(0)
+const totalElements = ref(0)
 
 const keyword = ref('')
 const searchInput = ref('')
@@ -21,9 +22,10 @@ const mostViewedPosts = ref([])
 const rankingLoading = ref(true)
 
 async function fetchPosts(page = 0) {
-  const pageData = await boardApi.getPosts(page, 10, keyword.value || null, 'all')
+  const pageData = await boardApi.getPosts(page, 15, keyword.value || null, 'all')
   posts.value = pageData.content
   totalPages.value = pageData.totalPages
+  totalElements.value = pageData.totalElements ?? 0
   currentPage.value = page
 }
 
@@ -51,26 +53,13 @@ async function fetchRanking() {
   }
 }
 
-const currentBlock = computed(() => Math.floor(currentPage.value / 5))
-
 const visiblePages = computed(() => {
-  const start = currentBlock.value * 5
-  const end = Math.min(start + 4, totalPages.value - 1)
+  const blockStart = Math.floor(currentPage.value / 5) * 5
+  const blockEnd = Math.min(blockStart + 4, totalPages.value - 1)
   const pages = []
-  for (let i = start; i <= end; i++) pages.push(i)
+  for (let i = blockStart; i <= blockEnd; i++) pages.push(i)
   return pages
 })
-
-const hasPrevBlock = computed(() => currentBlock.value > 0)
-const hasNextBlock = computed(() => (currentBlock.value + 1) * 5 < totalPages.value)
-
-function goToPrevBlock() {
-  fetchPosts((currentBlock.value - 1) * 5)
-}
-
-function goToNextBlock() {
-  fetchPosts((currentBlock.value + 1) * 5)
-}
 
 onMounted(() => {
   fetchPosts(0)
@@ -87,62 +76,6 @@ onMounted(() => {
           낙서장 <span class="text-[#ffe066]">게시판</span>
         </h1>
         <span class="text-xs font-bold text-[#d4f5e4] opacity-70 tracking-widest">✦ 익명 커뮤니티</span>
-      </div>
-    </div>
-
-    <!-- 모바일 전용 인기글 -->
-    <div class="block md:hidden max-w-6xl mx-auto px-6 pt-6">
-      <div class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
-        <div class="h-1.5 bg-[#ffe066]" />
-        <div class="p-4">
-          <div class="flex gap-2 mb-3">
-            <button
-              @click="activeTab = 'hot'"
-              class="flex-1 py-1.5 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer"
-              :class="activeTab === 'hot'
-                ? 'bg-[#ffe066] border-ink text-ink shadow-[2px_2px_0_#1c1712]'
-                : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-ink hover:text-ink'"
-            >
-              🔥 인기글
-            </button>
-            <button
-              @click="activeTab = 'mostViewed'"
-              class="flex-1 py-1.5 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer"
-              :class="activeTab === 'mostViewed'
-                ? 'bg-[#96d4b4] border-ink text-ink shadow-[2px_2px_0_#1c1712]'
-                : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-ink hover:text-ink'"
-            >
-              👁 조회순
-            </button>
-          </div>
-          <div v-if="rankingLoading" class="text-center py-4 text-sm text-[#8c7e6e]">불러오는 중...</div>
-          <template v-else>
-            <ul v-if="activeTab === 'hot'">
-              <li v-if="popularPosts.length === 0" class="text-center py-4 text-sm text-[#8c7e6e]">인기글이 없습니다.</li>
-              <li
-                v-for="(post, index) in popularPosts"
-                :key="post.id"
-                class="flex items-center gap-3 py-2 border-b border-dashed border-[#c8bca8] last:border-b-0"
-              >
-                <span class="w-5 text-center text-sm font-bold font-sketch shrink-0" :class="index < 3 ? 'text-[#2d5a48]' : 'text-[#8c7e6e]'">{{ index + 1 }}</span>
-                <RouterLink :to="`/board/${post.id}`" class="flex-1 text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors">{{ post.title }}</RouterLink>
-                <span class="text-xs text-[#8c7e6e] shrink-0">♥ {{ post.likeCount ?? 0 }}</span>
-              </li>
-            </ul>
-            <ul v-else>
-              <li v-if="mostViewedPosts.length === 0" class="text-center py-4 text-sm text-[#8c7e6e]">게시글이 없습니다.</li>
-              <li
-                v-for="(post, index) in mostViewedPosts"
-                :key="post.id"
-                class="flex items-center gap-3 py-2 border-b border-dashed border-[#c8bca8] last:border-b-0"
-              >
-                <span class="w-5 text-center text-sm font-bold font-sketch shrink-0" :class="index < 3 ? 'text-[#2d5a48]' : 'text-[#8c7e6e]'">{{ index + 1 }}</span>
-                <RouterLink :to="`/board/${post.id}`" class="flex-1 text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors">{{ post.title }}</RouterLink>
-                <span class="text-xs text-[#8c7e6e] shrink-0">👁 {{ post.viewCount }}</span>
-              </li>
-            </ul>
-          </template>
-        </div>
       </div>
     </div>
 
@@ -203,6 +136,58 @@ onMounted(() => {
           </div>
         </div>
 
+        <!-- 모바일 전용 인기글 -->
+        <div class="block md:hidden mb-4">
+          <div class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
+            <div class="h-1.5 bg-[#ffe066]" />
+            <div class="p-4">
+              <div class="flex gap-2 mb-3">
+                <button
+                  @click="activeTab = 'hot'"
+                  class="flex-1 py-1.5 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer"
+                  :class="activeTab === 'hot'
+                    ? 'bg-[#ffe066] border-ink text-ink shadow-[2px_2px_0_#1c1712]'
+                    : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-ink hover:text-ink'"
+                >🔥 인기글</button>
+                <button
+                  @click="activeTab = 'mostViewed'"
+                  class="flex-1 py-1.5 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer"
+                  :class="activeTab === 'mostViewed'
+                    ? 'bg-[#96d4b4] border-ink text-ink shadow-[2px_2px_0_#1c1712]'
+                    : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-ink hover:text-ink'"
+                >👁 조회순</button>
+              </div>
+              <div v-if="rankingLoading" class="text-center py-4 text-sm text-[#8c7e6e]">불러오는 중...</div>
+              <template v-else>
+                <ul v-if="activeTab === 'hot'">
+                  <li v-if="popularPosts.length === 0" class="text-center py-4 text-sm text-[#8c7e6e]">인기글이 없습니다.</li>
+                  <li
+                    v-for="(post, index) in popularPosts"
+                    :key="post.id"
+                    class="flex items-center gap-3 py-2 border-b border-dashed border-[#c8bca8] last:border-b-0"
+                  >
+                    <span class="w-5 text-center text-sm font-bold font-sketch shrink-0" :class="index < 3 ? 'text-[#2d5a48]' : 'text-[#8c7e6e]'">{{ index + 1 }}</span>
+                    <RouterLink :to="`/board/${post.id}`" class="flex-1 text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors">{{ post.title }}</RouterLink>
+                    <span class="text-xs text-[#8c7e6e] shrink-0">♥ {{ post.likeCount ?? 0 }}</span>
+                  </li>
+                </ul>
+                <ul v-else>
+                  <li v-if="mostViewedPosts.length === 0" class="text-center py-4 text-sm text-[#8c7e6e]">게시글이 없습니다.</li>
+                  <li
+                    v-for="(post, index) in mostViewedPosts"
+                    :key="post.id"
+                    class="flex items-center gap-3 py-2 border-b border-dashed border-[#c8bca8] last:border-b-0"
+                  >
+                    <span class="w-5 text-center text-sm font-bold font-sketch shrink-0" :class="index < 3 ? 'text-[#2d5a48]' : 'text-[#8c7e6e]'">{{ index + 1 }}</span>
+                    <RouterLink :to="`/board/${post.id}`" class="flex-1 text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors">{{ post.title }}</RouterLink>
+                    <span class="text-xs text-[#8c7e6e] shrink-0">👁 {{ post.viewCount }}</span>
+                  </li>
+                </ul>
+              </template>
+            </div>
+          </div>
+        </div>
+
         <!-- 검색 안내 -->
         <p v-if="keyword" class="text-xs text-[#8c7e6e] mb-3">
           "<span class="font-bold text-ink">{{ keyword }}</span>" 검색 결과
@@ -211,9 +196,17 @@ onMounted(() => {
         <!-- 글 목록 -->
         <div class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
           <div class="h-1.5 bg-[#96d4b4]" />
-          <ul v-if="posts.length > 0" class="divide-y-2 divide-dashed divide-[#e8e0d4]">
-            <li v-for="post in posts" :key="post.id">
-              <BoardPostCard :post="post" />
+          <!-- 헤더 -->
+          <div class="flex items-center py-2 px-4 border-b-2 border-[#e8e0d4] bg-[#faf7f0]">
+            <span class="w-10 shrink-0 text-center text-[11px] font-bold text-[#8c7e6e]">번호</span>
+            <span class="flex-1 px-3 text-[11px] font-bold text-[#8c7e6e]">제목</span>
+            <span class="w-16 shrink-0 text-center text-[11px] font-bold text-[#8c7e6e]">작성일</span>
+            <span class="hidden md:block w-12 shrink-0 text-center text-[11px] font-bold text-[#8c7e6e]">조회</span>
+            <span class="hidden md:block w-12 shrink-0 text-center text-[11px] font-bold text-[#8c7e6e]">추천</span>
+          </div>
+          <ul v-if="posts.length > 0" class="divide-y divide-dashed divide-[#e8e0d4]">
+            <li v-for="(post, i) in posts" :key="post.id">
+              <BoardPostCard :post="post" :rank="totalElements - currentPage * 15 - i" />
             </li>
           </ul>
           <p v-else class="text-center text-[#8c7e6e] py-16">
@@ -222,37 +215,41 @@ onMounted(() => {
         </div>
 
         <!-- 페이지네이션 -->
-        <div v-if="totalPages > 1" class="flex justify-center items-center gap-2 mt-8 mb-4">
+        <div v-if="totalPages > 1" class="flex justify-center items-center gap-1 mt-8 mb-4">
           <button
-            v-if="hasPrevBlock"
-            @click="goToPrevBlock"
-            class="w-9 h-9 flex items-center justify-center border-2 border-ink rounded-xl bg-white text-ink hover:bg-[#ffe066] shadow-[2px_2px_0_#1c1712] transition-all cursor-pointer"
-          >
-            <ChevronLeftIcon class="w-4 h-4" />
-          </button>
+            @click="fetchPosts(Math.max(0, currentPage - 5))"
+            :disabled="currentPage <= 0"
+            class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all"
+          >«</button>
+          <button
+            @click="fetchPosts(Math.max(0, currentPage - 1))"
+            :disabled="currentPage <= 0"
+            class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all"
+          >‹</button>
           <button
             v-for="page in visiblePages"
             :key="page"
             @click="fetchPosts(page)"
             :class="currentPage === page
-              ? 'bg-[#ffe066] border-ink text-ink shadow-[2px_2px_0_#1c1712]'
-              : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-ink hover:text-ink'"
-            class="w-9 h-9 rounded-xl font-bold text-sm border-2 transition-all cursor-pointer"
-          >
-            {{ page + 1 }}
-          </button>
+              ? 'bg-[#ffe066] border-ink shadow-[2px_2px_0_#1c1712] text-ink'
+              : 'bg-white border-[#c8bca8] text-ink hover:border-ink hover:shadow-[2px_2px_0_#1c1712]'"
+            class="min-w-8 h-8 md:min-w-9 md:h-9 px-2 rounded-xl font-bold text-sm border-2 transition-all"
+          >{{ page + 1 }}</button>
           <button
-            v-if="hasNextBlock"
-            @click="goToNextBlock"
-            class="w-9 h-9 flex items-center justify-center border-2 border-ink rounded-xl bg-white text-ink hover:bg-[#ffe066] shadow-[2px_2px_0_#1c1712] transition-all cursor-pointer"
-          >
-            <ChevronRightIcon class="w-4 h-4" />
-          </button>
+            @click="fetchPosts(Math.min(totalPages - 1, currentPage + 1))"
+            :disabled="currentPage >= totalPages - 1"
+            class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all"
+          >›</button>
+          <button
+            @click="fetchPosts(Math.min(totalPages - 1, currentPage + 5))"
+            :disabled="currentPage >= totalPages - 1"
+            class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all"
+          >»</button>
         </div>
       </div>
 
       <!-- 사이드바 (sticky) - 데스크탑 전용 -->
-      <div class="hidden md:block w-72 shrink-0 sticky top-8">
+      <div class="hidden md:block w-72 shrink-0 sticky top-20">
         <div class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
           <div class="h-1.5 bg-[#ffe066]" />
           <div class="p-5">
