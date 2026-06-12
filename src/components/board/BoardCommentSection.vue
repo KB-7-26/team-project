@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import BoardCommentItem from '@/components/board/BoardCommentItem.vue'
+import BoardReportModal from '@/components/board/BoardReportModal.vue'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
 import { useToastStore } from '@/stores/toast'
@@ -117,6 +118,32 @@ const toggleCommentLike = async (commentId) => {
   }
 }
 
+const reportingCommentId = ref(null)
+const commentReportModalRef = ref(null)
+const isReportingComment = ref(false)
+
+const openCommentReport = (commentId) => {
+  reportingCommentId.value = commentId
+}
+
+const submitCommentReport = async (reason) => {
+  if (isReportingComment.value) return
+  isReportingComment.value = true
+  try {
+    await boardApi.reportComment(props.postId, reportingCommentId.value, reason)
+    reportingCommentId.value = null
+    toast.show('신고가 접수되었습니다.')
+  } catch (e) {
+    if (e.response?.status === 409) {
+      commentReportModalRef.value?.setError('이미 신고한 댓글입니다.')
+    } else {
+      commentReportModalRef.value?.setError('신고 접수에 실패했습니다. 다시 시도해주세요.')
+    }
+  } finally {
+    isReportingComment.value = false
+  }
+}
+
 const deleteComment = async (commentId) => {
   if (!confirm('댓글을 삭제하시겠습니까?')) return
   const { ok } = await request(
@@ -162,6 +189,7 @@ const deleteComment = async (commentId) => {
             @update="updateComment"
             @delete="deleteComment"
             @like="toggleCommentLike"
+            @report="openCommentReport"
           />
 
           <ul v-if="comment.replies?.length > 0">
@@ -174,6 +202,7 @@ const deleteComment = async (commentId) => {
                 @update="updateComment"
                 @delete="deleteComment"
                 @like="toggleCommentLike"
+                @report="openCommentReport"
               />
             </li>
           </ul>
@@ -242,4 +271,12 @@ const deleteComment = async (commentId) => {
       </div>
     </div>
   </div>
+
+  <BoardReportModal
+    v-if="reportingCommentId !== null"
+    ref="commentReportModalRef"
+    target="comment"
+    @submit="submitCommentReport"
+    @close="reportingCommentId = null"
+  />
 </template>

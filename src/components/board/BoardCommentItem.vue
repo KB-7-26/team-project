@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { ChatBubbleOvalLeftIcon, PencilSquareIcon, TrashIcon, HeartIcon } from '@heroicons/vue/24/outline'
+import { ChatBubbleOvalLeftIcon, PencilSquareIcon, TrashIcon, HeartIcon, FlagIcon } from '@heroicons/vue/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 import { formatDate } from '@/utils/formatDate'
 
@@ -20,7 +20,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['reply-click', 'update', 'delete', 'like'])
+const emit = defineEmits(['reply-click', 'update', 'delete', 'like', 'report'])
 
 const isEditing = ref(false)
 const editContent = ref('')
@@ -123,6 +123,13 @@ const submitEdit = () => {
         >
           <ChatBubbleOvalLeftIcon class="w-3.5 h-3.5" />
           {{ comment.replies?.length ?? 0 }}
+        </button>
+        <button
+          v-if="!comment.isOwner"
+          @click="emit('report', comment.id)"
+          class="flex items-center gap-1 text-xs text-[#8c7e6e] hover:text-red-400 border border-[#e8e0d4] hover:border-red-200 px-2 py-1 rounded-lg transition-all cursor-pointer font-medium"
+        >
+          <FlagIcon class="w-3.5 h-3.5" />
         </button>
       </div>
     </div>
