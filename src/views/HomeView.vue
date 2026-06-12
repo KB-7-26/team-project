@@ -14,15 +14,15 @@ import ProductCard from '@/components/product/ProductCard.vue'
 import { mapProduct } from '@/utils/product'
 
 const categories = [
-  { icon: ShoppingBagIcon, title: '중고거래', desc: '안전한 학생 간 거래', to: '/products', tape: '#ffe066' },
-  { icon: ChatBubbleLeftRightIcon, title: '익명게시판', desc: '자유로운 소통 공간', to: '/board', tape: '#96d4b4' },
+  { icon: ShoppingBagIcon, title: '낙서장터', desc: '안전한 학생 간 거래', to: '/products', tape: '#ffe066' },
+  { icon: ChatBubbleLeftRightIcon, title: '낙서판', desc: '자유로운 소통 공간', to: '/board', tape: '#96d4b4' },
   { icon: ChatBubbleOvalLeftIcon, title: '채팅목록', desc: '실시간 대화', to: '/chats', tape: '#a8c8e8' },
   { icon: UserIcon, title: '마이페이지', desc: '내 정보 관리', to: '/mypage', tape: '#f4a8b8' },
 ]
 
 const router = useRouter()
 const searchQuery = ref('')
-const searchType = ref('중고거래')
+const searchType = ref('낙서장터')
 const showTypeDropdown = ref(false)
 const typeDropdownRef = ref(null)
 
@@ -34,7 +34,7 @@ const selectType = (type) => {
 const searchSubmit = () => {
   const q = searchQuery.value.trim()
   if (!q) return
-  const path = searchType.value === '중고거래' ? '/products' : '/board'
+  const path = searchType.value === '낙서장터' ? '/products' : '/board'
   router.push({ path, query: { keyword: q } })
   searchQuery.value = ''
 }
@@ -47,8 +47,17 @@ const handleTypeOutsideClick = (e) => {
 
 const popularProducts = ref([])
 // ── 교육 진행 계산 ──────────────────────────────────────────
-const EDUCATION_START = new Date('2026-04-07')
+const ANCHOR_DATE = '2026-06-12' // 이 날짜가 67일차
+const ANCHOR_DAY = 67
 const TOTAL_DAYS = 120
+
+// 휴강일 (주말 제외 수업 없는 날)
+const HOLIDAYS = new Set([
+  '2026-07-13', // 휴강
+  '2026-07-17', // 휴강 (제헌절)
+  '2026-07-27', // 휴강
+  '2026-08-17', // 휴강 (대체휴일)
+])
 
 const schedule = [
   { date: '2026-06-09', label: '모듈 평가', type: 'module' },
@@ -70,6 +79,7 @@ function todayMidnight() {
   return d
 }
 
+
 function diffDays(dateStr) {
   const target = new Date(dateStr)
   target.setHours(0, 0, 0, 0)
@@ -88,8 +98,19 @@ function shortDate(dateStr) {
 }
 
 const currentDay = computed(() => {
-  const diff = Math.floor((todayMidnight() - EDUCATION_START) / 86400000) + 1
-  return Math.min(Math.max(diff, 1), TOTAL_DAYS)
+  const today = todayMidnight()
+  const anchor = new Date(ANCHOR_DATE)
+  anchor.setHours(0, 0, 0, 0)
+  if (today <= anchor) return ANCHOR_DAY
+  let extra = 0
+  const d = new Date(anchor.getTime() + 86400000)
+  d.setHours(0, 0, 0, 0)
+  while (d <= today) {
+    const dow = d.getDay()
+    if (dow !== 0 && dow !== 6 && !HOLIDAYS.has(d.toISOString().slice(0, 10))) extra++
+    d.setDate(d.getDate() + 1)
+  }
+  return Math.min(ANCHOR_DAY + extra, TOTAL_DAYS)
 })
 
 const remainingDays = computed(() => TOTAL_DAYS - currentDay.value)
@@ -132,7 +153,7 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
 
           <span
             class="inline-block rotate-[-1.2deg] mb-6 px-3 py-0.5 font-sketch text-sm text-[#8c7e6e] border-2 border-[#8c7e6e] rounded-md"
-            >✦ 캠퍼스 중고거래 플랫폼</span
+            >✦ 캠퍼스 낙서장터 플랫폼</span
           >
 
           <h1 class="font-sketch font-bold leading-[1.05] mb-5 text-[clamp(3rem,7vw,5.5rem)]">
@@ -162,11 +183,11 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
                 class="absolute left-0 top-full mt-2 bg-white border-2 border-ink rounded-xl shadow-[3px_3px_0_#1c1712] overflow-hidden z-20 min-w-24"
               >
                 <button
-                  @click="selectType('중고거래')"
-                  :class="searchType === '중고거래' ? 'bg-[#ffe066]' : 'hover:bg-[#ffe066]/60'"
+                  @click="selectType('낙서장터')"
+                  :class="searchType === '낙서장터' ? 'bg-[#ffe066]' : 'hover:bg-[#ffe066]/60'"
                   class="block w-full text-left px-4 py-2.5 text-sm font-bold text-ink transition-colors"
                 >
-                  중고거래
+                  낙서장터
                 </button>
                 <button
                   @click="selectType('게시물')"
@@ -204,7 +225,7 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
               @click="
                 () => {
                   searchQuery = tag
-                  searchType = '중고거래'
+                  searchType = '낙서장터'
                   searchSubmit()
                 }
               "
@@ -258,8 +279,8 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
                   <span class="font-sketch font-bold text-[32px] text-ink leading-none">{{ currentDay }}</span>
                   <span class="text-[13px] text-[#8c7e6e] font-bold">/ {{ TOTAL_DAYS }}일차</span>
                 </div>
-                <div class="h-2 bg-ink bg-opacity-10 rounded-full overflow-hidden mb-1.5">
-                  <div class="h-full bg-ink rounded-full transition-all" :style="{ width: progressPct + '%' }"></div>
+                <div class="h-2.5 bg-ink rounded-full overflow-hidden mb-1.5 border border-ink">
+                  <div class="h-full bg-[#96d4b4] rounded-full transition-all duration-500" :style="{ width: progressPct + '%' }"></div>
                 </div>
                 <p class="text-[10px] text-[#8c7e6e]">{{ progressPct }}% 완료 · {{ remainingDays }}일 남음</p>
               </div>

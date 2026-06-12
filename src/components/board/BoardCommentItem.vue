@@ -70,14 +70,21 @@ const submitEdit = () => {
     </div>
 
     <div v-if="isEditing" class="flex gap-2 mt-1">
-      <input
-        v-model="editContent"
-        @keyup.enter="submitEdit"
-        @keyup.esc="cancelEdit"
-        type="text"
-        class="flex-1 px-4 py-2 border-2 border-[#c8bca8] focus:border-ink rounded-xl text-sm text-ink outline-none transition-colors"
-        autofocus
-      />
+      <div class="flex-1 relative">
+        <input
+          v-model="editContent"
+          @keyup.enter="submitEdit"
+          @keyup.esc="cancelEdit"
+          type="text"
+          maxlength="500"
+          class="w-full px-4 py-2 pr-16 border-2 border-[#c8bca8] focus:border-ink rounded-xl text-sm text-ink outline-none transition-colors"
+          autofocus
+        />
+        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] tabular-nums"
+          :class="editContent.length >= 480 ? 'text-red-400' : 'text-[#8c7e6e]'">
+          {{ editContent.length }}/500
+        </span>
+      </div>
       <button
         @click="submitEdit"
         class="bg-[#ffe066] border-2 border-ink text-ink text-sm font-bold px-4 py-2 rounded-xl shadow-[2px_2px_0_#1c1712] hover:-translate-y-0.5 transition-all shrink-0 cursor-pointer"

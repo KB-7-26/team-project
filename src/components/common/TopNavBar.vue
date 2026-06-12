@@ -1,39 +1,20 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
-import { RouterLink, useRouter, useRoute } from 'vue-router'
+import { onMounted, watch } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useChatStore } from '@/stores/chat'
-import { PlusIcon } from '@heroicons/vue/24/solid'
 
-const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const chatStore = useChatStore()
-const showMobileMenu = ref(false)
-const mobileMenuRef = ref(null)
 
-const logout = async () => {
-  showMobileMenu.value = false
-  await authStore.logout()
-  router.push('/login')
-}
-
-const handleOutsideClick = (e) => {
-  if (mobileMenuRef.value && !mobileMenuRef.value.contains(e.target)) {
-    showMobileMenu.value = false
-  }
-}
-
-// 라우트 변경마다 갱신
 watch(() => route.path, () => {
   if (authStore.isLoggedIn) chatStore.fetchUnreadCount()
 })
 
 onMounted(() => {
-  document.addEventListener('click', handleOutsideClick)
   if (authStore.isLoggedIn) chatStore.fetchUnreadCount()
 })
-onBeforeUnmount(() => document.removeEventListener('click', handleOutsideClick))
 </script>
 
 <template>
@@ -49,10 +30,10 @@ onBeforeUnmount(() => document.removeEventListener('click', handleOutsideClick))
       <div class="flex items-center gap-6 md:gap-10">
         <ul class="hidden md:flex gap-7 list-none">
           <li>
-            <RouterLink to="/products" class="nav-link text-base text-[#8c7e6e] hover:text-ink transition-colors">중고거래</RouterLink>
+            <RouterLink to="/products" class="nav-link text-base text-[#8c7e6e] hover:text-ink transition-colors">낙서장터</RouterLink>
           </li>
           <li>
-            <RouterLink to="/board" class="nav-link text-base text-[#8c7e6e] hover:text-ink transition-colors">게시판</RouterLink>
+            <RouterLink to="/board" class="nav-link text-base text-[#8c7e6e] hover:text-ink transition-colors">낙서판</RouterLink>
           </li>
           <li>
             <RouterLink to="/chats" class="nav-link relative inline-flex items-center text-base text-[#8c7e6e] hover:text-ink transition-colors">
@@ -69,11 +50,6 @@ onBeforeUnmount(() => document.removeEventListener('click', handleOutsideClick))
         </ul>
 
         <div class="hidden md:flex items-center gap-2">
-          <RouterLink
-            to="/product/create"
-            class="nav-btn font-bold text-sm border-2 border-ink bg-[#ffe066] text-ink px-4 py-1.5 rounded-lg shadow-[2px_2px_0_#1c1712] transition-all"
-          >상품등록</RouterLink>
-
           <RouterLink
             v-if="!authStore.isLoggedIn && !authStore.needsProfile"
             to="/login"
@@ -98,24 +74,6 @@ onBeforeUnmount(() => document.removeEventListener('click', handleOutsideClick))
             to="/signup/profile"
             class="nav-btn font-bold text-sm border-2 border-ink bg-primary text-white px-3 py-1.5 rounded-lg shadow-[2px_2px_0_#1c1712]"
           >프로필</RouterLink>
-          <div v-else ref="mobileMenuRef" class="relative">
-            <button
-              @click.stop="showMobileMenu = !showMobileMenu"
-              class="nav-btn w-10 h-10 border-2 border-ink bg-[#ffe066] text-ink rounded-full flex items-center justify-center shadow-[2px_2px_0_#1c1712] transition-all"
-            >
-              <PlusIcon class="w-5 h-5" />
-            </button>
-            <div
-              v-if="showMobileMenu"
-              class="absolute right-0 top-full mt-2 w-36 bg-paper border-2 border-ink rounded-xl shadow-[3px_3px_0_#1c1712] overflow-hidden z-50"
-            >
-              <RouterLink
-                to="/product/create"
-                @click="showMobileMenu = false"
-                class="block px-4 py-3 font-bold text-sm text-ink hover:bg-[#ffe066] transition-colors"
-              >상품등록</RouterLink>
-            </div>
-          </div>
         </div>
       </div>
     </nav>
