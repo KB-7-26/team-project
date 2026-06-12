@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import UserProfileAvatar from '@/components/user/UserProfileAvatar.vue'
 
-const props = defineProps({
+defineProps({
   senderType: String,
   content: String,
   createdAt: String,
@@ -12,6 +12,7 @@ const props = defineProps({
   senderId: { type: Number, default: null },
   senderNickname: { type: String, default: '' },
   senderImageUrl: { type: String, default: '' },
+  reportProductId: { type: [Number, String], default: null },
   // 별점 전용
   type: { type: String, default: 'message' }, // 'message' | 'review'
   opponentName: { type: String, default: '' },
@@ -112,6 +113,7 @@ function onTouchStar(event, i) {
         :userId="senderId"
         :nickname="senderNickname"
         :imageUrl="senderImageUrl"
+        :reportProductId="reportProductId"
       />
       <div v-else class="w-11 h-11" />
     </div>

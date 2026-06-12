@@ -249,6 +249,7 @@ watch(() => route.params.id, () => {
                   :userId="product.sellerId"
                   :nickname="product.sellerNickname"
                   :imageUrl="product.sellerProfileImageUrl"
+                  :reportProductId="product.id"
                 />
                 <p class="font-bold text-ink">{{ product.sellerNickname }}</p>
               </div>
@@ -317,6 +318,7 @@ watch(() => route.params.id, () => {
               :userId="product.sellerId"
               :nickname="product.sellerNickname"
               :imageUrl="product.sellerProfileImageUrl"
+              :reportProductId="product.id"
             />
             <p class="font-bold text-ink">{{ product.sellerNickname }}</p>
           </div>

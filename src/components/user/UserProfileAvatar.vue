@@ -9,7 +9,9 @@ import {
   XMarkIcon,
 } from '@heroicons/vue/24/outline'
 import { userProfileApi } from '@/api/userProfileApi'
+import { reportApi } from '@/api/reportApi'
 import TrustStars from '@/components/user/TrustStars.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps({
   userId: {
@@ -24,13 +26,20 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  reportProductId: {
+    type: [Number, String],
+    default: null,
+  },
 })
 
+const authStore = useAuthStore()
 const isOpen = ref(false)
 const isLoading = ref(false)
 const errorMessage = ref('')
 const profile = ref(null)
 const reportStatus = ref('idle')
+const reportErrorMessage = ref('')
+const isReporting = ref(false)
 
 const normalizeImageUrl = (value) => (typeof value === 'string' ? value.trim() : '')
 
@@ -38,6 +47,7 @@ const propImageUrl = computed(() => normalizeImageUrl(props.imageUrl))
 const resolvedImageUrl = computed(() => normalizeImageUrl(profile.value?.profileImageUrl) || propImageUrl.value)
 const displayNickname = computed(() => profile.value?.nickname || props.nickname || '사용자')
 const reportButtonText = computed(() => {
+  if (isReporting.value) return '접수 중'
   if (reportStatus.value === 'confirm') return '신고하기'
   if (reportStatus.value === 'done') return '신고완료'
   return ''
@@ -52,6 +62,10 @@ const reportButtonClass = computed(() => [
   reportStatus.value === 'idle' ? 'w-9 text-red-500' : 'px-3',
   reportStatus.value === 'done' ? 'text-primary' : 'text-red-500',
 ])
+const canReport = computed(() => (
+  Boolean(props.userId && props.reportProductId) &&
+  Number(props.userId) !== authStore.user?.id
+))
 
 const profileStats = computed(() => [
   { label: '판매중', value: String(profile.value?.stats?.activeProductCount ?? 0), icon: ShoppingBagIcon },
@@ -59,24 +73,38 @@ const profileStats = computed(() => [
 ])
 
 const closeProfile = () => {
+  if (isReporting.value) return
+
   isOpen.value = false
   reportStatus.value = 'idle'
+  reportErrorMessage.value = ''
 }
 
 const handleKeydown = (e) => { if (e.key === 'Escape' && isOpen.value) closeProfile() }
 onMounted(() => window.addEventListener('keydown', handleKeydown))
 onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
 
-const handleReportClick = () => {
-  if (!props.userId) return
+const handleReportClick = async () => {
+  if (!canReport.value || isReporting.value) return
 
   if (reportStatus.value === 'idle') {
     reportStatus.value = 'confirm'
+    reportErrorMessage.value = ''
     return
   }
 
   if (reportStatus.value === 'confirm') {
-    reportStatus.value = 'done'
+    isReporting.value = true
+    reportErrorMessage.value = ''
+    try {
+      await reportApi.createUserReport(props.reportProductId, props.userId)
+      reportStatus.value = 'done'
+    } catch (error) {
+      reportErrorMessage.value =
+        error.response?.data?.message || '신고를 접수하지 못했습니다. 잠시 후 다시 시도해주세요.'
+    } finally {
+      isReporting.value = false
+    }
   }
 }
 
@@ -84,6 +112,7 @@ const openProfile = async () => {
   if (!props.userId) return
 
   reportStatus.value = 'idle'
+  reportErrorMessage.value = ''
   isOpen.value = true
 
   if (profile.value || isLoading.value) return
@@ -125,10 +154,11 @@ defineExpose({ openProfile })
     >
       <section class="relative max-h-full w-full max-w-md overflow-y-auto rounded-2xl border-2 border-ink bg-white shadow-[6px_6px_0_#1c1712]">
         <button
+          v-if="canReport"
           type="button"
           :class="reportButtonClass"
           :aria-label="reportButtonAriaLabel"
-          :disabled="reportStatus === 'done'"
+          :disabled="reportStatus === 'done' || isReporting"
           @click="handleReportClick"
         >
           <ExclamationTriangleIcon v-if="reportStatus === 'idle'" class="h-5 w-5" />
@@ -192,6 +222,13 @@ defineExpose({ openProfile })
                 </div>
                 <TrustStars :score="profile?.trustScore ?? 0" size="lg" />
               </div>
+
+              <p
+                v-if="reportErrorMessage"
+                class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-600"
+              >
+                {{ reportErrorMessage }}
+              </p>
             </div>
           </template>
         </div>
