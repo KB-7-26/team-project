@@ -87,7 +87,8 @@ const submitEdit = () => {
       </div>
       <button
         @click="submitEdit"
-        class="bg-[#ffe066] border-2 border-ink text-ink text-sm font-bold px-4 py-2 rounded-xl shadow-[2px_2px_0_#1c1712] hover:-translate-y-0.5 transition-all shrink-0 cursor-pointer"
+        :disabled="!editContent.trim()"
+        class="bg-[#ffe066] border-2 border-ink text-ink text-sm font-bold px-4 py-2 rounded-xl shadow-[2px_2px_0_#1c1712] hover:-translate-y-0.5 transition-all shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
       >
         저장
       </button>
