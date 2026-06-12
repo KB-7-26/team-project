@@ -9,7 +9,10 @@ import { useToastStore } from '@/stores/toast'
 const route = useRoute()
 const router = useRouter()
 
+const CATEGORIES = ['자유게시판', '공지', '전공', '비전공', '취업']
+
 const postId = Number(route.params.id)
+const category = ref('자유게시판')
 const title = ref('')
 const content = ref('')
 const titleError = ref(false)
@@ -26,6 +29,7 @@ onMounted(async () => {
       router.replace(`/board/${postId}`)
       return
     }
+    category.value = post.category ?? '자유게시판'
     title.value = post.title
     content.value = post.content
   } catch {
@@ -41,7 +45,7 @@ const submit = async () => {
   if (titleError.value || contentError.value || isSubmitting.value) return
 
   const { ok } = await request(
-    () => boardApi.updatePost(postId, title.value.trim(), content.value.trim()),
+    () => boardApi.updatePost(postId, title.value.trim(), content.value.trim(), category.value),
     {
       errorMessage: '게시글 수정에 실패했습니다. 다시 시도해주세요.',
       on403: () => router.replace(`/board/${postId}`),
@@ -73,6 +77,22 @@ const submit = async () => {
           <h1 class="font-sketch font-bold text-2xl text-ink mb-7">✏️ 게시글 수정</h1>
 
           <div class="flex flex-col gap-5">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-bold text-ink">카테고리</label>
+              <div class="flex gap-2 flex-wrap">
+                <button
+                  v-for="cat in CATEGORIES"
+                  :key="cat"
+                  type="button"
+                  @click="category = cat"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer"
+                  :class="category === cat
+                    ? 'bg-[#2d5a48] text-white border-[#2d5a48] shadow-[2px_2px_0_#1c1712]'
+                    : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-[#2d5a48] hover:text-[#2d5a48]'"
+                >{{ cat }}</button>
+              </div>
+            </div>
+
             <div class="flex flex-col gap-1.5">
               <label class="text-sm font-bold text-ink">제목</label>
               <input

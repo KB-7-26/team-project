@@ -129,7 +129,18 @@ const deletePost = async () => {
               </div>
             </div>
             <p v-if="deleteError" class="text-sm text-red-400 mb-3">{{ deleteError }}</p>
-            <div class="flex items-center gap-3 text-xs text-[#8c7e6e] mb-6">
+            <div class="flex items-center gap-3 text-xs text-[#8c7e6e] mb-6 flex-wrap">
+              <span
+                v-if="post.category"
+                class="font-bold text-xs px-2 py-0.5 rounded-full border"
+                :class="{
+                  'text-[#2d5a48] bg-[#96d4b4]/30 border-[#96d4b4]/50': post.category === '자유게시판',
+                  'text-orange-600 bg-orange-50 border-orange-200': post.category === '공지',
+                  'text-blue-600 bg-blue-50 border-blue-200': post.category === '전공',
+                  'text-purple-600 bg-purple-50 border-purple-200': post.category === '비전공',
+                  'text-red-600 bg-red-50 border-red-200': post.category === '취업',
+                }"
+              >{{ post.category }}</span>
               <span class="font-bold text-[#2d5a48] bg-[#96d4b4]/30 px-2 py-0.5 rounded-full">{{ post.displayName }}</span>
               <span>{{ formatDate(post.createdAt) }}</span>
               <span>👁 {{ post.viewCount }}</span>

@@ -17,6 +17,16 @@ defineProps({
 
     <!-- 제목 -->
     <div class="flex-1 min-w-0 flex items-center gap-1.5 px-3">
+      <span
+        v-if="post.category && post.category !== '자유게시판'"
+        class="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md border"
+        :class="{
+          'text-orange-600 bg-orange-50 border-orange-200': post.category === '공지',
+          'text-blue-600 bg-blue-50 border-blue-200': post.category === '전공',
+          'text-purple-600 bg-purple-50 border-purple-200': post.category === '비전공',
+          'text-red-600 bg-red-50 border-red-200': post.category === '취업',
+        }"
+      >{{ post.category }}</span>
       <p class="text-sm font-bold text-ink line-clamp-1 group-hover:text-[#2d5a48] transition-colors">{{ post.title }}</p>
       <span v-if="post.commentCount > 0" class="shrink-0 text-[11px] font-bold text-[#2d5a48]">[{{ post.commentCount }}]</span>
     </div>
