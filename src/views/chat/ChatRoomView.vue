@@ -52,7 +52,9 @@ async function markAsReadAndUpdate() {
   try {
     const { data } = await chatApi.markAsRead(chatRoomId.value)
     opponentLastReadAt.value = data.data?.opponentLastReadAt ?? null
-  } catch {}
+  } catch {
+    // 읽음 처리는 실패해도 채팅 화면 사용을 막지 않습니다.
+  }
   chatStore.fetchUnreadCount()
 }
 
@@ -126,7 +128,10 @@ async function loadRoomInfo() {
     const room = data.data.find(r => r.chatRoomId === chatRoomId.value)
     if (room) {
       opponentName.value = room.opponentNickname
-      productInfo.value = { productTitle: room.productTitle }
+      productInfo.value = {
+        productId: room.productId,
+        productTitle: room.productTitle,
+      }
       opponentLastReadAt.value = room.opponentLastReadAt ?? null
       isSeller.value = room.sellerId === myId.value
     }
@@ -262,19 +267,6 @@ function handleReviewSkip() {
   chatStore.clearRoomReview(chatRoomId.value)
 }
 
-// 별점 카드 - 0.5 단위 계산
-function calcStarRating(event, starIndex) {
-  const rect = event.currentTarget.getBoundingClientRect()
-  const x = event.clientX - rect.left
-  return x < rect.width / 2 ? starIndex - 0.5 : starIndex
-}
-
-function getStarState(starIndex, current) {
-  if (current >= starIndex) return 'full'
-  if (current >= starIndex - 0.5) return 'half'
-  return 'empty'
-}
-
 // 메시지 전송
 function handleSend(content) {
   if (!stompClient.value?.connected) return
@@ -354,6 +346,7 @@ onUnmounted(() => {
           :senderNickname="message.senderNickname"
           :content="message.content"
           :createdAt="message.createdAt"
+          :reportProductId="productInfo.productId"
           :isUnread="message.senderType === 'me' && (opponentLastReadAt === null || message.rawCreatedAt > opponentLastReadAt)"
           :showTime="message.type === 'review' ? false : shouldShowTime(index)"
           :showProfile="message.type === 'review' ? false : shouldShowProfile(index)"
