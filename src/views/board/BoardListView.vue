@@ -15,6 +15,9 @@ const totalElements = ref(0)
 
 const keyword = ref('')
 const searchInput = ref('')
+const selectedCategory = ref(null)
+
+const CATEGORIES = ['자유게시판', '공지', '전공', '비전공', '취업']
 
 const activeTab = ref('hot')
 const popularPosts = ref([])
@@ -22,11 +25,16 @@ const mostViewedPosts = ref([])
 const rankingLoading = ref(true)
 
 async function fetchPosts(page = 0) {
-  const pageData = await boardApi.getPosts(page, 15, keyword.value || null, 'all')
+  const pageData = await boardApi.getPosts(page, 15, keyword.value || null, 'all', selectedCategory.value)
   posts.value = pageData.content
   totalPages.value = pageData.totalPages
   totalElements.value = pageData.totalElements ?? 0
   currentPage.value = page
+}
+
+function selectCategory(category) {
+  selectedCategory.value = selectedCategory.value === category ? null : category
+  fetchPosts(0)
 }
 
 function search() {
@@ -115,6 +123,26 @@ onMounted(() => {
             <PencilSquareIcon class="w-4 h-4" />
             글쓰기
           </RouterLink>
+        </div>
+
+        <!-- 카테고리 탭 -->
+        <div class="flex items-center gap-1.5 mb-4 flex-wrap">
+          <button
+            @click="selectCategory(null)"
+            class="px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer"
+            :class="selectedCategory === null
+              ? 'bg-ink text-white border-ink shadow-[2px_2px_0_#1c1712]'
+              : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-ink hover:text-ink'"
+          >전체</button>
+          <button
+            v-for="cat in CATEGORIES"
+            :key="cat"
+            @click="selectCategory(cat)"
+            class="px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer"
+            :class="selectedCategory === cat
+              ? 'bg-[#2d5a48] text-white border-[#2d5a48] shadow-[2px_2px_0_#1c1712]'
+              : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-[#2d5a48] hover:text-[#2d5a48]'"
+          >{{ cat }}</button>
         </div>
 
         <!-- 공지사항 -->

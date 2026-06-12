@@ -5,9 +5,14 @@ const BASE_URL = '/posts'
 const unwrapData = (response) => response.data.data
 
 export const boardApi = {
-  async getPosts(page = 0, size = 10, keyword = null, searchType = 'title') {
+  async getCategories() {
+    const response = await api.get(`${BASE_URL}/categories`)
+    return unwrapData(response)
+  },
+  async getPosts(page = 0, size = 10, keyword = null, searchType = 'title', category = null) {
     const params = { page, size }
     if (keyword) { params.keyword = keyword; params.searchType = searchType }
+    if (category) params.category = category
     const response = await api.get(BASE_URL, { params })
     return unwrapData(response)
   },
@@ -15,12 +20,12 @@ export const boardApi = {
     const response = await api.get(`${BASE_URL}/${id}`)
     return unwrapData(response)
   },
-  async createPost(title, content) {
-    const response = await api.post(BASE_URL, { title, content })
+  async createPost(title, content, category = '자유게시판') {
+    const response = await api.post(BASE_URL, { category, title, content })
     return unwrapData(response)
   },
-  async updatePost(id, title, content) {
-    const response = await api.put(`${BASE_URL}/${id}`, { title, content })
+  async updatePost(id, title, content, category) {
+    const response = await api.put(`${BASE_URL}/${id}`, { category, title, content })
     return unwrapData(response)
   },
   async deletePost(id) {
