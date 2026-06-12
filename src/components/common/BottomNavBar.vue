@@ -8,8 +8,8 @@ const chatStore = useChatStore()
 
 const items = [
   { to: '/', icon: HomeIcon, label: '홈', match: (p) => p === '/' },
-  { to: '/products', icon: ShoppingBagIcon, label: '중고거래', match: (p) => p.startsWith('/products') },
-  { to: '/board', icon: ChatBubbleLeftRightIcon, label: '게시판', match: (p) => p.startsWith('/board') },
+  { to: '/products', icon: ShoppingBagIcon, label: '낙서장터', match: (p) => p.startsWith('/products') },
+  { to: '/board', icon: ChatBubbleLeftRightIcon, label: '낙서판', match: (p) => p.startsWith('/board') },
   { to: '/chats', icon: ChatBubbleOvalLeftIcon, label: '채팅', match: (p) => p.startsWith('/chats') },
   { to: '/mypage', icon: UserIcon, label: '마이페이지', match: (p) => p.startsWith('/mypage') },
 ]

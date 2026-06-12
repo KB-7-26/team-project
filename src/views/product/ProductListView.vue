@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
+import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { PlusIcon } from '@heroicons/vue/24/solid'
 import ProductCard from '@/components/product/ProductCard.vue'
 import { productApi } from '@/api/productApi'
 import { categoryApi } from '@/api/categoryApi'
@@ -19,15 +20,16 @@ const categories = ref([])
 const isLoading = ref(false)
 const includeSold = ref(false)
 const authStore = useAuthStore()
-const dropdownRef = ref(null)
+const sidebarSortRef = ref(null)
+const mobileSortRef = ref(null)
 const sortParamMap = {
-  최신순: null,
-  가격낮은순: 'price,asc',
-  가격높은순: 'price,desc',
-  추천순: 'favoriteCount,desc',
+  '최신순': null,
+  '낮은 가격순': 'price,asc',
+  '높은 가격순': 'price,desc',
+  '추천순': 'favoriteCount,desc',
 }
 
-const sortOptions = ['최신순', '가격낮은순', '가격높은순', '추천순']
+const sortOptions = ['최신순', '낮은 가격순', '높은 가격순', '추천순']
 
 onMounted(() => {
   fetchCategories()
@@ -41,7 +43,9 @@ onBeforeUnmount(() => {
 })
 
 const handleOutsideClick = (e) => {
-  if (dropdownRef.value && !dropdownRef.value.contains(e.target)) {
+  const insideSidebar = sidebarSortRef.value?.contains(e.target)
+  const insideMobile = mobileSortRef.value?.contains(e.target)
+  if (!insideSidebar && !insideMobile) {
     showSortDropdown.value = false
   }
 }
@@ -139,50 +143,106 @@ const visiblePages = computed(() => {
 
 <template>
   <div class="flex flex-col bg-paper-dots min-h-screen">
-    <!-- 검색 + 정렬 -->
+    <!-- 검색 -->
     <div class="px-4 md:px-6 py-6 md:py-8">
       <div class="max-w-2xl mx-auto">
-        <p class="font-bold text-3xl text-ink mb-4">중고 거래</p>
+        <p class="font-bold text-3xl text-ink mb-4">낙서장터</p>
         <div class="flex items-center gap-2">
           <!-- 검색바 -->
-          <div class="flex flex-1 items-center bg-white border-2 border-ink rounded-xl overflow-hidden shadow-[2px_2px_0_#1c1712]">
+          <div class="flex flex-1 min-w-0 items-center bg-white border-2 border-ink rounded-xl shadow-[2px_2px_0_#1c1712]">
             <input
               v-model="searchQuery"
               type="text"
               placeholder="검색어를 입력해주세요"
-              class="flex-1 px-4 py-2 text-sm text-ink outline-none placeholder:text-[#8c7e6e]"
+              class="flex-1 min-w-0 px-4 py-2 text-sm text-ink outline-none placeholder:text-[#8c7e6e]"
               @keyup.enter="searchSubmit"
             />
             <button
-              v-if="searchQuery"
-              @click="searchQuery = ''; searchSubmit()"
-              class="px-3 text-[#8c7e6e] hover:text-ink text-sm cursor-pointer"
+              @click="searchQuery ? (searchQuery = '', searchSubmit()) : searchSubmit()"
+              class="pl-3 pr-4 py-2 text-[#8c7e6e] hover:text-ink transition-colors cursor-pointer"
             >
-              ✕
-            </button>
-            <button
-              @click="searchSubmit"
-              class="px-3 py-2 text-[#8c7e6e] hover:text-ink transition-colors cursor-pointer"
-            >
-              <MagnifyingGlassIcon class="w-4 h-4" />
+              <XMarkIcon v-if="searchQuery" class="w-4 h-4" />
+              <MagnifyingGlassIcon v-else class="w-4 h-4" />
             </button>
           </div>
-          <!-- 정렬 필터 -->
-          <div ref="dropdownRef" class="relative shrink-0">
+          <!-- 상품등록 버튼 -->
+          <RouterLink
+            to="/product/create"
+            class="flex items-center gap-2 bg-[#ffe066] border-2 border-ink text-ink text-sm font-bold px-4 py-2 rounded-xl shadow-[3px_3px_0_#1c1712] hover:-translate-y-0.5 hover:shadow-[4px_4px_0_#1c1712] transition-all whitespace-nowrap shrink-0"
+          >
+            <PlusIcon class="w-4 h-4" />
+            상품등록
+          </RouterLink>
+        </div>
+      </div>
+    </div>
+
+    <!-- 모바일 카테고리 칩 + 정렬 -->
+    <div class="flex items-center gap-2 px-4 py-3 md:hidden">
+      <!-- 정렬 버튼 (모바일) -->
+      <div ref="mobileSortRef" class="relative shrink-0">
+        <button
+          @click="showSortDropdown = !showSortDropdown"
+          :class="sortBy !== '최신순' ? 'bg-[#ffe066] border-ink' : 'bg-white border-[#c8bca8] hover:border-ink'"
+          class="p-2 rounded-xl border-2 transition-all cursor-pointer"
+          :title="sortBy"
+        >
+          <AdjustmentsHorizontalIcon class="w-4 h-4 text-ink" />
+        </button>
+        <div
+          v-if="showSortDropdown"
+          class="absolute left-0 top-full mt-1 bg-white border-2 border-ink rounded-xl shadow-[3px_3px_0_#1c1712] z-20 overflow-hidden"
+        >
+          <button
+            v-for="option in sortOptions"
+            :key="option"
+            @click="selectSort(option)"
+            :class="sortBy === option ? 'bg-[#ffe066] font-bold' : 'hover:bg-[#ffe066]/60'"
+            class="block w-full text-left px-5 py-2.5 text-sm text-ink whitespace-nowrap cursor-pointer border-b border-[#c8bca8] last:border-b-0"
+          >
+            {{ option }}
+          </button>
+        </div>
+      </div>
+      <!-- 카테고리 칩 -->
+      <div class="flex gap-2 overflow-x-auto no-scrollbar flex-1">
+        <button
+          v-for="category in categories"
+          :key="category.id"
+          @click="selectedCategoryId = category.id"
+          :class="
+            selectedCategoryId === category.id
+              ? 'bg-primary text-white border-ink shadow-[2px_2px_0_#1c1712]'
+              : 'bg-white text-ink border-[#c8bca8] hover:border-ink'
+          "
+          class="shrink-0 px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-all border-2"
+        >
+          {{ category.name }}
+        </button>
+      </div>
+    </div>
+
+    <!-- 본문 -->
+    <div class="flex w-full mx-auto items-start px-4 md:px-6 py-6 md:py-8 gap-6">
+      <!-- PC 사이드바 -->
+      <div
+        class="hidden md:block border-2 border-ink rounded-2xl p-4 w-56 shrink-0 sticky top-20 self-start bg-white shadow-[4px_4px_0_#1c1712]"
+      >
+        <div class="flex items-center justify-between px-4 pt-4 pb-2">
+          <p class="font-bold text-lg text-ink">카테고리</p>
+          <!-- 정렬 버튼 (데스크탑) -->
+          <div ref="sidebarSortRef" class="relative">
             <button
               @click="showSortDropdown = !showSortDropdown"
-              class="flex items-center gap-2 bg-[#ffe066] border-2 border-ink text-ink text-sm font-bold px-4 py-2 rounded-xl shadow-[3px_3px_0_#1c1712] hover:-translate-y-0.5 hover:shadow-[4px_4px_0_#1c1712] transition-all whitespace-nowrap cursor-pointer"
+              :class="sortBy !== '최신순' ? 'bg-[#ffe066] border-ink' : 'border-[#c8bca8] hover:border-ink text-[#8c7e6e] hover:text-ink'"
+              class="p-1.5 rounded-lg border-2 transition-all cursor-pointer"
+              :title="sortBy"
             >
-              <AdjustmentsHorizontalIcon class="w-4 h-4" />
-              {{ sortBy }}
-              <ChevronDownIcon
-                class="w-3 h-3 transition-transform duration-150"
-                :class="showSortDropdown ? 'rotate-180' : ''"
-              />
+              <AdjustmentsHorizontalIcon class="w-4 h-4 text-ink" />
             </button>
             <div
               v-if="showSortDropdown"
-              class="absolute right-0 top-full mt-2 bg-white border-2 border-ink rounded-xl shadow-[3px_3px_0_#1c1712] z-10 overflow-hidden"
+              class="absolute right-0 top-full mt-1 bg-white border-2 border-ink rounded-xl shadow-[3px_3px_0_#1c1712] z-20 overflow-hidden"
             >
               <button
                 v-for="option in sortOptions"
@@ -196,33 +256,6 @@ const visiblePages = computed(() => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- 모바일 카테고리 칩 -->
-    <div class="flex gap-2 px-4 py-3 overflow-x-auto no-scrollbar md:hidden">
-      <button
-        v-for="category in categories"
-        :key="category.id"
-        @click="selectedCategoryId = category.id"
-        :class="
-          selectedCategoryId === category.id
-            ? 'bg-primary text-white border-ink shadow-[2px_2px_0_#1c1712]'
-            : 'bg-white text-ink border-[#c8bca8] hover:border-ink'
-        "
-        class="shrink-0 px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-all border-2"
-      >
-        {{ category.name }}
-      </button>
-    </div>
-
-    <!-- 본문 -->
-    <div class="flex w-full mx-auto items-start px-4 md:px-6 py-6 md:py-8 gap-6">
-      <!-- PC 사이드바 -->
-      <div
-        class="hidden md:block border-2 border-ink rounded-2xl p-4 w-56 shrink-0 sticky top-20 self-start bg-white shadow-[4px_4px_0_#1c1712]"
-      >
-        <p class="font-bold text-lg text-ink px-4 pt-4 pb-2">카테고리</p>
         <!-- 판매완료 포함 토글 -->
         <div class="flex items-center justify-between px-4 py-2">
           <span class="text-sm font-bold text-ink">판매완료 포함</span>

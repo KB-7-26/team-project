@@ -73,7 +73,7 @@ onMounted(() => {
     <div class="board-hero px-6 py-4">
       <div class="max-w-6xl mx-auto flex items-center gap-3">
         <h1 class="font-bold text-2xl text-white tracking-tight">
-          낙서장 <span class="text-[#ffe066]">게시판</span>
+          <span class="text-[#ffe066]">낙서판</span>
         </h1>
         <span class="text-xs font-bold text-[#d4f5e4] opacity-70 tracking-widest">✦ 익명 커뮤니티</span>
       </div>
