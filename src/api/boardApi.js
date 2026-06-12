@@ -59,4 +59,10 @@ export const boardApi = {
     const response = await api.get(`${BASE_URL}/most-viewed`, { params: { limit } })
     return unwrapData(response)
   },
+  async reportPost(postId, reason) {
+    await api.post(`${BASE_URL}/${postId}/reports`, { reason })
+  },
+  async reportComment(postId, commentId, reason) {
+    await api.post(`${BASE_URL}/${postId}/comments/${commentId}/reports`, { reason })
+  },
 }

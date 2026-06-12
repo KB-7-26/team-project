@@ -1,9 +1,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { TrashIcon, PencilSquareIcon, ArrowLeftIcon, HeartIcon } from '@heroicons/vue/24/outline'
+import { TrashIcon, PencilSquareIcon, ArrowLeftIcon, HeartIcon, FlagIcon } from '@heroicons/vue/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 import BoardCommentSection from '@/components/board/BoardCommentSection.vue'
+import BoardReportModal from '@/components/board/BoardReportModal.vue'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
 import { useToastStore } from '@/stores/toast'
@@ -22,6 +23,28 @@ const isLiking = ref(false)
 
 const { isLoading: isDeleting, error: deleteError, request } = useApiRequest()
 const toast = useToastStore()
+
+const showPostReportModal = ref(false)
+const postReportModalRef = ref(null)
+const isReporting = ref(false)
+
+const submitPostReport = async (reason) => {
+  if (isReporting.value) return
+  isReporting.value = true
+  try {
+    await boardApi.reportPost(postId, reason)
+    showPostReportModal.value = false
+    toast.show('신고가 접수되었습니다.')
+  } catch (e) {
+    if (e.response?.status === 409) {
+      postReportModalRef.value?.setError('이미 신고한 게시글입니다.')
+    } else {
+      postReportModalRef.value?.setError('신고 접수에 실패했습니다. 다시 시도해주세요.')
+    }
+  } finally {
+    isReporting.value = false
+  }
+}
 
 onMounted(async () => {
   try {
@@ -112,7 +135,7 @@ const deletePost = async () => {
               <span>👁 {{ post.viewCount }}</span>
             </div>
             <p class="text-base text-ink leading-relaxed whitespace-pre-line">{{ post.content }}</p>
-            <div class="flex items-center mt-6 pt-4 border-t-2 border-dashed border-[#e8e0d4]">
+            <div class="flex items-center justify-between mt-6 pt-4 border-t-2 border-dashed border-[#e8e0d4]">
               <button
                 @click="togglePostLike"
                 :disabled="isLiking"
@@ -124,6 +147,14 @@ const deletePost = async () => {
                 <component :is="postLiked ? HeartSolidIcon : HeartIcon" class="w-5 h-5" />
                 <span>{{ postLikeCount }}</span>
               </button>
+              <button
+                v-if="!post.isOwner"
+                @click="showPostReportModal = true"
+                class="flex items-center gap-1 text-xs text-[#8c7e6e] hover:text-red-400 border border-[#e8e0d4] hover:border-red-200 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer font-medium"
+              >
+                <FlagIcon class="w-3.5 h-3.5" />
+                신고
+              </button>
             </div>
           </div>
         </div>
@@ -133,4 +164,12 @@ const deletePost = async () => {
       </template>
     </div>
   </div>
+
+  <BoardReportModal
+    v-if="showPostReportModal"
+    ref="postReportModalRef"
+    target="post"
+    @submit="submitPostReport"
+    @close="showPostReportModal = false"
+  />
 </template>
