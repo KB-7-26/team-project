@@ -18,7 +18,7 @@ defineProps({
   opponentName: { type: String, default: '' },
 })
 
-const emit = defineEmits(['review-submit', 'review-skip'])
+const emit = defineEmits(['review-submit'])
 
 const reviewRating = ref(0)
 const reviewHover = ref(0)
@@ -90,17 +90,13 @@ function onTouchStar(event, i) {
       </p>
 
       <!-- 버튼 -->
-      <div class="flex gap-2">
-        <button
-          @click="emit('review-skip')"
-          class="flex-1 py-2 rounded-xl border-2 border-ink text-xs font-bold text-ink hover:bg-gray-50 transition shadow-[2px_2px_0_#1c1712]"
-        >다음에</button>
+      <div class="flex">
         <button
           @click="emit('review-submit', reviewRating)"
           :disabled="reviewRating === 0"
-          class="flex-1 py-2 rounded-xl bg-[#ffe066] border-2 border-ink text-xs font-bold text-ink transition shadow-[2px_2px_0_#1c1712] disabled:opacity-40"
+          class="w-full py-2 rounded-xl bg-[#ffe066] border-2 border-ink text-xs font-bold text-ink transition shadow-[2px_2px_0_#1c1712] disabled:opacity-40"
           :class="reviewRating > 0 ? 'hover:-translate-y-0.5' : ''"
-        >리뷰 남기기</button>
+        >별점 남기기</button>
       </div>
     </div>
   </div>
