@@ -261,12 +261,6 @@ async function handleReviewSubmit(rating) {
   }
 }
 
-// 별점 건너뛰기
-function handleReviewSkip() {
-  messages.value = messages.value.filter(m => m.type !== 'review')
-  chatStore.clearRoomReview(chatRoomId.value)
-}
-
 // 메시지 전송
 function handleSend(content) {
   if (!stompClient.value?.connected) return
@@ -352,7 +346,6 @@ onUnmounted(() => {
           :showProfile="message.type === 'review' ? false : shouldShowProfile(index)"
           :opponentName="opponentName"
           @review-submit="handleReviewSubmit"
-          @review-skip="handleReviewSkip"
         />
       </div>
 
