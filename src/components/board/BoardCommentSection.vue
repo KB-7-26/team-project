@@ -1,11 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import BoardCommentItem from '@/components/board/BoardCommentItem.vue'
 import BoardReportModal from '@/components/board/BoardReportModal.vue'
+import AuthRequiredModal from '@/components/common/AuthRequiredModal.vue'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthRequiredModal } from '@/composables/useAuthRequiredModal'
 import { useToastStore } from '@/stores/toast'
 
 const props = defineProps({
@@ -26,8 +26,12 @@ const newReply = ref('')
 const { isLoading: isSubmitting, error: submitError, request } = useApiRequest()
 const { isLoading: isSubmittingReply, request: requestReply } = useApiRequest()
 const toast = useToastStore()
-const router = useRouter()
-const authStore = useAuthStore()
+const {
+  authRequiredModalOpen,
+  authRequiredModalMode,
+  confirmAuthRequired,
+  requireVerified,
+} = useAuthRequiredModal()
 
 const commentLikes = ref({})
 
@@ -38,20 +42,6 @@ const initCommentLikes = (list) => {
       commentLikes.value[r.id] = { liked: r.liked ?? false, likeCount: r.likeCount ?? 0 }
     })
   })
-}
-
-const requireVerified = () => {
-  if (!authStore.isFirebaseAuthenticated) {
-    router.push('/login')
-    return false
-  }
-
-  if (!authStore.isVerified) {
-    router.push(authStore.signupCompletionPath)
-    return false
-  }
-
-  return true
 }
 
 onMounted(async () => {
@@ -304,5 +294,11 @@ const deleteComment = async (commentId) => {
     target="comment"
     @submit="submitCommentReport"
     @close="reportingCommentId = null"
+  />
+
+  <AuthRequiredModal
+    v-model:open="authRequiredModalOpen"
+    :mode="authRequiredModalMode"
+    @confirm="confirmAuthRequired"
   />
 </template>

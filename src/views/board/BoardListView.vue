@@ -3,10 +3,18 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { MagnifyingGlassIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import BoardPostCard from '@/components/board/BoardPostCard.vue'
+import AuthRequiredModal from '@/components/common/AuthRequiredModal.vue'
 import { boardApi } from '@/api/boardApi'
+import { useAuthRequiredModal } from '@/composables/useAuthRequiredModal'
 import { formatDate } from '@/utils/formatDate'
 
 const route = useRoute()
+const {
+  authRequiredModalOpen,
+  authRequiredModalMode,
+  confirmAuthRequired,
+  goToVerifiedRoute,
+} = useAuthRequiredModal()
 
 const notices = [
   { id: 1, tag: '공지', title: '학교 축제 부스 모집합니다', date: '6/10' },
@@ -180,13 +188,14 @@ onMounted(() => {
               <MagnifyingGlassIcon v-else class="w-4 h-4" />
             </button>
           </div>
-          <RouterLink
-            :to="writeUrl"
+          <button
+            type="button"
+            @click="goToVerifiedRoute(writeUrl)"
             class="flex items-center gap-2 bg-[#ffe066] border-2 border-ink text-ink text-sm font-bold px-4 py-2.5 rounded-xl shadow-[3px_3px_0_#1c1712] hover:-translate-y-0.5 hover:shadow-[4px_4px_0_#1c1712] transition-all shrink-0"
           >
             <PencilSquareIcon class="w-4 h-4" />
             글쓰기
-          </RouterLink>
+          </button>
         </div>
 
         <!-- 현재 섹션 레이블 -->
@@ -288,6 +297,11 @@ onMounted(() => {
 
       </div>
     </div>
+    <AuthRequiredModal
+      v-model:open="authRequiredModalOpen"
+      :mode="authRequiredModalMode"
+      @confirm="confirmAuthRequired"
+    />
   </div>
 </template>
 

@@ -1,12 +1,13 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
 import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { PlusIcon } from '@heroicons/vue/24/solid'
+import AuthRequiredModal from '@/components/common/AuthRequiredModal.vue'
 import ProductCard from '@/components/product/ProductCard.vue'
 import { productApi } from '@/api/productApi'
 import { categoryApi } from '@/api/categoryApi'
 import { useAuthStore } from '@/stores/auth'
+import { useAuthRequiredModal } from '@/composables/useAuthRequiredModal'
 import { mapProduct } from '@/utils/product'
 
 const likedIds = ref([])
@@ -21,9 +22,15 @@ const categories = ref([])
 const isLoading = ref(false)
 const includeSold = ref(false)
 const authStore = useAuthStore()
-const router = useRouter()
 const sidebarSortRef = ref(null)
 const mobileSortRef = ref(null)
+const {
+  authRequiredModalOpen,
+  authRequiredModalMode,
+  confirmAuthRequired,
+  goToVerifiedRoute,
+  requireVerified,
+} = useAuthRequiredModal()
 const sortParamMap = {
   최신순: null,
   '낮은 가격순': 'price,asc',
@@ -90,16 +97,7 @@ const selectSort = (option) => {
 }
 
 const toggleLike = async (id) => {
-  if (!authStore.isFirebaseAuthenticated) {
-    router.push('/login')
-    return
-  }
-
-  if (!authStore.isVerified) {
-    router.push(authStore.signupCompletionPath)
-    return
-  }
-
+  if (!requireVerified()) return
   const isLiked = likedIds.value.includes(id)
   likedIds.value = isLiked ? likedIds.value.filter((i) => i !== id) : [...likedIds.value, id]
   try {
@@ -188,13 +186,14 @@ const visiblePages = computed(() => {
             </button>
           </div>
           <!-- 상품등록 버튼 -->
-          <RouterLink
-            to="/product/create"
+          <button
+            type="button"
+            @click="goToVerifiedRoute('/product/create')"
             class="flex items-center gap-2 bg-[#ffe066] border-2 border-ink text-ink text-sm font-bold px-4 py-2 rounded-xl shadow-[3px_3px_0_#1c1712] hover:-translate-y-0.5 hover:shadow-[4px_4px_0_#1c1712] transition-all whitespace-nowrap shrink-0"
           >
             <PlusIcon class="w-4 h-4" />
             상품등록
-          </RouterLink>
+          </button>
         </div>
       </div>
     </div>
@@ -375,6 +374,11 @@ const visiblePages = computed(() => {
         </div>
       </div>
     </div>
+    <AuthRequiredModal
+      v-model:open="authRequiredModalOpen"
+      :mode="authRequiredModalMode"
+      @confirm="confirmAuthRequired"
+    />
   </div>
 </template>
 

@@ -5,15 +5,21 @@ import { TrashIcon, PencilSquareIcon, ArrowLeftIcon, HeartIcon, FlagIcon } from 
 import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 import BoardCommentSection from '@/components/board/BoardCommentSection.vue'
 import BoardReportModal from '@/components/board/BoardReportModal.vue'
+import AuthRequiredModal from '@/components/common/AuthRequiredModal.vue'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthRequiredModal } from '@/composables/useAuthRequiredModal'
 import { useToastStore } from '@/stores/toast'
 import { formatDate } from '@/utils/formatDate'
 
 const route = useRoute()
 const router = useRouter()
-const authStore = useAuthStore()
+const {
+  authRequiredModalOpen,
+  authRequiredModalMode,
+  confirmAuthRequired,
+  requireVerified,
+} = useAuthRequiredModal()
 
 const postId = Number(route.params.id)
 const post = ref(null)
@@ -30,18 +36,9 @@ const showPostReportModal = ref(false)
 const postReportModalRef = ref(null)
 const isReporting = ref(false)
 
-const requireVerified = () => {
-  if (!authStore.isFirebaseAuthenticated) {
-    router.push('/login')
-    return false
-  }
-
-  if (!authStore.isVerified) {
-    router.push(authStore.signupCompletionPath)
-    return false
-  }
-
-  return true
+const openPostReport = () => {
+  if (!requireVerified()) return
+  showPostReportModal.value = true
 }
 
 const submitPostReport = async (reason) => {
@@ -178,7 +175,7 @@ const deletePost = async () => {
               </button>
               <button
                 v-if="!post.isOwner"
-                @click="showPostReportModal = true"
+                @click="openPostReport"
                 class="flex items-center gap-1 text-xs text-[#8c7e6e] hover:text-red-400 border border-[#e8e0d4] hover:border-red-200 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer font-medium"
               >
                 <FlagIcon class="w-3.5 h-3.5" />
@@ -200,5 +197,11 @@ const deletePost = async () => {
     target="post"
     @submit="submitPostReport"
     @close="showPostReportModal = false"
+  />
+
+  <AuthRequiredModal
+    v-model:open="authRequiredModalOpen"
+    :mode="authRequiredModalMode"
+    @confirm="confirmAuthRequired"
   />
 </template>
