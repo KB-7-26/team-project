@@ -1,15 +1,16 @@
 <script setup>
 import { formatDate } from '@/utils/formatDate'
 
-defineProps({
+const props = defineProps({
   post: Object,
   rank: Number,
+  from: String,
 })
 </script>
 
 <template>
   <RouterLink
-    :to="`/board/${post.id}`"
+    :to="props.from ? `/board/${post.id}?from=${props.from}` : `/board/${post.id}`"
     class="flex items-center py-2.5 px-4 hover:bg-[#fffef5] transition-colors duration-150 cursor-pointer group"
   >
     <!-- 번호 -->
@@ -38,6 +39,6 @@ defineProps({
     <span class="hidden md:block w-12 shrink-0 text-xs text-center text-[#8c7e6e] tabular-nums">{{ post.viewCount }}</span>
 
     <!-- 추천 -->
-    <span class="hidden md:block w-12 shrink-0 text-xs text-center text-[#8c7e6e] tabular-nums">{{ post.likeCount ?? 0 }}</span>
+    <span class="hidden md:block w-12 shrink-0 text-center text-xs font-bold text-[#e85d04] tabular-nums">♥ {{ post.likeCount ?? 0 }}</span>
   </RouterLink>
 </template>

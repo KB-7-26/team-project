@@ -94,7 +94,7 @@ const deletePost = async () => {
   <div class="bg-paper-dots min-h-screen">
     <div class="max-w-4xl mx-auto px-6 py-8">
       <button
-        @click="router.push('/board')"
+        @click="router.push(route.query.from === 'mypage' ? '/mypage' : route.query.from ? `/board?mode=${route.query.from}` : '/board')"
         class="flex items-center gap-1.5 text-sm text-[#8c7e6e] hover:text-ink mb-6 transition-colors cursor-pointer font-medium group"
       >
         <ArrowLeftIcon class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />

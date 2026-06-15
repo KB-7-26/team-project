@@ -874,7 +874,7 @@ watch(selectedSaleStatus, () => {
               </p>
               <ul v-else-if="boardActivityPosts.length" class="flex flex-col divide-y-2 divide-dashed divide-ink/15">
                 <li v-for="post in boardActivityPosts" :key="post.id">
-                  <BoardPostCard :post="post" />
+                  <BoardPostCard :post="post" from="mypage" />
                 </li>
               </ul>
               <div v-else class="px-6 py-12 text-center">
