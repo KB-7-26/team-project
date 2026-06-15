@@ -23,10 +23,10 @@ const authStore = useAuthStore()
 const sidebarSortRef = ref(null)
 const mobileSortRef = ref(null)
 const sortParamMap = {
-  '최신순': null,
+  최신순: null,
   '낮은 가격순': 'price,asc',
   '높은 가격순': 'price,desc',
-  '추천순': 'favoriteCount,desc',
+  추천순: 'favoriteCount,desc',
 }
 
 const sortOptions = ['최신순', '낮은 가격순', '높은 가격순', '추천순']
@@ -143,13 +143,24 @@ const visiblePages = computed(() => {
 
 <template>
   <div class="flex flex-col bg-paper-dots min-h-screen">
+    <!-- 히어로 배너 -->
+    <div class="market-hero px-6 py-4">
+      <div class="max-w-6xl mx-auto flex items-center gap-3">
+        <h1 class="font-bold text-2xl text-white tracking-tight">
+          <span class="text-[#ffe066]">낙서장터</span>
+        </h1>
+        <span class="text-xs font-bold text-[#f5ddc8] opacity-70 tracking-widest">✦ 캠퍼스 중고 거래</span>
+      </div>
+    </div>
+
     <!-- 검색 -->
-    <div class="px-4 md:px-6 py-6 md:py-8">
+    <div class="px-4 md:px-6 pt-4 pb-0 md:py-6">
       <div class="max-w-2xl mx-auto">
-        <p class="font-bold text-3xl text-ink mb-4">낙서장터</p>
         <div class="flex items-center gap-2">
           <!-- 검색바 -->
-          <div class="flex flex-1 min-w-0 items-center bg-white border-2 border-ink rounded-xl shadow-[2px_2px_0_#1c1712]">
+          <div
+            class="flex flex-1 min-w-0 items-center bg-white border-2 border-ink rounded-xl shadow-[2px_2px_0_#1c1712]"
+          >
             <input
               v-model="searchQuery"
               type="text"
@@ -158,7 +169,7 @@ const visiblePages = computed(() => {
               @keyup.enter="searchSubmit"
             />
             <button
-              @click="searchQuery ? (searchQuery = '', searchSubmit()) : searchSubmit()"
+              @click="searchQuery ? ((searchQuery = ''), searchSubmit()) : searchSubmit()"
               class="pl-3 pr-4 py-2 text-[#8c7e6e] hover:text-ink transition-colors cursor-pointer"
             >
               <XMarkIcon v-if="searchQuery" class="w-4 h-4" />
@@ -205,7 +216,7 @@ const visiblePages = computed(() => {
         </div>
       </div>
       <!-- 카테고리 칩 -->
-      <div class="flex gap-2 overflow-x-auto no-scrollbar flex-1">
+      <div class="flex gap-2 overflow-x-auto no-scrollbar flex-1 pb-0.5">
         <button
           v-for="category in categories"
           :key="category.id"
@@ -213,9 +224,9 @@ const visiblePages = computed(() => {
           :class="
             selectedCategoryId === category.id
               ? 'bg-primary text-white border-ink shadow-[2px_2px_0_#1c1712]'
-              : 'bg-white text-ink border-[#c8bca8] hover:border-ink'
+              : 'bg-white text-[#8c7e6e] border-[#c8bca8]'
           "
-          class="shrink-0 px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-all border-2"
+          class="shrink-0 px-3 py-1.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all border-2"
         >
           {{ category.name }}
         </button>
@@ -223,7 +234,7 @@ const visiblePages = computed(() => {
     </div>
 
     <!-- 본문 -->
-    <div class="flex w-full mx-auto items-start px-4 md:px-6 py-6 md:py-8 gap-6">
+    <div class="flex w-full mx-auto items-start px-4 md:px-6 pt-0 pb-6 md:pb-8 gap-6">
       <!-- PC 사이드바 -->
       <div
         class="hidden md:block border-2 border-ink rounded-2xl p-4 w-56 shrink-0 sticky top-20 self-start bg-white shadow-[4px_4px_0_#1c1712]"
@@ -234,7 +245,11 @@ const visiblePages = computed(() => {
           <div ref="sidebarSortRef" class="relative">
             <button
               @click="showSortDropdown = !showSortDropdown"
-              :class="sortBy !== '최신순' ? 'bg-[#ffe066] border-ink' : 'border-[#c8bca8] hover:border-ink text-[#8c7e6e] hover:text-ink'"
+              :class="
+                sortBy !== '최신순'
+                  ? 'bg-[#ffe066] border-ink'
+                  : 'border-[#c8bca8] hover:border-ink text-[#8c7e6e] hover:text-ink'
+              "
               class="p-1.5 rounded-lg border-2 transition-all cursor-pointer"
               :title="sortBy"
             >
@@ -353,6 +368,11 @@ const visiblePages = computed(() => {
 </template>
 
 <style scoped>
+.market-hero {
+  background-color: #7c3d1a;
+  box-shadow: 0 4px 0 #1c1712;
+}
+
 .sort-btn:active {
   transform: translate(2px, 2px);
   box-shadow: none;
