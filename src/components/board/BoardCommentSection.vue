@@ -1,9 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import BoardCommentItem from '@/components/board/BoardCommentItem.vue'
 import BoardReportModal from '@/components/board/BoardReportModal.vue'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
+import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 
 const props = defineProps({
@@ -24,6 +26,8 @@ const newReply = ref('')
 const { isLoading: isSubmitting, error: submitError, request } = useApiRequest()
 const { isLoading: isSubmittingReply, request: requestReply } = useApiRequest()
 const toast = useToastStore()
+const router = useRouter()
+const authStore = useAuthStore()
 
 const commentLikes = ref({})
 
@@ -34,6 +38,20 @@ const initCommentLikes = (list) => {
       commentLikes.value[r.id] = { liked: r.liked ?? false, likeCount: r.likeCount ?? 0 }
     })
   })
+}
+
+const requireVerified = () => {
+  if (!authStore.isFirebaseAuthenticated) {
+    router.push('/login')
+    return false
+  }
+
+  if (!authStore.isVerified) {
+    router.push(authStore.signupCompletionPath)
+    return false
+  }
+
+  return true
 }
 
 onMounted(async () => {
@@ -48,6 +66,7 @@ onMounted(async () => {
 })
 
 const submitComment = async () => {
+  if (!requireVerified()) return
   if (!newComment.value.trim() || isSubmitting.value) return
   const { ok, data } = await request(
     () => boardApi.createComment(props.postId, newComment.value.trim()),
@@ -61,6 +80,7 @@ const submitComment = async () => {
 }
 
 const toggleReplyInput = (comment) => {
+  if (!requireVerified()) return
   if (replyingToId.value === comment.id) {
     replyingToId.value = null
     newReply.value = ''
@@ -71,6 +91,7 @@ const toggleReplyInput = (comment) => {
 }
 
 const submitReply = async (parentCommentId) => {
+  if (!requireVerified()) return
   if (!newReply.value.trim() || isSubmittingReply.value) return
   const { ok, data } = await requestReply(
     () => boardApi.createComment(props.postId, newReply.value.trim(), parentCommentId),
@@ -86,6 +107,7 @@ const submitReply = async (parentCommentId) => {
 }
 
 const updateComment = async (commentId, content) => {
+  if (!requireVerified()) return
   const { ok, data } = await request(
     () => boardApi.updateComment(props.postId, commentId, content),
     {
@@ -110,6 +132,7 @@ const updateComment = async (commentId, content) => {
 }
 
 const toggleCommentLike = async (commentId) => {
+  if (!requireVerified()) return
   try {
     const data = await boardApi.toggleCommentLike(props.postId, commentId)
     commentLikes.value[commentId] = { liked: data.liked, likeCount: data.likeCount }
@@ -123,10 +146,12 @@ const commentReportModalRef = ref(null)
 const isReportingComment = ref(false)
 
 const openCommentReport = (commentId) => {
+  if (!requireVerified()) return
   reportingCommentId.value = commentId
 }
 
 const submitCommentReport = async (reason) => {
+  if (!requireVerified()) return
   if (isReportingComment.value) return
   isReportingComment.value = true
   try {
@@ -145,6 +170,7 @@ const submitCommentReport = async (reason) => {
 }
 
 const deleteComment = async (commentId) => {
+  if (!requireVerified()) return
   if (!confirm('댓글을 삭제하시겠습니까?')) return
   const { ok } = await request(
     () => boardApi.deleteComment(props.postId, commentId),

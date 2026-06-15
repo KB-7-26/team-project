@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth'
 import { auth } from '@/firebase'
 import { useAuthStore } from '@/stores/auth'
 
@@ -125,7 +125,12 @@ const signupHandler = async () => {
       gender: signupForm.value.gender,
       cohort: signupForm.value.cohort,
     })
-    router.push('/')
+    try {
+      await sendEmailVerification(credential.user)
+    } catch {
+      // 인증 안내 페이지에서 재발송할 수 있으므로 가입 흐름은 유지한다.
+    }
+    router.push('/verify-email')
   } catch (error) {
     formErrorMessage.value =
       firebaseErrorMessages[error.code] || error.response?.data?.message || '회원가입에 실패했습니다'

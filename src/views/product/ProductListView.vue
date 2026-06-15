@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
 import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { PlusIcon } from '@heroicons/vue/24/solid'
 import ProductCard from '@/components/product/ProductCard.vue'
@@ -20,6 +21,7 @@ const categories = ref([])
 const isLoading = ref(false)
 const includeSold = ref(false)
 const authStore = useAuthStore()
+const router = useRouter()
 const sidebarSortRef = ref(null)
 const mobileSortRef = ref(null)
 const sortParamMap = {
@@ -34,7 +36,7 @@ const sortOptions = ['최신순', '낮은 가격순', '높은 가격순', '추�
 onMounted(() => {
   fetchCategories()
   fetchProducts()
-  if (authStore.isLoggedIn) fetchFavorites()
+  if (authStore.isVerified) fetchFavorites()
   document.addEventListener('click', handleOutsideClick)
 })
 
@@ -88,7 +90,16 @@ const selectSort = (option) => {
 }
 
 const toggleLike = async (id) => {
-  if (!authStore.isLoggedIn) return
+  if (!authStore.isFirebaseAuthenticated) {
+    router.push('/login')
+    return
+  }
+
+  if (!authStore.isVerified) {
+    router.push(authStore.signupCompletionPath)
+    return
+  }
+
   const isLiked = likedIds.value.includes(id)
   likedIds.value = isLiked ? likedIds.value.filter((i) => i !== id) : [...likedIds.value, id]
   try {

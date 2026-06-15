@@ -63,6 +63,7 @@ const reportButtonClass = computed(() => [
   reportStatus.value === 'done' ? 'text-primary' : 'text-red-500',
 ])
 const canReport = computed(() => (
+  authStore.isVerified &&
   Boolean(props.userId && props.reportProductId) &&
   Number(props.userId) !== authStore.user?.id
 ))

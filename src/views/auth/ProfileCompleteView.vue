@@ -1,7 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { CheckBadgeIcon, UserCircleIcon } from '@heroicons/vue/24/outline'
 import { useAuthStore } from '@/stores/auth'
 
 defineOptions({
@@ -91,7 +90,7 @@ const submitProfile = async () => {
       cohort: profileForm.value.cohort,
       profileImageUrl: authStore.pendingUser?.profileImageUrl || '',
     })
-    router.push('/')
+    router.push(authStore.needsVerification ? '/verify-email' : '/')
   } catch (error) {
     formErrorMessage.value = error.response?.data?.message || '프로필 저장에 실패했습니다'
   } finally {
@@ -202,7 +201,7 @@ const logout = async () => {
 
           <!-- 이메일 (비활성) -->
           <label class="block">
-            <span class="field-lbl">이메일 <span class="normal-case text-[9px] opacity-60 ml-0.5">(인증 완료)</span></span>
+            <span class="field-lbl">이메일 <span class="normal-case text-[9px] opacity-60 ml-0.5">(로그인 계정)</span></span>
             <input
               :value="pendingEmail"
               type="email"

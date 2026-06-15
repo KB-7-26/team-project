@@ -82,26 +82,35 @@ const next = () => {
   startAutoSlide()
 }
 
-function requireAuth() {
-  if (!authStore.isLoggedIn) { showLoginPrompt.value = true; return false }
+function requireVerified() {
+  if (!authStore.isFirebaseAuthenticated) {
+    showLoginPrompt.value = true
+    return false
+  }
+
+  if (!authStore.isVerified) {
+    router.push(authStore.signupCompletionPath)
+    return false
+  }
+
   return true
 }
 
 async function shareProduct() {
-  if (!requireAuth()) return
+  if (!requireVerified()) return
   await navigator.clipboard.writeText(window.location.href)
   copied.value = true
   setTimeout(() => { copied.value = false }, 2000)
 }
 
 async function startChat() {
-  if (!requireAuth()) return
+  if (!requireVerified()) return
   const { data } = await chatApi.createChatRoom(product.value.id)
   router.push(`/chats/${data.data.chatRoomId}`)
 }
 
 const toggleLike = async () => {
-  if (!requireAuth()) return
+  if (!requireVerified()) return
   const prev = liked.value
   liked.value = !liked.value
   try {
@@ -121,7 +130,7 @@ async function loadProduct() {
     product.value = data
     startAutoSlide()
 
-    if (authStore.isLoggedIn) {
+    if (authStore.isVerified) {
       const { data: favorites } = await productApi.getMyFavorites()
       liked.value = favorites.some((p) => p.id === data.id)
     }

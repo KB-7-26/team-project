@@ -1,18 +1,30 @@
 <script setup>
+import { computed } from 'vue'
 import { HomeIcon, ShoppingBagIcon, ChatBubbleLeftRightIcon, ChatBubbleOvalLeftIcon, UserIcon } from '@heroicons/vue/24/outline'
 import { useRoute } from 'vue-router'
 import { useChatStore } from '@/stores/chat'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const chatStore = useChatStore()
+const authStore = useAuthStore()
 
-const items = [
+const myPageTarget = computed(() =>
+  authStore.needsSignupCompletion ? authStore.signupCompletionPath : '/mypage',
+)
+
+const items = computed(() => [
   { to: '/', icon: HomeIcon, label: '홈', match: (p) => p === '/' },
   { to: '/products', icon: ShoppingBagIcon, label: '낙서장터', match: (p) => p.startsWith('/products') },
   { to: '/board', icon: ChatBubbleLeftRightIcon, label: '낙서판', match: (p) => p.startsWith('/board') },
   { to: '/chats', icon: ChatBubbleOvalLeftIcon, label: '채팅', match: (p) => p.startsWith('/chats') },
-  { to: '/mypage', icon: UserIcon, label: '마이페이지', match: (p) => p.startsWith('/mypage') },
-]
+  {
+    to: myPageTarget.value,
+    icon: UserIcon,
+    label: '마이페이지',
+    match: (p) => p.startsWith('/mypage') || p === '/signup/profile' || p === '/verify-email',
+  },
+])
 </script>
 
 <template>
@@ -34,6 +46,10 @@ const items = [
           <span
             v-if="item.to === '/chats' && (chatStore.unreadCount > 0 || chatStore.pendingReview)"
             class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full border border-white"
+          />
+          <span
+            v-if="item.label === '마이페이지' && authStore.needsSignupCompletion"
+            class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#ffe066] rounded-full border border-ink"
           />
         </div>
         <span class="text-[10px] font-bold leading-none">{{ item.label }}</span>

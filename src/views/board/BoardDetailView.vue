@@ -7,11 +7,13 @@ import BoardCommentSection from '@/components/board/BoardCommentSection.vue'
 import BoardReportModal from '@/components/board/BoardReportModal.vue'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
+import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { formatDate } from '@/utils/formatDate'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 
 const postId = Number(route.params.id)
 const post = ref(null)
@@ -28,7 +30,22 @@ const showPostReportModal = ref(false)
 const postReportModalRef = ref(null)
 const isReporting = ref(false)
 
+const requireVerified = () => {
+  if (!authStore.isFirebaseAuthenticated) {
+    router.push('/login')
+    return false
+  }
+
+  if (!authStore.isVerified) {
+    router.push(authStore.signupCompletionPath)
+    return false
+  }
+
+  return true
+}
+
 const submitPostReport = async (reason) => {
+  if (!requireVerified()) return
   if (isReporting.value) return
   isReporting.value = true
   try {
@@ -61,6 +78,7 @@ onMounted(async () => {
 })
 
 const togglePostLike = async () => {
+  if (!requireVerified()) return
   if (isLiking.value) return
   isLiking.value = true
   try {
