@@ -1,8 +1,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { MagnifyingGlassIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import BoardPostCard from '@/components/board/BoardPostCard.vue'
 import { boardApi } from '@/api/boardApi'
+import { formatDate } from '@/utils/formatDate'
+
+const route = useRoute()
 
 const notices = [
   { id: 1, tag: '공지', title: '학교 축제 부스 모집합니다', date: '6/10' },
@@ -84,7 +88,9 @@ const currentLabel = computed(() => {
 })
 
 onMounted(() => {
-  fetchPosts(0)
+  const modeFromQuery = route.query.mode
+  if (modeFromQuery) selectedMode.value = modeFromQuery
+  if (selectedMode.value !== 'hot') fetchPosts(0)
   fetchRanking()
 })
 </script>
@@ -218,24 +224,28 @@ onMounted(() => {
           <div class="flex items-center py-2 px-4 border-b-2 border-[#e8e0d4] bg-[#faf7f0]">
             <span class="w-10 shrink-0 text-center text-[11px] font-bold text-[#8c7e6e]">순위</span>
             <span class="flex-1 px-3 text-[11px] font-bold text-[#8c7e6e]">제목</span>
-            <span class="w-14 shrink-0 text-center text-[11px] font-bold text-[#8c7e6e]">추천</span>
+            <span class="w-16 shrink-0 text-center text-[11px] font-bold text-[#8c7e6e]">작성일</span>
+            <span class="hidden md:block w-12 shrink-0 text-center text-[11px] font-bold text-[#8c7e6e]">조회</span>
+            <span class="w-12 shrink-0 text-center text-[11px] font-bold text-[#8c7e6e]">추천</span>
           </div>
           <div v-if="rankingLoading" class="text-center py-16 text-sm text-[#8c7e6e]">불러오는 중...</div>
           <ul v-else-if="popularPosts.length > 0" class="divide-y divide-dashed divide-[#e8e0d4]">
             <li
               v-for="(post, index) in popularPosts"
               :key="post.id"
-              class="flex items-center gap-3 px-4 py-3 hover:bg-[#faf7f0] transition-colors"
+              class="flex items-center px-4 py-2.5 hover:bg-[#faf7f0] transition-colors"
             >
               <span
-                class="w-10 shrink-0 text-center text-sm font-bold font-sketch"
+                class="w-10 shrink-0 text-center text-xs font-mono tabular-nums"
                 :class="index === 0 ? 'text-[#e85d04]' : index === 1 ? 'text-[#f48c06]' : index === 2 ? 'text-[#faa307]' : 'text-[#8c7e6e]'"
               >{{ index + 1 }}</span>
               <RouterLink
-                :to="`/board/${post.id}`"
-                class="flex-1 text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors"
+                :to="`/board/${post.id}?from=hot`"
+                class="flex-1 min-w-0 px-3 text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors"
               >{{ post.title }}</RouterLink>
-              <span class="w-14 shrink-0 text-center text-xs font-bold text-[#e85d04]">♥ {{ post.likeCount ?? 0 }}</span>
+              <span class="w-16 shrink-0 text-center text-[11px] text-[#8c7e6e]">{{ formatDate(post.createdAt) }}</span>
+              <span class="hidden md:block w-12 shrink-0 text-center text-xs text-[#8c7e6e] tabular-nums">{{ post.viewCount }}</span>
+              <span class="w-12 shrink-0 text-center text-xs font-bold text-[#e85d04]">♥ {{ post.likeCount ?? 0 }}</span>
             </li>
           </ul>
           <p v-else class="text-center text-[#8c7e6e] py-16">인기글이 없습니다.</p>
@@ -253,7 +263,7 @@ onMounted(() => {
           </div>
           <ul v-if="posts.length > 0" class="divide-y divide-dashed divide-[#e8e0d4]">
             <li v-for="(post, i) in posts" :key="post.id">
-              <BoardPostCard :post="post" :rank="totalElements - currentPage * 15 - i" />
+              <BoardPostCard :post="post" :rank="totalElements - currentPage * 15 - i" :from="selectedMode !== 'all' ? selectedMode : undefined" />
             </li>
           </ul>
           <p v-else class="text-center text-[#8c7e6e] py-16">
