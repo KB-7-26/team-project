@@ -10,6 +10,7 @@ import { chatApi } from '@/api/chatApi'
 import { useAuthStore } from '@/stores/auth'
 import { useChatStore } from '@/stores/chat'
 import { auth } from '@/firebase'
+import { WS_BASE_URL } from '@/config/env'
 
 const route = useRoute()
 const router = useRouter()
@@ -157,7 +158,7 @@ async function connectWebSocket() {
   const token = await auth.currentUser?.getIdToken()
 
   const client = new Client({
-    brokerURL: 'ws://localhost:8080/ws',
+    brokerURL: WS_BASE_URL,
     reconnectDelay: 5000,
     connectHeaders: {
       Authorization: `Bearer ${token}`,

@@ -63,8 +63,18 @@ feature/*  ← 기능 개발 브랜치
 
 ```sh
 npm install
+cp .env.example .env.local
 npm run dev
 ```
+
+`.env.local`에는 Firebase 클라이언트 설정과 백엔드 접속 주소를 둡니다.
+
+| 변수 | 설명 |
+|------|------|
+| `VITE_API_BASE_URL` | 브라우저에서 호출할 백엔드 REST API base URL. 로컬 기본값은 `/api` |
+| `VITE_WS_BASE_URL` | 브라우저에서 연결할 STOMP WebSocket URL |
+| `VITE_DEV_API_PROXY_TARGET` | Vite 개발 서버가 `/api` 요청을 전달할 로컬 백엔드 주소 |
+| `VITE_FIREBASE_*` | Firebase Web App 클라이언트 설정 |
 
 ## 빌드
 
