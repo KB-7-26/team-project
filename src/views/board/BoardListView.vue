@@ -1,8 +1,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { MagnifyingGlassIcon, PencilSquareIcon } from '@heroicons/vue/24/outline'
+import { useRoute } from 'vue-router'
+import { MagnifyingGlassIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import BoardPostCard from '@/components/board/BoardPostCard.vue'
 import { boardApi } from '@/api/boardApi'
+import { formatDate } from '@/utils/formatDate'
+
+const route = useRoute()
 
 const notices = [
   { id: 1, tag: '공지', title: '학교 축제 부스 모집합니다', date: '6/10' },
@@ -15,30 +19,38 @@ const totalElements = ref(0)
 
 const keyword = ref('')
 const searchInput = ref('')
-const selectedCategory = ref(null)
+const selectedMode = ref('all') // 'all' | 'hot' | category value string
 
-const CATEGORIES = ['자유게시판', '공지', '전공', '비전공', '취업']
+const CATEGORIES = [
+  { value: '공지', label: '공지사항', icon: '📌' },
+  { value: '자유게시판', label: '자유게시판', icon: null },
+  { value: '전공', label: '전공', icon: null },
+  { value: '비전공', label: '비전공', icon: null },
+  { value: '취업', label: '취업', icon: null },
+]
 
-const activeTab = ref('hot')
 const popularPosts = ref([])
-const mostViewedPosts = ref([])
 const rankingLoading = ref(true)
 
 async function fetchPosts(page = 0) {
-  const pageData = await boardApi.getPosts(page, 15, keyword.value || null, 'all', selectedCategory.value)
+  const categoryFilter = selectedMode.value === 'all' ? null : selectedMode.value
+  const pageData = await boardApi.getPosts(page, 15, keyword.value || null, 'all', categoryFilter)
   posts.value = pageData.content
   totalPages.value = pageData.totalPages
   totalElements.value = pageData.totalElements ?? 0
   currentPage.value = page
 }
 
-function selectCategory(category) {
-  selectedCategory.value = selectedCategory.value === category ? null : category
-  fetchPosts(0)
+function selectMode(mode) {
+  selectedMode.value = mode
+  keyword.value = ''
+  searchInput.value = ''
+  if (mode !== 'hot') fetchPosts(0)
 }
 
 function search() {
   keyword.value = searchInput.value.trim()
+  if (selectedMode.value === 'hot') selectedMode.value = 'all'
   fetchPosts(0)
 }
 
@@ -50,12 +62,7 @@ function clearSearch() {
 
 async function fetchRanking() {
   try {
-    const [popular, mostViewed] = await Promise.all([
-      boardApi.getPopularPosts(5),
-      boardApi.getMostViewedPosts(5),
-    ])
-    popularPosts.value = popular
-    mostViewedPosts.value = mostViewed
+    popularPosts.value = await boardApi.getPopularPosts(20)
   } finally {
     rankingLoading.value = false
   }
@@ -69,8 +76,21 @@ const visiblePages = computed(() => {
   return pages
 })
 
+const writeUrl = computed(() => {
+  if (selectedMode.value === 'all' || selectedMode.value === 'hot') return '/board/write'
+  return `/board/write?category=${selectedMode.value}`
+})
+
+const currentLabel = computed(() => {
+  if (selectedMode.value === 'all') return '전체글보기'
+  if (selectedMode.value === 'hot') return '🔥 인기글'
+  return CATEGORIES.find((c) => c.value === selectedMode.value)?.label ?? selectedMode.value
+})
+
 onMounted(() => {
-  fetchPosts(0)
+  const modeFromQuery = route.query.mode
+  if (modeFromQuery) selectedMode.value = modeFromQuery
+  if (selectedMode.value !== 'hot') fetchPosts(0)
   fetchRanking()
 })
 </script>
@@ -87,37 +107,81 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 메인 레이아웃: 본문 + 사이드바 -->
+    <!-- 메인 레이아웃: 사이드바(왼쪽) + 본문 -->
     <div class="max-w-6xl mx-auto px-6 py-8 flex gap-6 items-start">
+
+      <!-- 왼쪽 카테고리 사이드바 (데스크탑 전용) -->
+      <div class="hidden md:block border-2 border-ink rounded-2xl p-4 w-48 shrink-0 sticky top-20 self-start bg-white shadow-[4px_4px_0_#1c1712]">
+        <div class="flex items-center px-4 pt-4 pb-2">
+          <p class="font-bold text-lg text-ink">게시판</p>
+        </div>
+        <hr class="mx-4 mb-2 border-[#c8bca8]" />
+        <ul class="flex flex-col">
+          <li
+            @click="selectMode('all')"
+            :class="selectedMode === 'all' ? 'bg-[#2d5a48] text-white border-ink shadow-[2px_2px_0_#1c1712]' : 'text-ink hover:bg-[#2d5a48]/10 border-transparent'"
+            class="mx-2 my-1 px-4 py-2 cursor-pointer rounded-lg border-2 transition-all"
+          >전체글보기</li>
+          <li
+            @click="selectMode('hot')"
+            :class="selectedMode === 'hot' ? 'bg-[#2d5a48] text-white border-ink shadow-[2px_2px_0_#1c1712]' : 'text-ink hover:bg-[#2d5a48]/10 border-transparent'"
+            class="mx-2 my-1 px-4 py-2 cursor-pointer rounded-lg border-2 transition-all"
+          >🔥 인기글</li>
+          <hr class="mx-4 my-1 border-[#c8bca8]" />
+          <li
+            v-for="cat in CATEGORIES"
+            :key="cat.value"
+            @click="selectMode(cat.value)"
+            :class="selectedMode === cat.value ? 'bg-[#2d5a48] text-white border-ink shadow-[2px_2px_0_#1c1712]' : 'text-ink hover:bg-[#2d5a48]/10 border-transparent'"
+            class="mx-2 my-1 px-4 py-2 cursor-pointer rounded-lg border-2 transition-all"
+          >{{ cat.label }}</li>
+        </ul>
+      </div>
 
       <!-- 본문 -->
       <div class="flex-1 min-w-0">
+
+        <!-- 모바일 카테고리 칩 -->
+        <div class="flex gap-2 overflow-x-auto no-scrollbar mb-4 md:hidden pb-0.5">
+          <button
+            @click="selectMode('all')"
+            class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer whitespace-nowrap"
+            :class="selectedMode === 'all' ? 'bg-ink text-white border-ink shadow-[2px_2px_0_#1c1712]' : 'bg-white border-[#c8bca8] text-[#8c7e6e]'"
+          >전체</button>
+          <button
+            @click="selectMode('hot')"
+            class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer whitespace-nowrap"
+            :class="selectedMode === 'hot' ? 'bg-[#2d5a48] text-white border-[#2d5a48] shadow-[2px_2px_0_#1c1712]' : 'bg-white border-[#c8bca8] text-[#8c7e6e]'"
+          >🔥 인기글</button>
+          <button
+            v-for="cat in CATEGORIES"
+            :key="cat.value"
+            @click="selectMode(cat.value)"
+            class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer whitespace-nowrap"
+            :class="selectedMode === cat.value ? 'bg-[#2d5a48] text-white border-[#2d5a48] shadow-[2px_2px_0_#1c1712]' : 'bg-white border-[#c8bca8] text-[#8c7e6e]'"
+          >{{ cat.label }}</button>
+        </div>
+
         <!-- 검색 + 글쓰기 -->
         <div class="flex items-center gap-2 mb-4">
-          <div class="flex flex-1 items-center bg-white border-2 border-ink rounded-xl overflow-hidden shadow-[2px_2px_0_#1c1712]">
+          <div class="flex flex-1 min-w-0 items-center bg-white border-2 border-ink rounded-xl shadow-[2px_2px_0_#1c1712]">
             <input
               v-model="searchInput"
               @keyup.enter="search"
               type="text"
               placeholder="검색어를 입력하세요"
-              class="flex-1 px-4 py-2 text-sm text-ink outline-none placeholder:text-[#8c7e6e]"
+              class="flex-1 min-w-0 px-4 py-2 text-sm text-ink outline-none placeholder:text-[#8c7e6e]"
             />
             <button
-              v-if="searchInput"
-              @click="clearSearch"
-              class="px-3 text-[#8c7e6e] hover:text-ink text-sm cursor-pointer"
+              @click="searchInput ? clearSearch() : search()"
+              class="pl-3 pr-4 py-2 text-[#8c7e6e] hover:text-ink transition-colors cursor-pointer"
             >
-              ✕
-            </button>
-            <button
-              @click="search"
-              class="px-3 py-2 text-[#8c7e6e] hover:text-ink transition-colors cursor-pointer"
-            >
-              <MagnifyingGlassIcon class="w-4 h-4" />
+              <XMarkIcon v-if="searchInput" class="w-4 h-4" />
+              <MagnifyingGlassIcon v-else class="w-4 h-4" />
             </button>
           </div>
           <RouterLink
-            to="/board/write"
+            :to="writeUrl"
             class="flex items-center gap-2 bg-[#ffe066] border-2 border-ink text-ink text-sm font-bold px-4 py-2.5 rounded-xl shadow-[3px_3px_0_#1c1712] hover:-translate-y-0.5 hover:shadow-[4px_4px_0_#1c1712] transition-all shrink-0"
           >
             <PencilSquareIcon class="w-4 h-4" />
@@ -125,28 +189,18 @@ onMounted(() => {
           </RouterLink>
         </div>
 
-        <!-- 카테고리 탭 -->
-        <div class="flex items-center gap-1.5 mb-4 flex-wrap">
-          <button
-            @click="selectCategory(null)"
-            class="px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer"
-            :class="selectedCategory === null
-              ? 'bg-ink text-white border-ink shadow-[2px_2px_0_#1c1712]'
-              : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-ink hover:text-ink'"
-          >전체</button>
-          <button
-            v-for="cat in CATEGORIES"
-            :key="cat"
-            @click="selectCategory(cat)"
-            class="px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer"
-            :class="selectedCategory === cat
-              ? 'bg-[#2d5a48] text-white border-[#2d5a48] shadow-[2px_2px_0_#1c1712]'
-              : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-[#2d5a48] hover:text-[#2d5a48]'"
-          >{{ cat }}</button>
+        <!-- 현재 섹션 레이블 -->
+        <div class="flex items-center gap-2 mb-3">
+          <span class="w-1 h-4 bg-[#2d5a48] rounded-full" />
+          <h2 class="text-sm font-bold text-ink">{{ currentLabel }}</h2>
+          <span v-if="selectedMode !== 'hot' && !keyword" class="text-xs text-[#8c7e6e]">({{ totalElements }})</span>
+          <span v-if="keyword" class="text-xs text-[#8c7e6e]">
+            — "<span class="font-bold text-ink">{{ keyword }}</span>" 검색 결과
+          </span>
         </div>
 
-        <!-- 공지사항 -->
-        <div v-if="!keyword" class="mb-4 flex flex-col gap-2">
+        <!-- 공지사항 핀 (전체 / 공지 카테고리에서만) -->
+        <div v-if="!keyword && (selectedMode === 'all' || selectedMode === '공지')" class="mb-4 flex flex-col gap-2">
           <div
             v-for="(notice, i) in notices"
             :key="notice.id"
@@ -164,67 +218,42 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- 모바일 전용 인기글 -->
-        <div class="block md:hidden mb-4">
-          <div class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
-            <div class="h-1.5 bg-[#ffe066]" />
-            <div class="p-4">
-              <div class="flex gap-2 mb-3">
-                <button
-                  @click="activeTab = 'hot'"
-                  class="flex-1 py-1.5 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer"
-                  :class="activeTab === 'hot'
-                    ? 'bg-[#ffe066] border-ink text-ink shadow-[2px_2px_0_#1c1712]'
-                    : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-ink hover:text-ink'"
-                >🔥 인기글</button>
-                <button
-                  @click="activeTab = 'mostViewed'"
-                  class="flex-1 py-1.5 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer"
-                  :class="activeTab === 'mostViewed'
-                    ? 'bg-[#96d4b4] border-ink text-ink shadow-[2px_2px_0_#1c1712]'
-                    : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-ink hover:text-ink'"
-                >👁 조회순</button>
-              </div>
-              <div v-if="rankingLoading" class="text-center py-4 text-sm text-[#8c7e6e]">불러오는 중...</div>
-              <template v-else>
-                <ul v-if="activeTab === 'hot'">
-                  <li v-if="popularPosts.length === 0" class="text-center py-4 text-sm text-[#8c7e6e]">인기글이 없습니다.</li>
-                  <li
-                    v-for="(post, index) in popularPosts"
-                    :key="post.id"
-                    class="flex items-center gap-3 py-2 border-b border-dashed border-[#c8bca8] last:border-b-0"
-                  >
-                    <span class="w-5 text-center text-sm font-bold font-sketch shrink-0" :class="index < 3 ? 'text-[#2d5a48]' : 'text-[#8c7e6e]'">{{ index + 1 }}</span>
-                    <RouterLink :to="`/board/${post.id}`" class="flex-1 text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors">{{ post.title }}</RouterLink>
-                    <span class="text-xs text-[#8c7e6e] shrink-0">♥ {{ post.likeCount ?? 0 }}</span>
-                  </li>
-                </ul>
-                <ul v-else>
-                  <li v-if="mostViewedPosts.length === 0" class="text-center py-4 text-sm text-[#8c7e6e]">게시글이 없습니다.</li>
-                  <li
-                    v-for="(post, index) in mostViewedPosts"
-                    :key="post.id"
-                    class="flex items-center gap-3 py-2 border-b border-dashed border-[#c8bca8] last:border-b-0"
-                  >
-                    <span class="w-5 text-center text-sm font-bold font-sketch shrink-0" :class="index < 3 ? 'text-[#2d5a48]' : 'text-[#8c7e6e]'">{{ index + 1 }}</span>
-                    <RouterLink :to="`/board/${post.id}`" class="flex-1 text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors">{{ post.title }}</RouterLink>
-                    <span class="text-xs text-[#8c7e6e] shrink-0">👁 {{ post.viewCount }}</span>
-                  </li>
-                </ul>
-              </template>
-            </div>
+        <!-- 인기글 목록 -->
+        <div v-if="selectedMode === 'hot'" class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
+          <div class="h-1.5 bg-[#ffe066]" />
+          <div class="flex items-center py-2 px-4 border-b-2 border-[#e8e0d4] bg-[#faf7f0]">
+            <span class="w-10 shrink-0 text-center text-[11px] font-bold text-[#8c7e6e]">순위</span>
+            <span class="flex-1 px-3 text-[11px] font-bold text-[#8c7e6e]">제목</span>
+            <span class="w-16 shrink-0 text-center text-[11px] font-bold text-[#8c7e6e]">작성일</span>
+            <span class="hidden md:block w-12 shrink-0 text-center text-[11px] font-bold text-[#8c7e6e]">조회</span>
+            <span class="w-12 shrink-0 text-center text-[11px] font-bold text-[#8c7e6e]">추천</span>
           </div>
+          <div v-if="rankingLoading" class="text-center py-16 text-sm text-[#8c7e6e]">불러오는 중...</div>
+          <ul v-else-if="popularPosts.length > 0" class="divide-y divide-dashed divide-[#e8e0d4]">
+            <li
+              v-for="(post, index) in popularPosts"
+              :key="post.id"
+              class="flex items-center px-4 py-2.5 hover:bg-[#faf7f0] transition-colors"
+            >
+              <span
+                class="w-10 shrink-0 text-center text-xs font-mono tabular-nums"
+                :class="index === 0 ? 'text-[#e85d04]' : index === 1 ? 'text-[#f48c06]' : index === 2 ? 'text-[#faa307]' : 'text-[#8c7e6e]'"
+              >{{ index + 1 }}</span>
+              <RouterLink
+                :to="`/board/${post.id}?from=hot`"
+                class="flex-1 min-w-0 px-3 text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors"
+              >{{ post.title }}</RouterLink>
+              <span class="w-16 shrink-0 text-center text-[11px] text-[#8c7e6e]">{{ formatDate(post.createdAt) }}</span>
+              <span class="hidden md:block w-12 shrink-0 text-center text-xs text-[#8c7e6e] tabular-nums">{{ post.viewCount }}</span>
+              <span class="w-12 shrink-0 text-center text-xs font-bold text-[#e85d04]">♥ {{ post.likeCount ?? 0 }}</span>
+            </li>
+          </ul>
+          <p v-else class="text-center text-[#8c7e6e] py-16">인기글이 없습니다.</p>
         </div>
 
-        <!-- 검색 안내 -->
-        <p v-if="keyword" class="text-xs text-[#8c7e6e] mb-3">
-          "<span class="font-bold text-ink">{{ keyword }}</span>" 검색 결과
-        </p>
-
-        <!-- 글 목록 -->
-        <div class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
+        <!-- 일반 게시글 목록 -->
+        <div v-else class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
           <div class="h-1.5 bg-[#96d4b4]" />
-          <!-- 헤더 -->
           <div class="flex items-center py-2 px-4 border-b-2 border-[#e8e0d4] bg-[#faf7f0]">
             <span class="w-10 shrink-0 text-center text-[11px] font-bold text-[#8c7e6e]">번호</span>
             <span class="flex-1 px-3 text-[11px] font-bold text-[#8c7e6e]">제목</span>
@@ -234,7 +263,7 @@ onMounted(() => {
           </div>
           <ul v-if="posts.length > 0" class="divide-y divide-dashed divide-[#e8e0d4]">
             <li v-for="(post, i) in posts" :key="post.id">
-              <BoardPostCard :post="post" :rank="totalElements - currentPage * 15 - i" />
+              <BoardPostCard :post="post" :rank="totalElements - currentPage * 15 - i" :from="selectedMode !== 'all' ? selectedMode : undefined" />
             </li>
           </ul>
           <p v-else class="text-center text-[#8c7e6e] py-16">
@@ -243,114 +272,21 @@ onMounted(() => {
         </div>
 
         <!-- 페이지네이션 -->
-        <div v-if="totalPages > 1" class="flex justify-center items-center gap-1 mt-8 mb-4">
-          <button
-            @click="fetchPosts(Math.max(0, currentPage - 5))"
-            :disabled="currentPage <= 0"
-            class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all"
-          >«</button>
-          <button
-            @click="fetchPosts(Math.max(0, currentPage - 1))"
-            :disabled="currentPage <= 0"
-            class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all"
-          >‹</button>
+        <div v-if="selectedMode !== 'hot' && totalPages > 1" class="flex justify-center items-center gap-1 mt-8 mb-4">
+          <button @click="fetchPosts(Math.max(0, currentPage - 5))" :disabled="currentPage <= 0" class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all">«</button>
+          <button @click="fetchPosts(Math.max(0, currentPage - 1))" :disabled="currentPage <= 0" class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all">‹</button>
           <button
             v-for="page in visiblePages"
             :key="page"
             @click="fetchPosts(page)"
-            :class="currentPage === page
-              ? 'bg-[#ffe066] border-ink shadow-[2px_2px_0_#1c1712] text-ink'
-              : 'bg-white border-[#c8bca8] text-ink hover:border-ink hover:shadow-[2px_2px_0_#1c1712]'"
+            :class="currentPage === page ? 'bg-[#ffe066] border-ink shadow-[2px_2px_0_#1c1712] text-ink' : 'bg-white border-[#c8bca8] text-ink hover:border-ink hover:shadow-[2px_2px_0_#1c1712]'"
             class="min-w-8 h-8 md:min-w-9 md:h-9 px-2 rounded-xl font-bold text-sm border-2 transition-all"
           >{{ page + 1 }}</button>
-          <button
-            @click="fetchPosts(Math.min(totalPages - 1, currentPage + 1))"
-            :disabled="currentPage >= totalPages - 1"
-            class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all"
-          >›</button>
-          <button
-            @click="fetchPosts(Math.min(totalPages - 1, currentPage + 5))"
-            :disabled="currentPage >= totalPages - 1"
-            class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all"
-          >»</button>
+          <button @click="fetchPosts(Math.min(totalPages - 1, currentPage + 1))" :disabled="currentPage >= totalPages - 1" class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all">›</button>
+          <button @click="fetchPosts(Math.min(totalPages - 1, currentPage + 5))" :disabled="currentPage >= totalPages - 1" class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all">»</button>
         </div>
+
       </div>
-
-      <!-- 사이드바 (sticky) - 데스크탑 전용 -->
-      <div class="hidden md:block w-72 shrink-0 sticky top-20">
-        <div class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
-          <div class="h-1.5 bg-[#ffe066]" />
-          <div class="p-5">
-            <div class="flex gap-2 mb-4">
-              <button
-                @click="activeTab = 'hot'"
-                class="flex-1 py-1.5 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer"
-                :class="activeTab === 'hot'
-                  ? 'bg-[#ffe066] border-ink text-ink shadow-[2px_2px_0_#1c1712]'
-                  : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-ink hover:text-ink'"
-              >
-                🔥 인기글
-              </button>
-              <button
-                @click="activeTab = 'mostViewed'"
-                class="flex-1 py-1.5 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer"
-                :class="activeTab === 'mostViewed'
-                  ? 'bg-[#96d4b4] border-ink text-ink shadow-[2px_2px_0_#1c1712]'
-                  : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-ink hover:text-ink'"
-              >
-                👁 조회순
-              </button>
-            </div>
-
-            <div v-if="rankingLoading" class="text-center py-6 text-sm text-[#8c7e6e]">불러오는 중...</div>
-            <template v-else>
-              <ul v-if="activeTab === 'hot'">
-                <li v-if="popularPosts.length === 0" class="text-center py-6 text-sm text-[#8c7e6e]">
-                  인기글이 없습니다.
-                </li>
-                <li
-                  v-for="(post, index) in popularPosts"
-                  :key="post.id"
-                  class="flex items-center gap-3 py-2.5 border-b border-dashed border-[#c8bca8] last:border-b-0"
-                >
-                  <span class="w-5 text-center text-sm font-bold font-sketch shrink-0" :class="index < 3 ? 'text-[#2d5a48]' : 'text-[#8c7e6e]'">
-                    {{ index + 1 }}
-                  </span>
-                  <RouterLink
-                    :to="`/board/${post.id}`"
-                    class="flex-1 text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors"
-                  >
-                    {{ post.title }}
-                  </RouterLink>
-                  <span class="text-xs text-[#8c7e6e] shrink-0">♥ {{ post.likeCount ?? 0 }}</span>
-                </li>
-              </ul>
-              <ul v-else>
-                <li v-if="mostViewedPosts.length === 0" class="text-center py-6 text-sm text-[#8c7e6e]">
-                  게시글이 없습니다.
-                </li>
-                <li
-                  v-for="(post, index) in mostViewedPosts"
-                  :key="post.id"
-                  class="flex items-center gap-3 py-2.5 border-b border-dashed border-[#c8bca8] last:border-b-0"
-                >
-                  <span class="w-5 text-center text-sm font-bold font-sketch shrink-0" :class="index < 3 ? 'text-[#2d5a48]' : 'text-[#8c7e6e]'">
-                    {{ index + 1 }}
-                  </span>
-                  <RouterLink
-                    :to="`/board/${post.id}`"
-                    class="flex-1 text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors"
-                  >
-                    {{ post.title }}
-                  </RouterLink>
-                  <span class="text-xs text-[#8c7e6e] shrink-0">👁 {{ post.viewCount }}</span>
-                </li>
-              </ul>
-            </template>
-          </div>
-        </div>
-      </div>
-
     </div>
   </div>
 </template>
@@ -372,5 +308,13 @@ onMounted(() => {
   border-radius: 50%;
   box-shadow: 0 2px 5px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.3);
   z-index: 10;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 </style>

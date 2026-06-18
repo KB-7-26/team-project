@@ -10,6 +10,7 @@ import { chatApi } from '@/api/chatApi'
 import { useAuthStore } from '@/stores/auth'
 import { useChatStore } from '@/stores/chat'
 import { auth } from '@/firebase'
+import { WS_BASE_URL } from '@/config/env'
 
 const route = useRoute()
 const router = useRouter()
@@ -157,7 +158,7 @@ async function connectWebSocket() {
   const token = await auth.currentUser?.getIdToken()
 
   const client = new Client({
-    brokerURL: 'ws://localhost:8080/ws',
+    brokerURL: WS_BASE_URL,
     reconnectDelay: 5000,
     connectHeaders: {
       Authorization: `Bearer ${token}`,
@@ -261,12 +262,6 @@ async function handleReviewSubmit(rating) {
   }
 }
 
-// 별점 건너뛰기
-function handleReviewSkip() {
-  messages.value = messages.value.filter(m => m.type !== 'review')
-  chatStore.clearRoomReview(chatRoomId.value)
-}
-
 // 메시지 전송
 function handleSend(content) {
   if (!stompClient.value?.connected) return
@@ -352,7 +347,6 @@ onUnmounted(() => {
           :showProfile="message.type === 'review' ? false : shouldShowProfile(index)"
           :opponentName="opponentName"
           @review-submit="handleReviewSubmit"
-          @review-skip="handleReviewSkip"
         />
       </div>
 

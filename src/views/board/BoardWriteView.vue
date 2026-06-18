@@ -1,16 +1,18 @@
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
 import { useToastStore } from '@/stores/toast'
 
 const router = useRouter()
+const route = useRoute()
 
 const CATEGORIES = ['자유게시판', '공지', '전공', '비전공', '취업']
 
-const category = ref('자유게시판')
+const initialCategory = CATEGORIES.includes(route.query.category) ? route.query.category : '자유게시판'
+const category = ref(initialCategory)
 const title = ref('')
 const content = ref('')
 const titleError = ref(false)
