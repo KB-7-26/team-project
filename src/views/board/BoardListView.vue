@@ -50,6 +50,7 @@ function selectMode(mode) {
 
 function search() {
   keyword.value = searchInput.value.trim()
+  searchInput.value = ''
   if (selectedMode.value === 'hot') selectedMode.value = 'all'
   fetchPosts(0)
 }
@@ -89,7 +90,9 @@ const currentLabel = computed(() => {
 
 onMounted(() => {
   const modeFromQuery = route.query.mode
+  const keywordFromQuery = route.query.keyword
   if (modeFromQuery) selectedMode.value = modeFromQuery
+  if (keywordFromQuery) keyword.value = String(keywordFromQuery)
   if (selectedMode.value !== 'hot') fetchPosts(0)
   fetchRanking()
 })
@@ -241,8 +244,11 @@ onMounted(() => {
               >{{ index + 1 }}</span>
               <RouterLink
                 :to="`/board/${post.id}?from=hot`"
-                class="flex-1 min-w-0 px-3 text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors"
-              >{{ post.title }}</RouterLink>
+                class="flex-1 min-w-0 px-3 flex items-center gap-1.5"
+              >
+                <span class="text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors">{{ post.title }}</span>
+                <span v-if="post.commentCount > 0" class="shrink-0 text-[11px] font-bold text-[#2d5a48]">[{{ post.commentCount }}]</span>
+              </RouterLink>
               <span class="w-16 shrink-0 text-center text-[11px] text-[#8c7e6e]">{{ formatDate(post.createdAt) }}</span>
               <span class="hidden md:block w-12 shrink-0 text-center text-xs text-[#8c7e6e] tabular-nums">{{ post.viewCount }}</span>
               <span class="w-12 shrink-0 text-center text-xs font-bold text-[#e85d04]">♥ {{ post.likeCount ?? 0 }}</span>

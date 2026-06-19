@@ -70,4 +70,14 @@ export const boardApi = {
   async reportComment(postId, commentId, reason) {
     await api.post(`${BASE_URL}/${postId}/comments/${commentId}/reports`, { reason })
   },
+  async uploadPostImages(postId, formData) {
+    const response = await api.post(`${BASE_URL}/${postId}/images`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return unwrapData(response)
+  },
+  async deletePostImage(postId, imageId) {
+    const response = await api.delete(`${BASE_URL}/${postId}/images/${imageId}`)
+    return unwrapData(response)
+  },
 }

@@ -146,6 +146,20 @@ const deletePost = async () => {
               <span>👁 {{ post.viewCount }}</span>
             </div>
             <p class="text-base text-ink leading-relaxed whitespace-pre-line">{{ post.content }}</p>
+
+            <div
+              v-if="post.images?.length > 0"
+              class="mt-5 grid gap-2"
+              :class="post.images.length === 1 ? 'grid-cols-1' : post.images.length === 2 ? 'grid-cols-2' : 'grid-cols-3'"
+            >
+              <img
+                v-for="img in post.images"
+                :key="img.id"
+                :src="img.imageUrl"
+                class="w-full rounded-xl border-2 border-[#c8bca8] object-cover aspect-[4/3]"
+              />
+            </div>
+
             <div class="flex items-center justify-between mt-6 pt-4 border-t-2 border-dashed border-[#e8e0d4]">
               <button
                 @click="togglePostLike"

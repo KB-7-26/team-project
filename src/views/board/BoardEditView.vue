@@ -1,7 +1,7 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeftIcon, CameraIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
 import { useToastStore } from '@/stores/toast'
@@ -19,6 +19,13 @@ const titleError = ref(false)
 const contentError = ref(false)
 const loading = ref(true)
 
+const existingImages = ref([])
+const newImages = ref([])
+const deletedImageIds = ref([])
+const fileInput = ref(null)
+
+const totalImageCount = computed(() => existingImages.value.length + newImages.value.length)
+
 const { isLoading: isSubmitting, error: submitError, request } = useApiRequest()
 const toast = useToastStore()
 
@@ -32,6 +39,7 @@ onMounted(async () => {
     category.value = post.category ?? '자유게시판'
     title.value = post.title
     content.value = post.content
+    existingImages.value = post.images ?? []
   } catch {
     router.replace('/board')
   } finally {
@@ -39,13 +47,43 @@ onMounted(async () => {
   }
 })
 
+const handleFileChange = (e) => {
+  const files = Array.from(e.target.files)
+  const remaining = 5 - totalImageCount.value
+  files.slice(0, remaining).forEach(file => {
+    newImages.value.push({ file, url: URL.createObjectURL(file) })
+  })
+  e.target.value = ''
+}
+
+const removeExisting = (id) => {
+  deletedImageIds.value.push(id)
+  existingImages.value = existingImages.value.filter(img => img.id !== id)
+}
+
+const removeNew = (index) => {
+  URL.revokeObjectURL(newImages.value[index].url)
+  newImages.value.splice(index, 1)
+}
+
 const submit = async () => {
   titleError.value = !title.value.trim()
   contentError.value = !content.value.trim()
   if (titleError.value || contentError.value || isSubmitting.value) return
 
   const { ok } = await request(
-    () => boardApi.updatePost(postId, title.value.trim(), content.value.trim(), category.value),
+    async () => {
+      if (deletedImageIds.value.length > 0) {
+        await Promise.all(deletedImageIds.value.map(imgId => boardApi.deletePostImage(postId, imgId)))
+      }
+      const result = await boardApi.updatePost(postId, title.value.trim(), content.value.trim(), category.value)
+      if (newImages.value.length > 0) {
+        const formData = new FormData()
+        newImages.value.forEach(({ file }) => formData.append('images', file))
+        await boardApi.uploadPostImages(postId, formData)
+      }
+      return result
+    },
     {
       errorMessage: '게시글 수정에 실패했습니다. 다시 시도해주세요.',
       on403: () => router.replace(`/board/${postId}`),
@@ -117,6 +155,52 @@ const submit = async () => {
                 :class="contentError ? 'border-red-400 focus:border-red-400' : 'border-[#c8bca8] focus:border-ink'"
               />
               <p v-if="contentError" class="text-xs text-red-400 font-medium">내용을 입력해주세요</p>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-bold text-ink">
+                이미지 첨부
+                <span class="font-normal text-[#8c7e6e]">(최대 5장)</span>
+              </label>
+              <div class="flex gap-2 flex-wrap">
+                <div
+                  v-if="totalImageCount < 5"
+                  @click="fileInput.click()"
+                  class="w-20 h-20 border-2 border-dashed border-[#c8bca8] rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-ink hover:bg-[#96d4b4]/10 transition-all"
+                >
+                  <CameraIcon class="w-5 h-5 text-[#8c7e6e]" />
+                  <span class="text-[10px] text-[#8c7e6e] font-bold">{{ totalImageCount }}/5</span>
+                </div>
+                <div
+                  v-for="img in existingImages"
+                  :key="img.id"
+                  class="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-ink shadow-[2px_2px_0_#1c1712]"
+                >
+                  <img :src="img.imageUrl" class="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    @click="removeExisting(img.id)"
+                    class="absolute top-1 right-1 bg-ink rounded-full p-0.5 hover:scale-110 transition-transform cursor-pointer"
+                  >
+                    <XMarkIcon class="w-3 h-3 text-paper" />
+                  </button>
+                </div>
+                <div
+                  v-for="(img, index) in newImages"
+                  :key="'new-' + index"
+                  class="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-[#96d4b4] shadow-[2px_2px_0_#1c1712]"
+                >
+                  <img :src="img.url" class="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    @click="removeNew(index)"
+                    class="absolute top-1 right-1 bg-ink rounded-full p-0.5 hover:scale-110 transition-transform cursor-pointer"
+                  >
+                    <XMarkIcon class="w-3 h-3 text-paper" />
+                  </button>
+                </div>
+                <input ref="fileInput" type="file" accept="image/*" multiple class="hidden" @change="handleFileChange" />
+              </div>
             </div>
 
             <p v-if="submitError" class="text-sm text-red-400">{{ submitError }}</p>
