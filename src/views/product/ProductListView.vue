@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
 import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { PlusIcon } from '@heroicons/vue/24/solid'
 import ProductCard from '@/components/product/ProductCard.vue'
@@ -8,6 +9,7 @@ import { categoryApi } from '@/api/categoryApi'
 import { useAuthStore } from '@/stores/auth'
 import { mapProduct } from '@/utils/product'
 
+const route = useRoute()
 const likedIds = ref([])
 const currentPage = ref(1)
 const searchQuery = ref('')
@@ -32,6 +34,7 @@ const sortParamMap = {
 const sortOptions = ['최신순', '낮은 가격순', '높은 가격순', '추천순']
 
 onMounted(() => {
+  if (route.query.keyword) searchQuery.value = String(route.query.keyword)
   fetchCategories()
   fetchProducts()
   if (authStore.isLoggedIn) fetchFavorites()

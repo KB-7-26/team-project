@@ -10,6 +10,7 @@ import {
   ArrowRightIcon,
 } from '@heroicons/vue/24/outline'
 import { productApi } from '@/api/productApi'
+import { boardApi } from '@/api/boardApi'
 import ProductCard from '@/components/product/ProductCard.vue'
 import { mapProduct } from '@/utils/product'
 
@@ -46,6 +47,7 @@ const handleTypeOutsideClick = (e) => {
 }
 
 const popularProducts = ref([])
+const popularPosts = ref([])
 // ── 교육 진행 계산 ──────────────────────────────────────────
 const ANCHOR_DATE = '2026-06-12' // 이 날짜가 67일차
 const ANCHOR_DAY = 67
@@ -78,7 +80,6 @@ function todayMidnight() {
   d.setHours(0, 0, 0, 0)
   return d
 }
-
 
 function diffDays(dateStr) {
   const target = new Date(dateStr)
@@ -127,11 +128,19 @@ const nextEvents = computed(() => upcomingEvents.value.slice(1, 4))
 
 onMounted(async () => {
   document.addEventListener('click', handleTypeOutsideClick)
-  try {
-    const { data } = await productApi.getProducts({ sort: 'favoriteCount,desc', size: 4, saleStatus: 'available' })
-    popularProducts.value = data.content.map(mapProduct)
-  } catch (e) {
-    console.error('인기 상품 조회 실패', e)
+  const [productsRes, postsRes] = await Promise.allSettled([
+    productApi.getProducts({ sort: 'favoriteCount,desc', size: 4, saleStatus: 'available' }),
+    boardApi.getPopularPosts(5),
+  ])
+  if (productsRes.status === 'fulfilled') {
+    popularProducts.value = productsRes.value.data.content.map(mapProduct)
+  } else {
+    console.error('인기 상품 조회 실패', productsRes.reason)
+  }
+  if (postsRes.status === 'fulfilled') {
+    popularPosts.value = postsRes.value
+  } else {
+    console.error('인기글 조회 실패', postsRes.reason)
   }
 })
 
@@ -145,19 +154,13 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
       <div class="flex flex-col md:flex-row md:items-center gap-10 md:gap-12 lg:gap-20">
         <!-- LEFT: text content -->
         <div class="flex-1 min-w-0 relative">
-          <div
-            class="absolute bottom-0 -right-4 text-5xl opacity-[0.12] pointer-events-none hidden lg:block select-none"
-          >
-            ✦
-          </div>
-
           <span
             class="inline-block rotate-[-1.2deg] mb-6 px-3 py-0.5 font-sketch text-sm text-[#8c7e6e] border-2 border-[#8c7e6e] rounded-md"
             >✦ 캠퍼스 낙서장터 플랫폼</span
           >
 
           <h1 class="font-sketch font-bold leading-[1.05] mb-5 text-[clamp(3rem,7vw,5.5rem)]">
-            학생들의<br />
+            우리들의<br />
             <span class="hl-word">낙서장</span>
           </h1>
 
@@ -190,11 +193,11 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
                   낙서장터
                 </button>
                 <button
-                  @click="selectType('게시물')"
-                  :class="searchType === '게시물' ? 'bg-[#ffe066]' : 'hover:bg-[#ffe066]/60'"
+                  @click="selectType('낙서판')"
+                  :class="searchType === '낙서판' ? 'bg-[#ffe066]' : 'hover:bg-[#ffe066]/60'"
                   class="block w-full text-left px-4 py-2.5 text-sm font-bold text-ink transition-colors border-t border-[#c8bca8]"
                 >
-                  게시물
+                  낙서판
                 </button>
               </div>
             </div>
@@ -214,24 +217,6 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
               class="shrink-0 w-9 h-9 bg-ink text-white rounded-full flex items-center justify-center hover:bg-[#3d3530] transition-colors"
             >
               <ArrowRightIcon class="w-4 h-4" />
-            </button>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-2 mt-4">
-            <span class="text-sm text-[#8c7e6e]">인기 검색어:</span>
-            <button
-              v-for="tag in ['노트북', '모니터', '키보드', '마우스', '도서']"
-              :key="tag"
-              @click="
-                () => {
-                  searchQuery = tag
-                  searchType = '낙서장터'
-                  searchSubmit()
-                }
-              "
-              class="text-sm bg-white border-[1.5px] border-[#c8bca8] rounded-full px-3.5 py-1 text-[#8c7e6e] transition-all hover:border-ink hover:bg-[#ffe066] hover:text-ink"
-            >
-              {{ tag }}
             </button>
           </div>
         </div>
@@ -280,7 +265,10 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
                   <span class="text-[13px] text-[#8c7e6e] font-bold">/ {{ TOTAL_DAYS }}일차</span>
                 </div>
                 <div class="h-2.5 bg-ink rounded-full overflow-hidden mb-1.5 border border-ink">
-                  <div class="h-full bg-[#96d4b4] rounded-full transition-all duration-500" :style="{ width: progressPct + '%' }"></div>
+                  <div
+                    class="h-full bg-[#96d4b4] rounded-full transition-all duration-500"
+                    :style="{ width: progressPct + '%' }"
+                  ></div>
                 </div>
                 <p class="text-[10px] text-[#8c7e6e]">{{ progressPct }}% 완료 · {{ remainingDays }}일 남음</p>
               </div>
@@ -358,6 +346,54 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
           <p class="font-bold text-[17px] text-ink">{{ item.title }}</p>
           <p class="text-xs text-[#8c7e6e] mt-1">{{ item.desc }}</p>
         </RouterLink>
+      </div>
+    </section>
+
+    <div class="dash-divider h-0.5" />
+
+    <!-- POPULAR POSTS -->
+    <section class="max-w-275 mx-auto px-6 md:px-10 py-13">
+      <div class="flex items-baseline justify-between mb-8">
+        <h2 class="sec-title font-bold text-[26px]">인기글 ✏️</h2>
+        <RouterLink
+          to="/board?mode=hot"
+          class="text-sm text-[#8c7e6e] border-b border-dashed border-[#8c7e6e] pb-0.5 hover:text-ink hover:border-ink transition-colors"
+          >전체보기 →</RouterLink
+        >
+      </div>
+      <div class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
+        <div class="h-1.5 bg-[#96d4b4]" />
+        <ul v-if="popularPosts.length > 0" class="divide-y divide-dashed divide-[#e8e0d4]">
+          <li
+            v-for="(post, index) in popularPosts"
+            :key="post.id"
+            class="flex items-center px-5 py-3.5 hover:bg-[#faf7f0] transition-colors"
+          >
+            <span
+              class="w-8 shrink-0 text-center text-xs font-mono font-bold tabular-nums"
+              :class="
+                index === 0
+                  ? 'text-[#e85d04]'
+                  : index === 1
+                    ? 'text-[#f48c06]'
+                    : index === 2
+                      ? 'text-[#faa307]'
+                      : 'text-[#8c7e6e]'
+              "
+              >{{ index + 1 }}</span
+            >
+            <RouterLink :to="`/board/${post.id}?from=hot`" class="flex-1 min-w-0 px-3 flex items-center gap-1.5">
+              <span class="text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors">{{
+                post.title
+              }}</span>
+              <span v-if="post.commentCount > 0" class="shrink-0 text-[11px] font-bold text-[#2d5a48]"
+                >[{{ post.commentCount }}]</span
+              >
+            </RouterLink>
+            <span class="shrink-0 text-xs font-bold text-[#e85d04] tabular-nums">♥ {{ post.likeCount ?? 0 }}</span>
+          </li>
+        </ul>
+        <p v-else class="text-center text-[#8c7e6e] py-10 text-sm">아직 인기글이 없어요.</p>
       </div>
     </section>
 
@@ -542,20 +578,6 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
 
 .dash-divider {
   background: repeating-linear-gradient(90deg, #c8bca8 0 8px, transparent 8px 16px);
-}
-
-.search-btn {
-  transition:
-    transform 0.12s,
-    box-shadow 0.12s;
-}
-.search-btn:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 2px 2px 0 #1c1712;
-}
-.search-btn:active {
-  transform: none;
-  box-shadow: none;
 }
 
 .cat-card {
