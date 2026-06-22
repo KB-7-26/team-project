@@ -56,6 +56,10 @@ export const boardApi = {
     const response = await api.post(`${BASE_URL}/${postId}/comments/${commentId}/likes`)
     return unwrapData(response)
   },
+  async getPinnedPost() {
+    const response = await api.get(`${BASE_URL}/pinned`)
+    return unwrapData(response)
+  },
   async getPopularPosts(limit = 5) {
     const response = await api.get(`${BASE_URL}/popular`, { params: { limit } })
     return unwrapData(response)
