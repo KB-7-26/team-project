@@ -6,10 +6,13 @@ import { boardApi } from '@/api/boardApi'
 import { adminApi } from '@/api/adminApi'
 import { useToastStore } from '@/stores/toast'
 import { formatDate } from '@/utils/formatDate'
+import AdminCohortList from '@/components/admin/AdminCohortList.vue'
+import AdminUserList from '@/components/admin/AdminUserList.vue'
+import AdminReportDashboard from '@/components/admin/AdminReportDashboard.vue'
+import AdminActivityDashboard from '@/components/admin/AdminActivityDashboard.vue'
 
 const router = useRouter()
 const toast = useToastStore()
-
 const activeTab = ref('notices')
 
 // ---- 공지 관리 ----
@@ -31,7 +34,6 @@ async function deleteNotice(id) {
   try {
     await adminApi.deletePost(id)
     notices.value = notices.value.filter(n => n.id !== id)
-    if (pinnedPostId.value === id) pinnedPostId.value = null
     toast.show('게시글을 삭제했습니다.')
   } catch {
     toast.show('삭제에 실패했습니다.')
@@ -39,88 +41,108 @@ async function deleteNotice(id) {
 }
 
 // ---- 신고 관리 ----
-const reports = ref([])
-const reportsLoading = ref(false)
+// view: 'cohorts' | 'users' | 'dashboard'
+const reportView = ref('cohorts')
+const reportCohorts = ref([])
+const reportCohortsLoading = ref(false)
+const selectedReportCohort = ref(null)
+const selectedReportUser = ref(null)
 
-async function fetchReports() {
-  reportsLoading.value = true
+async function fetchReportCohorts() {
+  reportCohortsLoading.value = true
   try {
-    const data = await adminApi.getReports()
-    reports.value = data.content ?? (Array.isArray(data) ? data : [])
+    const data = await adminApi.getReportsByCohort()
+    reportCohorts.value = (data ?? []).map(c => ({
+      ...c,
+      primaryCount: c.reportedUserCount,
+      secondaryCount: c.totalReportCount,
+    }))
   } finally {
-    reportsLoading.value = false
+    reportCohortsLoading.value = false
   }
 }
 
-async function deleteReportedContent(report) {
-  const isProduct = report.type === 'PRODUCT'
-  const label = isProduct ? '상품' : '게시글'
-  if (!confirm(`신고된 ${label}을 삭제하시겠습니까?`)) return
-  try {
-    if (isProduct) {
-      await adminApi.deleteProduct(report.targetId)
-    } else {
-      await adminApi.deletePost(report.targetId)
-    }
-    toast.show(`${label}을 삭제했습니다.`)
-    reports.value = reports.value.filter(r => r.id !== report.id)
-  } catch {
-    toast.show('삭제에 실패했습니다.')
-  }
+function selectReportCohort(cohort) {
+  selectedReportCohort.value = cohort
+  reportView.value = 'users'
+}
+
+function selectReportUser(user) {
+  selectedReportUser.value = user
+  reportView.value = 'dashboard'
+}
+
+function backToReportCohorts() {
+  selectedReportCohort.value = null
+  selectedReportUser.value = null
+  reportView.value = 'cohorts'
+}
+
+function backToReportUsers() {
+  selectedReportUser.value = null
+  reportView.value = 'users'
 }
 
 // ---- 유저 관리 ----
-const users = ref([])
-const usersLoading = ref(false)
-const usersPage = ref(0)
-const usersTotalPages = ref(1)
+// view: 'cohorts' | 'users' | 'dashboard'
+const usersView = ref('cohorts')
+const userCohorts = ref([])
+const userCohortsLoading = ref(false)
+const selectedUserCohort = ref(null)
+const cohortUsers = ref([])
+const cohortUsersLoading = ref(false)
+const selectedUser = ref(null)
 
-async function fetchUsers(page = 0) {
-  usersLoading.value = true
+async function fetchUserCohorts() {
+  userCohortsLoading.value = true
   try {
-    const data = await adminApi.getUsers(page)
-    users.value = data.content ?? []
-    usersTotalPages.value = data.totalPages ?? 1
-    usersPage.value = page
+    const data = await adminApi.getUserCohortSummary()
+    userCohorts.value = (data ?? []).map(c => ({
+      ...c,
+      primaryCount: c.userCount,
+    }))
   } finally {
-    usersLoading.value = false
+    userCohortsLoading.value = false
   }
 }
 
-async function toggleSuspend(user) {
+async function selectUserCohort(cohort) {
+  selectedUserCohort.value = cohort
+  usersView.value = 'users'
+  cohortUsersLoading.value = true
   try {
-    await adminApi.toggleSuspend(user.id)
-    toast.show(user.suspended ? '정지를 해제했습니다.' : '유저를 정지했습니다.')
-    await fetchUsers(usersPage.value)
-  } catch {
-    toast.show('처리에 실패했습니다.')
+    const data = await adminApi.getUsersByCohort(cohort.cohort)
+    cohortUsers.value = (data?.content ?? []).map(u => ({
+      ...u,
+      userId: u.id,
+    }))
+  } finally {
+    cohortUsersLoading.value = false
   }
 }
 
-async function deleteUser(userId) {
-  if (!confirm('유저를 강제 탈퇴 처리하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return
-  try {
-    await adminApi.deleteUser(userId)
-    toast.show('유저를 탈퇴 처리했습니다.')
-    await fetchUsers(usersPage.value)
-  } catch {
-    toast.show('처리에 실패했습니다.')
-  }
+function selectUser(user) {
+  selectedUser.value = user
+  usersView.value = 'dashboard'
+}
+
+function backToUserCohorts() {
+  selectedUserCohort.value = null
+  selectedUser.value = null
+  cohortUsers.value = []
+  usersView.value = 'cohorts'
+}
+
+function backToUserList() {
+  selectedUser.value = null
+  usersView.value = 'users'
 }
 
 function selectTab(tab) {
   activeTab.value = tab
-  if (tab === 'notices') fetchNotices()
-  else if (tab === 'reports' && reports.value.length === 0) fetchReports()
-  else if (tab === 'users' && users.value.length === 0) fetchUsers()
-}
-
-const REPORT_TYPE_LABEL = { POST: '게시글', COMMENT: '댓글', PRODUCT: '상품', USER: '유저' }
-const REPORT_TYPE_COLOR = {
-  POST: 'bg-blue-50 text-blue-600 border-blue-200',
-  COMMENT: 'bg-purple-50 text-purple-600 border-purple-200',
-  PRODUCT: 'bg-amber-50 text-amber-600 border-amber-200',
-  USER: 'bg-red-50 text-red-500 border-red-200',
+  if (tab === 'notices' && notices.value.length === 0) fetchNotices()
+  else if (tab === 'reports' && reportCohorts.value.length === 0) fetchReportCohorts()
+  else if (tab === 'users' && userCohorts.value.length === 0) fetchUserCohorts()
 }
 
 onMounted(() => {
@@ -159,7 +181,7 @@ onMounted(() => {
             </button>
           </div>
 
-          <!-- 공지 관리 -->
+          <!-- ===== 공지 관리 ===== -->
           <div v-if="activeTab === 'notices'">
             <div v-if="noticesLoading" class="text-center py-16 text-sm text-[#8c7e6e]">불러오는 중...</div>
             <div v-else-if="notices.length === 0" class="text-center py-16 text-sm text-[#8c7e6e]">
@@ -175,11 +197,7 @@ onMounted(() => {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr
-                    v-for="notice in notices"
-                    :key="notice.id"
-                    class="hover:bg-[#96d4b4]/5 transition-colors"
-                  >
+                  <tr v-for="notice in notices" :key="notice.id" class="hover:bg-[#96d4b4]/5 transition-colors">
                     <td class="py-3 border-b border-[#e8e0d4] text-center">
                       <RouterLink
                         :to="`/board/${notice.id}`"
@@ -205,159 +223,97 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- 신고 관리 -->
+          <!-- ===== 신고 관리 ===== -->
           <div v-if="activeTab === 'reports'">
-            <div v-if="reportsLoading" class="text-center py-16 text-sm text-[#8c7e6e]">불러오는 중...</div>
-            <div v-else-if="reports.length === 0" class="text-center py-16 text-sm text-[#8c7e6e]">
-              처리할 신고가 없습니다.
-            </div>
-            <div v-else class="overflow-x-auto">
-              <table class="w-full text-center">
-                <thead>
-                  <tr>
-                    <th class="text-center text-xs font-bold text-[#8c7e6e] uppercase pb-3 border-b-2 border-[#e8e0d4] w-20">유형</th>
-                    <th class="text-center text-xs font-bold text-[#8c7e6e] uppercase pb-3 border-b-2 border-[#e8e0d4]">신고 대상</th>
-                    <th class="text-center text-xs font-bold text-[#8c7e6e] uppercase pb-3 border-b-2 border-[#e8e0d4] w-28">신고자</th>
-                    <th class="text-center text-xs font-bold text-[#8c7e6e] uppercase pb-3 border-b-2 border-[#e8e0d4] w-32">사유</th>
-                    <th class="text-center text-xs font-bold text-[#8c7e6e] uppercase pb-3 border-b-2 border-[#e8e0d4] w-36">날짜</th>
-                    <th class="text-center text-xs font-bold text-[#8c7e6e] uppercase pb-3 border-b-2 border-[#e8e0d4] w-20">조치</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="report in reports"
-                    :key="report.id"
-                    class="hover:bg-red-50/30 transition-colors"
-                  >
-                    <td class="py-3 border-b border-[#e8e0d4]">
-                      <span
-                        class="px-2 py-0.5 text-xs font-bold rounded-md border"
-                        :class="REPORT_TYPE_COLOR[report.type] ?? 'bg-gray-50 text-gray-500 border-gray-200'"
-                      >
-                        {{ REPORT_TYPE_LABEL[report.type] ?? report.type }}
-                      </span>
-                    </td>
-                    <td class="py-3 border-b border-[#e8e0d4] text-sm text-ink max-w-45 truncate text-center">
-                      {{ report.targetTitle ?? report.targetContent ?? `#${report.targetId}` }}
-                    </td>
-                    <td class="py-3 border-b border-[#e8e0d4] text-xs text-[#8c7e6e] text-center">
-                      {{ report.reporterNickname ?? report.reporterName ?? '—' }}
-                    </td>
-                    <td class="py-3 border-b border-[#e8e0d4] text-xs text-[#8c7e6e] max-w-30 truncate text-center">
-                      {{ report.reason ?? '—' }}
-                    </td>
-                    <td class="py-3 border-b border-[#e8e0d4] text-xs text-[#8c7e6e] text-center">
-                      {{ formatDate(report.createdAt) }}
-                    </td>
-                    <td class="py-3 border-b border-[#e8e0d4]">
-                      <button
-                        v-if="report.type !== 'USER'"
-                        @click="deleteReportedContent(report)"
-                        class="px-2.5 py-1 text-xs font-bold rounded-lg border-2 border-red-200 text-red-400 hover:bg-red-50 hover:border-red-400 transition-all cursor-pointer"
-                      >
-                        삭제
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+
+            <!-- 기수 목록 -->
+            <template v-if="reportView === 'cohorts'">
+              <div v-if="reportCohortsLoading" class="text-center py-16 text-sm text-[#8c7e6e]">불러오는 중...</div>
+              <AdminCohortList
+                v-else
+                :cohorts="reportCohorts"
+                primary-label="신고된 유저"
+                secondary-label="총 신고"
+                empty-text="신고 내역이 없습니다."
+                @select="selectReportCohort"
+              />
+            </template>
+
+            <!-- 기수 내 신고된 유저 목록 -->
+            <template v-else-if="reportView === 'users'">
+              <div class="flex items-center gap-3 mb-4">
+                <button
+                  @click="backToReportCohorts"
+                  class="text-sm text-[#8c7e6e] hover:text-ink transition-colors cursor-pointer font-medium"
+                >
+                  ← 기수 목록
+                </button>
+                <span class="text-[#c8bca8]">/</span>
+                <span class="text-sm font-bold text-ink">{{ selectedReportCohort?.cohort }}</span>
+              </div>
+              <AdminUserList
+                :users="selectedReportCohort?.users ?? []"
+                stat-label="신고 건수"
+                stat-key="totalReportCount"
+                @select="selectReportUser"
+              />
+            </template>
+
+            <!-- 유저 신고 대시보드 -->
+            <template v-else-if="reportView === 'dashboard'">
+              <AdminReportDashboard
+                :user="selectedReportUser"
+                :cohort="selectedReportCohort?.cohort ?? ''"
+                @back="backToReportUsers"
+              />
+            </template>
           </div>
 
-          <!-- 유저 관리 -->
+          <!-- ===== 유저 관리 ===== -->
           <div v-if="activeTab === 'users'">
-            <div v-if="usersLoading" class="text-center py-16 text-sm text-[#8c7e6e]">불러오는 중...</div>
-            <div v-else-if="users.length === 0" class="text-center py-16 text-sm text-[#8c7e6e]">
-              유저가 없습니다.
-            </div>
-            <div v-else>
-              <div class="overflow-x-auto">
-                <table class="w-full text-center">
-                  <thead>
-                    <tr>
-                      <th class="text-center text-xs font-bold text-[#8c7e6e] uppercase pb-3 border-b-2 border-[#e8e0d4]">닉네임</th>
-                      <th class="text-center text-xs font-bold text-[#8c7e6e] uppercase pb-3 border-b-2 border-[#e8e0d4]">이메일</th>
-                      <th class="text-center text-xs font-bold text-[#8c7e6e] uppercase pb-3 border-b-2 border-[#e8e0d4] w-20">역할</th>
-                      <th class="text-center text-xs font-bold text-[#8c7e6e] uppercase pb-3 border-b-2 border-[#e8e0d4] w-20">상태</th>
-                      <th class="text-center text-xs font-bold text-[#8c7e6e] uppercase pb-3 border-b-2 border-[#e8e0d4] w-36">가입일</th>
-                      <th class="text-center text-xs font-bold text-[#8c7e6e] uppercase pb-3 border-b-2 border-[#e8e0d4] w-44">조치</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr
-                      v-for="user in users"
-                      :key="user.id"
-                      class="hover:bg-[#96d4b4]/5 transition-colors"
-                      :class="{ 'opacity-50': user.suspended }"
-                    >
-                      <td class="py-3 border-b border-[#e8e0d4] text-sm font-medium text-ink text-center">
-                        {{ user.nickname ?? user.name ?? '—' }}
-                      </td>
-                      <td class="py-3 border-b border-[#e8e0d4] text-xs text-[#8c7e6e] text-center">
-                        {{ user.email ?? '—' }}
-                      </td>
-                      <td class="py-3 border-b border-[#e8e0d4] text-center">
-                        <span
-                          class="px-2 py-0.5 text-xs font-bold rounded-md border"
-                          :class="user.role?.includes('ADMIN')
-                            ? 'bg-[#ff7b54]/10 text-[#cc5a3a] border-[#ff7b54]/30'
-                            : 'bg-[#e8e0d4] text-[#8c7e6e] border-[#c8bca8]'"
-                        >
-                          {{ user.role?.includes('ADMIN') ? '관리자' : '일반' }}
-                        </span>
-                      </td>
-                      <td class="py-3 border-b border-[#e8e0d4] text-center">
-                        <span
-                          class="px-2 py-0.5 text-xs font-bold rounded-md border"
-                          :class="user.suspended
-                            ? 'bg-red-50 text-red-500 border-red-200'
-                            : 'bg-green-50 text-green-600 border-green-200'"
-                        >
-                          {{ user.suspended ? '정지' : '정상' }}
-                        </span>
-                      </td>
-                      <td class="py-3 border-b border-[#e8e0d4] text-xs text-[#8c7e6e] text-center">
-                        {{ formatDate(user.createdAt) }}
-                      </td>
-                      <td class="py-3 border-b border-[#e8e0d4]">
-                        <div class="flex gap-1.5 justify-center">
-                          <button
-                            @click="toggleSuspend(user)"
-                            class="px-2.5 py-1 text-xs font-bold rounded-lg border-2 transition-all cursor-pointer"
-                            :class="user.suspended
-                              ? 'border-green-300 text-green-600 hover:bg-green-50'
-                              : 'border-[#c8bca8] text-[#8c7e6e] hover:border-ink hover:text-ink'"
-                          >
-                            {{ user.suspended ? '해제' : '정지' }}
-                          </button>
-                          <button
-                            @click="deleteUser(user.id)"
-                            class="p-1.5 rounded-lg border-2 border-red-200 text-red-400 hover:bg-red-50 hover:border-red-400 transition-all cursor-pointer"
-                          >
-                            <TrashIcon class="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
 
-              <!-- 페이지네이션 -->
-              <div v-if="usersTotalPages > 1" class="flex justify-center gap-1.5 mt-6">
+            <!-- 기수 목록 -->
+            <template v-if="usersView === 'cohorts'">
+              <div v-if="userCohortsLoading" class="text-center py-16 text-sm text-[#8c7e6e]">불러오는 중...</div>
+              <AdminCohortList
+                v-else
+                :cohorts="userCohorts"
+                primary-label="가입자"
+                empty-text="유저 데이터가 없습니다."
+                @select="selectUserCohort"
+              />
+            </template>
+
+            <!-- 기수 내 유저 목록 -->
+            <template v-else-if="usersView === 'users'">
+              <div class="flex items-center gap-3 mb-4">
                 <button
-                  v-for="p in usersTotalPages"
-                  :key="p"
-                  @click="fetchUsers(p - 1)"
-                  class="w-8 h-8 rounded-lg border-2 text-xs font-bold transition-all cursor-pointer"
-                  :class="usersPage === p - 1
-                    ? 'bg-ink text-white border-ink'
-                    : 'bg-white border-[#c8bca8] text-[#8c7e6e] hover:border-ink hover:text-ink'"
+                  @click="backToUserCohorts"
+                  class="text-sm text-[#8c7e6e] hover:text-ink transition-colors cursor-pointer font-medium"
                 >
-                  {{ p }}
+                  ← 기수 목록
                 </button>
+                <span class="text-[#c8bca8]">/</span>
+                <span class="text-sm font-bold text-ink">{{ selectedUserCohort?.cohort }}</span>
               </div>
-            </div>
+              <div v-if="cohortUsersLoading" class="text-center py-16 text-sm text-[#8c7e6e]">불러오는 중...</div>
+              <AdminUserList
+                v-else
+                :users="cohortUsers"
+                stat-label="신뢰점수"
+                stat-key="trustScore"
+                @select="selectUser"
+              />
+            </template>
+
+            <!-- 유저 활동 대시보드 -->
+            <template v-else-if="usersView === 'dashboard'">
+              <AdminActivityDashboard
+                :user="selectedUser"
+                :cohort="selectedUserCohort?.cohort ?? ''"
+                @back="backToUserList"
+              />
+            </template>
           </div>
 
         </div>
