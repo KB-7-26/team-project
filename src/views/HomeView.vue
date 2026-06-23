@@ -48,7 +48,7 @@ const handleTypeOutsideClick = (e) => {
 
 const popularProducts = ref([])
 const popularPosts = ref([])
-const pinnedPost = ref(null)
+
 // ── 교육 진행 계산 ──────────────────────────────────────────
 const ANCHOR_DATE = '2026-06-12' // 이 날짜가 67일차
 const ANCHOR_DAY = 67
@@ -129,10 +129,9 @@ const nextEvents = computed(() => upcomingEvents.value.slice(1, 4))
 
 onMounted(async () => {
   document.addEventListener('click', handleTypeOutsideClick)
-  const [productsRes, postsRes, pinnedRes] = await Promise.allSettled([
+  const [productsRes, postsRes] = await Promise.allSettled([
     productApi.getProducts({ sort: 'favoriteCount,desc', size: 4, saleStatus: 'available' }),
     boardApi.getPopularPosts(5),
-    boardApi.getPinnedPost(),
   ])
   if (productsRes.status === 'fulfilled') {
     popularProducts.value = productsRes.value.data.content.map(mapProduct)
@@ -143,9 +142,6 @@ onMounted(async () => {
     popularPosts.value = postsRes.value
   } else {
     console.error('인기글 조회 실패', postsRes.reason)
-  }
-  if (pinnedRes.status === 'fulfilled') {
-    pinnedPost.value = pinnedRes.value
   }
 })
 
@@ -229,7 +225,7 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
         <!-- RIGHT: Bulletin Board -->
         <div
           class="hidden md:flex flex-col items-center shrink-0 board-animate cursor-pointer"
-          @click="router.push(pinnedPost ? `/board/${pinnedPost.id}` : '/board')"
+          @click="router.push('/board')"
         >
           <!-- hanger wire -->
           <div class="relative w-56 h-10 flex justify-center items-start">

@@ -20,12 +20,12 @@ export const boardApi = {
     const response = await api.get(`${BASE_URL}/${id}`)
     return unwrapData(response)
   },
-  async createPost(title, content, category = '자유게시판', pinned = false) {
-    const response = await api.post(BASE_URL, { category, title, content, pinned })
+  async createPost(title, content, category = '자유게시판') {
+    const response = await api.post(BASE_URL, { category, title, content })
     return unwrapData(response)
   },
-  async updatePost(id, title, content, category, pinned = false) {
-    const response = await api.put(`${BASE_URL}/${id}`, { category, title, content, pinned })
+  async updatePost(id, title, content, category) {
+    const response = await api.put(`${BASE_URL}/${id}`, { category, title, content })
     return unwrapData(response)
   },
   async deletePost(id) {
@@ -56,10 +56,7 @@ export const boardApi = {
     const response = await api.post(`${BASE_URL}/${postId}/comments/${commentId}/likes`)
     return unwrapData(response)
   },
-  async getPinnedPost() {
-    const response = await api.get(`${BASE_URL}/pinned`)
-    return unwrapData(response)
-  },
+
   async getPopularPosts(limit = 5) {
     const response = await api.get(`${BASE_URL}/popular`, { params: { limit } })
     return unwrapData(response)
