@@ -5,7 +5,6 @@ import { ArrowLeftIcon, CameraIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
 import { useToastStore } from '@/stores/toast'
-
 const route = useRoute()
 const router = useRouter()
 

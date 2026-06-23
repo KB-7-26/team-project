@@ -1237,6 +1237,19 @@ watch(selectedSaleStatus, () => {
                 </button>
               </div>
 
+              <div v-if="authStore.isAdmin" class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p class="text-sm font-bold text-[#cc5a3a]">관리자 페이지</p>
+                  <p class="text-xs text-[#8c7e6e] mt-0.5">공지·신고·유저를 관리합니다</p>
+                </div>
+                <RouterLink
+                  to="/admin"
+                  class="h-9 inline-flex items-center rounded-xl border-2 border-[#cc5a3a] bg-white px-4 text-sm font-extrabold text-[#cc5a3a] shadow-[2px_2px_0_#1c1712] transition hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_#1c1712]"
+                >
+                  이동하기
+                </RouterLink>
+              </div>
+
               <div class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p class="text-sm font-bold text-ink">로그아웃</p>

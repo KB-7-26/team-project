@@ -1,17 +1,19 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ArrowLeftIcon, CameraIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
 import { useToastStore } from '@/stores/toast'
-
+import { useAuthStore } from '@/stores/auth'
 const router = useRouter()
 const route = useRoute()
+const auth = useAuthStore()
 
-const CATEGORIES = ['자유게시판', '공지', '전공', '비전공', '취업']
+const ALL_CATEGORIES = ['자유게시판', '공지', '전공', '비전공', '취업']
+const CATEGORIES = computed(() => auth.isAdmin ? ALL_CATEGORIES : ALL_CATEGORIES.filter(c => c !== '공지'))
 
-const initialCategory = CATEGORIES.includes(route.query.category) ? route.query.category : '자유게시판'
+const initialCategory = ALL_CATEGORIES.includes(route.query.category) && (route.query.category !== '공지' || auth.isAdmin) ? route.query.category : '자유게시판'
 const category = ref(initialCategory)
 const title = ref('')
 const content = ref('')
