@@ -11,7 +11,11 @@ export const adminApi = {
     await api.delete(`/admin/products/${productId}`)
   },
 
-  // 신고 관리
+  // 신고 관리 - 최근 신고 목록 (대시보드용)
+  async getReports(page = 0, size = 5) {
+    const response = await api.get('/admin/reports', { params: { page, size } })
+    return unwrapData(response)
+  },
   async getReportsByCohort() {
     const response = await api.get('/admin/reports/by-cohort')
     return unwrapData(response)
