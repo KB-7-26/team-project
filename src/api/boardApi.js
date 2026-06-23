@@ -20,12 +20,12 @@ export const boardApi = {
     const response = await api.get(`${BASE_URL}/${id}`)
     return unwrapData(response)
   },
-  async createPost(title, content, category = '자유게시판') {
-    const response = await api.post(BASE_URL, { category, title, content })
+  async createPost(title, content, category = '자유게시판', pinned = false) {
+    const response = await api.post(BASE_URL, { category, title, content, pinned })
     return unwrapData(response)
   },
-  async updatePost(id, title, content, category) {
-    const response = await api.put(`${BASE_URL}/${id}`, { category, title, content })
+  async updatePost(id, title, content, category, pinned = false) {
+    const response = await api.put(`${BASE_URL}/${id}`, { category, title, content, pinned })
     return unwrapData(response)
   },
   async deletePost(id) {

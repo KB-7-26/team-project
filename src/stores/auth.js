@@ -15,6 +15,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isLoggedIn = computed(() => Boolean(firebaseUser.value && user.value))
   const needsProfile = computed(() => Boolean(firebaseUser.value && profileRequired.value))
+  const isAdmin = computed(() => user.value?.role === 'ADMIN')
 
   function applyMeResponse(response) {
     profileRequired.value = response.profileRequired
@@ -89,6 +90,7 @@ export const useAuthStore = defineStore('auth', () => {
     profileRequired,
     isLoggedIn,
     needsProfile,
+    isAdmin,
     initializeAuth,
     refreshMe,
     completeProfile,

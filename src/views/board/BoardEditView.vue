@@ -5,6 +5,7 @@ import { ArrowLeftIcon, CameraIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
 import { useToastStore } from '@/stores/toast'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
@@ -28,6 +29,9 @@ const totalImageCount = computed(() => existingImages.value.length + newImages.v
 
 const { isLoading: isSubmitting, error: submitError, request } = useApiRequest()
 const toast = useToastStore()
+const auth = useAuthStore()
+
+const pinned = ref(false)
 
 onMounted(async () => {
   try {
@@ -76,7 +80,7 @@ const submit = async () => {
       if (deletedImageIds.value.length > 0) {
         await Promise.all(deletedImageIds.value.map(imgId => boardApi.deletePostImage(postId, imgId)))
       }
-      const result = await boardApi.updatePost(postId, title.value.trim(), content.value.trim(), category.value)
+      const result = await boardApi.updatePost(postId, title.value.trim(), content.value.trim(), category.value, pinned.value)
       if (newImages.value.length > 0) {
         const formData = new FormData()
         newImages.value.forEach(({ file }) => formData.append('images', file))
@@ -155,6 +159,22 @@ const submit = async () => {
                 :class="contentError ? 'border-red-400 focus:border-red-400' : 'border-[#c8bca8] focus:border-ink'"
               />
               <p v-if="contentError" class="text-xs text-red-400 font-medium">내용을 입력해주세요</p>
+            </div>
+
+            <div v-if="category === '공지' && auth.isAdmin" class="flex items-center gap-3">
+              <label class="text-sm font-bold text-ink">홈 화면 핀 고정</label>
+              <button
+                type="button"
+                @click="pinned = !pinned"
+                class="relative w-10 h-6 rounded-full border-2 border-ink transition-colors cursor-pointer"
+                :class="pinned ? 'bg-[#2d5a48]' : 'bg-[#e8e0d4]'"
+              >
+                <span
+                  class="absolute top-0.5 w-4 h-4 rounded-full bg-white border border-ink transition-all"
+                  :class="pinned ? 'left-4' : 'left-0.5'"
+                />
+              </button>
+              <span class="text-xs text-[#8c7e6e]">{{ pinned ? '홈 보드 클릭 시 이 공지로 이동' : '핀 없음' }}</span>
             </div>
 
             <div class="flex flex-col gap-1.5">
