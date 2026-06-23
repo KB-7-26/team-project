@@ -70,6 +70,11 @@ const router = createRouter({
       component: () => import('@/views/user/MyPageView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/admin',
+      component: () => import('@/views/admin/AdminView.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true, hideNav: true },
+    },
   ],
 })
 
@@ -87,6 +92,10 @@ router.beforeEach(async (to) => {
 
   if (to.meta.requiresAuth && !authStore.isLoggedIn) {
     return '/login'
+  }
+
+  if (to.meta.requiresAdmin && !authStore.isAdmin) {
+    return '/'
   }
 
   if ((to.path === '/login' || to.path === '/signup') && authStore.isLoggedIn) {

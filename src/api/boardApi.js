@@ -56,6 +56,7 @@ export const boardApi = {
     const response = await api.post(`${BASE_URL}/${postId}/comments/${commentId}/likes`)
     return unwrapData(response)
   },
+
   async getPopularPosts(limit = 5) {
     const response = await api.get(`${BASE_URL}/popular`, { params: { limit } })
     return unwrapData(response)
@@ -69,5 +70,15 @@ export const boardApi = {
   },
   async reportComment(postId, commentId, reason) {
     await api.post(`${BASE_URL}/${postId}/comments/${commentId}/reports`, { reason })
+  },
+  async uploadPostImages(postId, formData) {
+    const response = await api.post(`${BASE_URL}/${postId}/images`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return unwrapData(response)
+  },
+  async deletePostImage(postId, imageId) {
+    const response = await api.delete(`${BASE_URL}/${postId}/images/${imageId}`)
+    return unwrapData(response)
   },
 }

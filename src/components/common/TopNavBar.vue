@@ -47,6 +47,9 @@ onMounted(() => {
           <li>
             <RouterLink to="/mypage" class="nav-link text-base text-[#8c7e6e] hover:text-ink transition-colors">마이페이지</RouterLink>
           </li>
+          <li v-if="authStore.isAdmin">
+            <RouterLink to="/admin" class="nav-link text-base text-[#cc5a3a] hover:text-ink font-bold transition-colors">관리자</RouterLink>
+          </li>
         </ul>
 
         <div class="hidden md:flex items-center gap-2">

@@ -8,9 +8,7 @@ import { formatDate } from '@/utils/formatDate'
 
 const route = useRoute()
 
-const notices = [
-  { id: 1, tag: '공지', title: '학교 축제 부스 모집합니다', date: '6/10' },
-]
+const notices = ref([])
 
 const posts = ref([])
 const currentPage = ref(0)
@@ -35,21 +33,27 @@ const rankingLoading = ref(true)
 async function fetchPosts(page = 0) {
   const categoryFilter = selectedMode.value === 'all' ? null : selectedMode.value
   const pageData = await boardApi.getPosts(page, 15, keyword.value || null, 'all', categoryFilter)
-  posts.value = pageData.content
+  posts.value = pageData.content.filter(p => p.category !== '공지')
   totalPages.value = pageData.totalPages
   totalElements.value = pageData.totalElements ?? 0
   currentPage.value = page
+}
+
+async function fetchNotices() {
+  const pageData = await boardApi.getPosts(0, 20, null, 'all', '공지')
+  notices.value = pageData.content
 }
 
 function selectMode(mode) {
   selectedMode.value = mode
   keyword.value = ''
   searchInput.value = ''
-  if (mode !== 'hot') fetchPosts(0)
+  if (mode !== 'hot' && mode !== '공지') fetchPosts(0)
 }
 
 function search() {
   keyword.value = searchInput.value.trim()
+  searchInput.value = ''
   if (selectedMode.value === 'hot') selectedMode.value = 'all'
   fetchPosts(0)
 }
@@ -89,8 +93,11 @@ const currentLabel = computed(() => {
 
 onMounted(() => {
   const modeFromQuery = route.query.mode
+  const keywordFromQuery = route.query.keyword
   if (modeFromQuery) selectedMode.value = modeFromQuery
-  if (selectedMode.value !== 'hot') fetchPosts(0)
+  if (keywordFromQuery) keyword.value = String(keywordFromQuery)
+  if (selectedMode.value !== 'hot' && selectedMode.value !== '공지') fetchPosts(0)
+  fetchNotices()
   fetchRanking()
 })
 </script>
@@ -200,22 +207,27 @@ onMounted(() => {
         </div>
 
         <!-- 공지사항 핀 (전체 / 공지 카테고리에서만) -->
-        <div v-if="!keyword && (selectedMode === 'all' || selectedMode === '공지')" class="mb-4 flex flex-col gap-2">
-          <div
+        <div v-if="(selectedMode === 'all' || selectedMode === '공지') && notices.length > 0 && !keyword" class="mb-4 flex flex-col gap-2">
+          <RouterLink
             v-for="(notice, i) in notices"
             :key="notice.id"
-            class="notice-pin relative bg-[#fff9c4] border-2 border-ink rounded-xl px-4 py-3 shadow-[2px_2px_0_#1c1712]"
+            :to="`/board/${notice.id}?from=${selectedMode}`"
+            class="notice-pin relative bg-[#fff9c4] border-2 border-ink rounded-xl px-4 py-3 shadow-[2px_2px_0_#1c1712] block hover:bg-[#fff3a0] transition-colors"
             :style="`transform: rotate(${i % 2 === 0 ? '-0.4deg' : '0.3deg'})`"
           >
             <div class="pushpin-dot" />
             <div class="flex items-center gap-2.5">
               <span class="shrink-0 inline-flex items-center gap-1 text-[11px] font-bold text-[#7a6010] bg-[#ffe066] border border-[#c8aa40] px-2 py-0.5 rounded-full">
-                📌 {{ notice.tag }}
+                📌 공지
               </span>
               <p class="text-sm font-bold text-ink flex-1">{{ notice.title }}</p>
-              <span class="text-[11px] text-[#8c7e6e] shrink-0">{{ notice.date }}</span>
+              <span class="text-[11px] text-[#8c7e6e] shrink-0">{{ formatDate(notice.createdAt) }}</span>
             </div>
-          </div>
+          </RouterLink>
+        </div>
+        <!-- 공지 탭: 게시글 없을 때 -->
+        <div v-if="selectedMode === '공지' && notices.length === 0 && !keyword" class="text-center text-[#8c7e6e] py-16">
+          등록된 공지사항이 없습니다.
         </div>
 
         <!-- 인기글 목록 -->
@@ -241,8 +253,11 @@ onMounted(() => {
               >{{ index + 1 }}</span>
               <RouterLink
                 :to="`/board/${post.id}?from=hot`"
-                class="flex-1 min-w-0 px-3 text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors"
-              >{{ post.title }}</RouterLink>
+                class="flex-1 min-w-0 px-3 flex items-center gap-1.5"
+              >
+                <span class="text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors">{{ post.title }}</span>
+                <span v-if="post.commentCount > 0" class="shrink-0 text-[11px] font-bold text-[#2d5a48]">[{{ post.commentCount }}]</span>
+              </RouterLink>
               <span class="w-16 shrink-0 text-center text-[11px] text-[#8c7e6e]">{{ formatDate(post.createdAt) }}</span>
               <span class="hidden md:block w-12 shrink-0 text-center text-xs text-[#8c7e6e] tabular-nums">{{ post.viewCount }}</span>
               <span class="w-12 shrink-0 text-center text-xs font-bold text-[#e85d04]">♥ {{ post.likeCount ?? 0 }}</span>
@@ -252,7 +267,7 @@ onMounted(() => {
         </div>
 
         <!-- 일반 게시글 목록 -->
-        <div v-else class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
+        <div v-else-if="selectedMode !== '공지'" class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
           <div class="h-1.5 bg-[#96d4b4]" />
           <div class="flex items-center py-2 px-4 border-b-2 border-[#e8e0d4] bg-[#faf7f0]">
             <span class="w-10 shrink-0 text-center text-[11px] font-bold text-[#8c7e6e]">번호</span>
@@ -272,7 +287,7 @@ onMounted(() => {
         </div>
 
         <!-- 페이지네이션 -->
-        <div v-if="selectedMode !== 'hot' && totalPages > 1" class="flex justify-center items-center gap-1 mt-8 mb-4">
+        <div v-if="selectedMode !== 'hot' && selectedMode !== '공지' && totalPages > 1" class="flex justify-center items-center gap-1 mt-8 mb-4">
           <button @click="fetchPosts(Math.max(0, currentPage - 5))" :disabled="currentPage <= 0" class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all">«</button>
           <button @click="fetchPosts(Math.max(0, currentPage - 1))" :disabled="currentPage <= 0" class="min-w-8 h-8 md:min-w-9 md:h-9 px-1.5 rounded-xl text-sm text-ink hover:bg-white hover:border-ink hover:border-2 disabled:opacity-30 transition-all">‹</button>
           <button
