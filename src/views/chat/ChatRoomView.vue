@@ -48,9 +48,9 @@ async function scrollToBottom() {
   }
 }
 
-// 읽음 처리 + 네비바 뱃지 갱신
+// 읽음 처리 + 네비바 뱃지 갱신 (탭이 보이는 상태일 때만)
 async function markAsReadAndUpdate() {
-  if (!chatRoomId.value) return
+  if (!chatRoomId.value || document.visibilityState !== 'visible') return
   try {
     const { data } = await chatApi.markAsRead(chatRoomId.value)
     opponentLastReadAt.value = data.data?.opponentLastReadAt ?? null
@@ -58,6 +58,11 @@ async function markAsReadAndUpdate() {
     // 읽음 처리는 실패해도 채팅 화면 사용을 막지 않습니다.
   }
   chatStore.fetchUnreadCount()
+}
+
+// 탭 전환 시 다시 보이면 읽음 처리
+function handleVisibilityChange() {
+  if (document.visibilityState === 'visible') markAsReadAndUpdate()
 }
 
 // 채팅방 안에 있을 때 pendingReview 감지 → 즉시 말풍선 표시
@@ -157,8 +162,8 @@ async function loadRoomInfo() {
 // WebSocket 연결
 async function connectWebSocket() {
   // 기존 구독 먼저 해제
-  subscriptions.value.forEach((sub) => sub.unsubscribe())
-  subscriptions.value = []
+  subscriptions.forEach((sub) => sub.unsubscribe())
+  subscriptions = []
 
   // 기존 연결 끊기
   if (stompClient.value) {
@@ -312,6 +317,7 @@ onMounted(async () => {
   connectWebSocket()
   markAsReadAndUpdate()
   window.addEventListener('keydown', handleKeydown)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 
   // 채팅방 입장 시 대기 중인 별점 요청 확인
   if (chatStore.pendingReview) {
@@ -327,6 +333,7 @@ onUnmounted(() => {
   subscriptions = []
   stompClient.value?.deactivate()
   window.removeEventListener('keydown', handleKeydown)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
 
