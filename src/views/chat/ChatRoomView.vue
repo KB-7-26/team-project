@@ -21,6 +21,7 @@ const messages = ref([])
 const opponentName = ref('')
 const productInfo = ref({})
 const stompClient = ref(null)
+let subscriptions = []
 const messageListRef = ref(null)
 const showNewMessageBanner = ref(false)
 const opponentLastReadAt = ref(null)
@@ -60,28 +61,34 @@ async function markAsReadAndUpdate() {
 }
 
 // 채팅방 안에 있을 때 pendingReview 감지 → 즉시 말풍선 표시
-watch(() => chatStore.pendingReview, (val) => {
-  if (!val) return
-  currentTransactionId.value = val.transactionId
-  tradeCompleted.value = true
-  chatStore.clearPendingReview()
-  addReviewMessage()
-})
+watch(
+  () => chatStore.pendingReview,
+  (val) => {
+    if (!val) return
+    currentTransactionId.value = val.transactionId
+    tradeCompleted.value = true
+    chatStore.clearPendingReview()
+    addReviewMessage()
+  },
+)
 
 // 메시지 개수 변화를 watch (deep 대신 length 감지로 정확하게)
-watch(() => messages.value.length, (newLen, oldLen) => {
-  if (newLen <= oldLen) return
-  const lastMsg = messages.value[newLen - 1]
+watch(
+  () => messages.value.length,
+  (newLen, oldLen) => {
+    if (newLen <= oldLen) return
+    const lastMsg = messages.value[newLen - 1]
 
-  if (lastMsg.senderType === 'me') {
-    // 내가 보낸 메시지 → 항상 맨 아래로
-    scrollToBottom()
-  } else {
-    // 상대방 메시지 → 맨 아래에 있으면 스크롤, 아니면 배너
-    if (isAtBottom()) scrollToBottom()
-    else showNewMessageBanner.value = true
-  }
-})
+    if (lastMsg.senderType === 'me') {
+      // 내가 보낸 메시지 → 항상 맨 아래로
+      scrollToBottom()
+    } else {
+      // 상대방 메시지 → 맨 아래에 있으면 스크롤, 아니면 배너
+      if (isAtBottom()) scrollToBottom()
+      else showNewMessageBanner.value = true
+    }
+  },
+)
 
 const chatRoomId = computed(() => Number(route.params.chatRoomId))
 const myId = computed(() => authStore.user?.id)
@@ -101,7 +108,7 @@ async function loadMessages() {
   if (!chatRoomId.value) return
   try {
     const { data } = await chatApi.getMessages(chatRoomId.value)
-    messages.value = data.data.map(msg => ({
+    messages.value = data.data.map((msg) => ({
       messageId: msg.messageId,
       senderId: msg.senderId,
       senderNickname: msg.senderNickname,
@@ -126,7 +133,7 @@ async function loadMessages() {
 async function loadRoomInfo() {
   try {
     const { data } = await chatApi.getChatRooms()
-    const room = data.data.find(r => r.chatRoomId === chatRoomId.value)
+    const room = data.data.find((r) => r.chatRoomId === chatRoomId.value)
     if (room) {
       opponentName.value = room.opponentNickname
       productInfo.value = {
@@ -149,7 +156,11 @@ async function loadRoomInfo() {
 
 // WebSocket 연결
 async function connectWebSocket() {
-  // 기존 연결 먼저 끊기
+  // 기존 구독 먼저 해제
+  subscriptions.value.forEach((sub) => sub.unsubscribe())
+  subscriptions.value = []
+
+  // 기존 연결 끊기
   if (stompClient.value) {
     stompClient.value.deactivate()
     stompClient.value = null
@@ -167,16 +178,21 @@ async function connectWebSocket() {
       console.error('❌ STOMP 에러:', frame)
     },
     onConnect: () => {
-      // 읽음 이벤트 구독 - 상대방이 읽으면 opponentLastReadAt 갱신
-      client.subscribe(`/topic/chat/${chatRoomId.value}/read`, (frame) => {
+      // 재연결 시 중복 구독 방지: 이 클라이언트가 여전히 활성 클라이언트인지 확인
+      if (stompClient.value !== client) return
+
+      // 재연결 시 이전 구독 해제 후 재구독
+      subscriptions.forEach((sub) => sub.unsubscribe())
+      subscriptions = []
+
+      const readSub = client.subscribe(`/topic/chat/${chatRoomId.value}/read`, (frame) => {
         const { readerId, readAt } = JSON.parse(frame.body)
         if (readerId !== myId.value) {
           opponentLastReadAt.value = readAt
         }
       })
 
-      // 채팅방 구독 - 새 메시지 실시간 수신
-      client.subscribe(`/topic/chat/${chatRoomId.value}`, (frame) => {
+      const msgSub = client.subscribe(`/topic/chat/${chatRoomId.value}`, (frame) => {
         const msg = JSON.parse(frame.body)
         const isMyMessage = msg.senderId === myId.value
         messages.value.push({
@@ -189,11 +205,12 @@ async function connectWebSocket() {
           rawCreatedAt: msg.createdAt,
         })
         chatStore.triggerListRefresh(chatRoomId.value, formatTime(msg.createdAt), msg.content)
-        // 상대방 메시지이고 현재 맨 아래에서 보고 있으면 즉시 읽음 처리
         if (!isMyMessage && isAtBottom()) {
           markAsReadAndUpdate()
         }
       })
+
+      subscriptions = [readSub, msgSub]
     },
   })
 
@@ -219,7 +236,7 @@ function shouldShowProfile(index) {
 
 // 별점 메시지 추가
 function addReviewMessage() {
-  if (messages.value.some(m => m.type === 'review')) return
+  if (messages.value.some((m) => m.type === 'review')) return
   messages.value.push({
     messageId: 'review-' + Date.now(),
     type: 'review',
@@ -257,7 +274,7 @@ async function handleReviewSubmit(rating) {
   } catch (e) {
     console.error('리뷰 작성 실패', e)
   } finally {
-    messages.value = messages.value.filter(m => m.type !== 'review')
+    messages.value = messages.value.filter((m) => m.type !== 'review')
     chatStore.clearRoomReview(chatRoomId.value)
   }
 }
@@ -282,7 +299,10 @@ watch(chatRoomId, async () => {
 
 function handleKeydown(e) {
   if (e.key !== 'Escape') return
-  if (showTradeConfirm.value) { showTradeConfirm.value = false; return }
+  if (showTradeConfirm.value) {
+    showTradeConfirm.value = false
+    return
+  }
   router.push('/chats')
 }
 
@@ -303,6 +323,8 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  subscriptions.forEach((sub) => sub.unsubscribe())
+  subscriptions = []
   stompClient.value?.deactivate()
   window.removeEventListener('keydown', handleKeydown)
 })
@@ -342,7 +364,9 @@ onUnmounted(() => {
           :content="message.content"
           :createdAt="message.createdAt"
           :reportProductId="productInfo.productId"
-          :isUnread="message.senderType === 'me' && (opponentLastReadAt === null || message.rawCreatedAt > opponentLastReadAt)"
+          :isUnread="
+            message.senderType === 'me' && (opponentLastReadAt === null || message.rawCreatedAt > opponentLastReadAt)
+          "
           :showTime="message.type === 'review' ? false : shouldShowTime(index)"
           :showProfile="message.type === 'review' ? false : shouldShowProfile(index)"
           :opponentName="opponentName"
@@ -365,10 +389,13 @@ onUnmounted(() => {
     <MessageInput :chatRoomId="chatRoomId" @send="handleSend" />
   </div>
 
-
   <!-- 거래완료 확인 모달 -->
   <Teleport to="body">
-    <div v-if="showTradeConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-ink/40" @click.self="showTradeConfirm = false">
+    <div
+      v-if="showTradeConfirm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-ink/40"
+      @click.self="showTradeConfirm = false"
+    >
       <div class="bg-white border-2 border-ink rounded-2xl shadow-[6px_6px_0_#1c1712] p-6 w-80 flex flex-col gap-4">
         <p class="font-bold text-ink text-lg">거래를 완료할까요?</p>
         <p class="text-sm text-[#8c7e6e] -mt-2">상품이 판매완료 상태로 변경돼요.</p>
@@ -376,12 +403,16 @@ onUnmounted(() => {
           <button
             @click="showTradeConfirm = false"
             class="flex-1 py-2.5 rounded-xl border-2 border-ink font-bold text-sm text-ink hover:bg-gray-50 transition shadow-[2px_2px_0_#1c1712]"
-          >취소</button>
+          >
+            취소
+          </button>
           <button
             @click="completeTrade"
             :disabled="isCompleting"
             class="flex-1 py-2.5 rounded-xl bg-[#ffe066] border-2 border-ink font-bold text-sm text-ink hover:bg-primary/20 transition shadow-[2px_2px_0_#1c1712] disabled:opacity-50"
-          >{{ isCompleting ? '처리 중...' : '거래완료' }}</button>
+          >
+            {{ isCompleting ? '처리 중...' : '거래완료' }}
+          </button>
         </div>
       </div>
     </div>
