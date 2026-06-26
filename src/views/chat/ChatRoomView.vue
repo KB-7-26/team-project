@@ -20,7 +20,7 @@ const chatStore = useChatStore()
 const messages = ref([])
 const opponentName = ref('')
 const productInfo = ref({})
-const stompClient = ref(null)
+let stompClient = null
 let subscriptions = []
 const messageListRef = ref(null)
 const showNewMessageBanner = ref(false)
@@ -166,9 +166,9 @@ async function connectWebSocket() {
   subscriptions = []
 
   // 기존 연결 끊기
-  if (stompClient.value) {
-    stompClient.value.deactivate()
-    stompClient.value = null
+  if (stompClient) {
+    stompClient.deactivate()
+    stompClient = null
   }
 
   const token = await auth.currentUser?.getIdToken()
@@ -184,8 +184,7 @@ async function connectWebSocket() {
     },
     onConnect: () => {
       // 재연결 시 중복 구독 방지: 이 클라이언트가 여전히 활성 클라이언트인지 확인
-      if (stompClient.value !== client) return
-
+      if (stompClient !== client) return
       // 재연결 시 이전 구독 해제 후 재구독
       subscriptions.forEach((sub) => sub.unsubscribe())
       subscriptions = []
@@ -200,7 +199,7 @@ async function connectWebSocket() {
       const msgSub = client.subscribe(`/topic/chat/${chatRoomId.value}`, (frame) => {
         const msg = JSON.parse(frame.body)
         const isMyMessage = msg.senderId === myId.value
-        messages.value.push({
+        const realMsg = {
           messageId: msg.messageId,
           senderId: msg.senderId,
           senderNickname: msg.senderNickname,
@@ -208,7 +207,18 @@ async function connectWebSocket() {
           content: msg.content,
           createdAt: formatTime(msg.createdAt),
           rawCreatedAt: msg.createdAt,
-        })
+        }
+        if (isMyMessage) {
+          const tempIndex = messages.value.findLastIndex(
+            (m) => typeof m.messageId === 'string' && m.messageId.startsWith('temp-') && m.content === msg.content,
+          )
+          if (tempIndex !== -1) {
+            messages.value.splice(tempIndex, 1, realMsg)
+            chatStore.triggerListRefresh(chatRoomId.value, formatTime(msg.createdAt), msg.content)
+            return
+          }
+        }
+        messages.value.push(realMsg)
         chatStore.triggerListRefresh(chatRoomId.value, formatTime(msg.createdAt), msg.content)
         if (!isMyMessage && isAtBottom()) {
           markAsReadAndUpdate()
@@ -219,7 +229,7 @@ async function connectWebSocket() {
     },
   })
 
-  stompClient.value = client
+  stompClient = client
   client.activate()
 }
 
@@ -286,8 +296,18 @@ async function handleReviewSubmit(rating) {
 
 // 메시지 전송
 function handleSend(content) {
-  if (!stompClient.value?.connected) return
-  stompClient.value.publish({
+  if (!stompClient?.connected) return
+  const tempId = 'temp-' + Date.now()
+  messages.value.push({
+    messageId: tempId,
+    senderId: myId.value,
+    senderNickname: authStore.user?.nickname ?? '',
+    senderType: 'me',
+    content,
+    createdAt: formatTime(new Date().toISOString()),
+    rawCreatedAt: new Date().toISOString(),
+  })
+  stompClient.publish({
     destination: `/app/chat/${chatRoomId.value}/send`,
     body: JSON.stringify({ content }),
   })
@@ -331,7 +351,7 @@ onMounted(async () => {
 onUnmounted(() => {
   subscriptions.forEach((sub) => sub.unsubscribe())
   subscriptions = []
-  stompClient.value?.deactivate()
+  stompClient?.deactivate()
   window.removeEventListener('keydown', handleKeydown)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
