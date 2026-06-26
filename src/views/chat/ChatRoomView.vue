@@ -219,8 +219,8 @@ async function connectWebSocket() {
     },
   })
 
-  client.activate()
   stompClient.value = client
+  client.activate()
 }
 
 // 시간 표시 여부: 다음 메시지가 다른 사람이거나 다른 분이거나 마지막이면 표시
