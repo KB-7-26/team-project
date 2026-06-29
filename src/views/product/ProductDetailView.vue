@@ -20,6 +20,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 import UserProfileAvatar from '@/components/user/UserProfileAvatar.vue'
+import TrustBadge from '@/components/user/TrustBadge.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -251,7 +252,10 @@ watch(() => route.params.id, () => {
                   :imageUrl="product.sellerProfileImageUrl"
                   :reportProductId="product.id"
                 />
-                <p class="font-bold text-ink">{{ product.sellerNickname }}</p>
+                <div class="flex min-w-0 items-center gap-1.5">
+                  <p class="truncate font-bold text-ink">{{ product.sellerNickname }}</p>
+                  <TrustBadge :score="product.sellerTrustScore ?? 50" size="xs" />
+                </div>
               </div>
               <template v-if="authStore.user?.id === product.sellerId">
                 <button
@@ -320,7 +324,10 @@ watch(() => route.params.id, () => {
               :imageUrl="product.sellerProfileImageUrl"
               :reportProductId="product.id"
             />
-            <p class="font-bold text-ink">{{ product.sellerNickname }}</p>
+            <div class="flex min-w-0 items-center gap-1.5">
+              <p class="truncate font-bold text-ink">{{ product.sellerNickname }}</p>
+              <TrustBadge :score="product.sellerTrustScore ?? 50" size="xs" />
+            </div>
           </div>
           <template v-if="authStore.user?.id === product.sellerId">
             <button
@@ -496,3 +503,4 @@ watch(() => route.params.id, () => {
 .toast-enter-from { opacity: 0; transform: translateX(-50%) translateY(12px); }
 .toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(12px); }
 </style>
+
