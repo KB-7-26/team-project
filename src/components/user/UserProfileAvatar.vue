@@ -10,7 +10,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import { userProfileApi } from '@/api/userProfileApi'
 import { reportApi } from '@/api/reportApi'
-import TrustStars from '@/components/user/TrustStars.vue'
+import TrustBadge from '@/components/user/TrustBadge.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps({
@@ -194,7 +194,10 @@ defineExpose({ openProfile })
                 <UserCircleIcon v-else class="h-16 w-16" />
               </div>
 
-              <h3 class="mt-4 text-2xl font-extrabold text-ink">{{ displayNickname }}</h3>
+              <h3 class="mt-4 flex items-center justify-center gap-2 text-2xl font-extrabold text-ink">
+                <span>{{ displayNickname }}</span>
+                <TrustBadge :score="profile?.trustScore ?? 50" size="md" />
+              </h3>
               <p class="mt-2 rounded-full border border-ink bg-[#ffe066]/60 px-3 py-1 text-xs font-bold text-ink">
                 {{ profile?.cohort || '-' }}
               </p>
@@ -220,7 +223,7 @@ defineExpose({ openProfile })
                   <ShieldCheckIcon class="h-3.5 w-3.5 shrink-0 text-primary" />
                   <span class="text-xs font-bold text-[#8c7e6e]">신뢰도</span>
                 </div>
-                <TrustStars :score="profile?.trustScore ?? 0" size="lg" />
+                <TrustBadge :score="profile?.trustScore ?? 50" size="lg" />
               </div>
 
               <p
@@ -236,3 +239,4 @@ defineExpose({ openProfile })
     </div>
   </Teleport>
 </template>
+
