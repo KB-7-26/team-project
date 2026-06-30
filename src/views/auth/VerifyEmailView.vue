@@ -1,11 +1,10 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { sendEmailVerification } from 'firebase/auth'
+import { useRoute, useRouter } from 'vue-router'
+import { applyActionCode, sendEmailVerification } from 'firebase/auth'
 import {
   ArrowPathIcon,
   ArrowRightOnRectangleIcon,
-  CheckBadgeIcon,
   EnvelopeIcon,
 } from '@heroicons/vue/24/outline'
 import { auth } from '@/firebase'
@@ -15,9 +14,10 @@ defineOptions({
   name: 'VerifyEmailView',
 })
 
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-const isChecking = ref(false)
+const isApplyingAction = ref(false)
 const isResending = ref(false)
 const statusMessage = ref('')
 const isError = ref(false)
@@ -25,23 +25,95 @@ const resendCooldown = ref(0)
 
 let cooldownTimer = null
 
+const getQueryValue = (value) => (Array.isArray(value) ? value[0] : value)
+
+const actionMode = computed(() => getQueryValue(route.query.mode))
+const actionCode = computed(() => getQueryValue(route.query.oobCode))
+const isEmailVerificationAction = computed(
+  () => actionMode.value === 'verifyEmail' && Boolean(actionCode.value),
+)
 const email = computed(() => authStore.user?.email || authStore.firebaseUser?.email || '')
 const defaultMessage = computed(() =>
-  email.value
-    ? `${email.value} 주소로 보낸 인증 메일을 확인해주세요.`
-    : '가입한 이메일 주소로 보낸 인증 메일을 확인해주세요.',
+  isEmailVerificationAction.value
+    ? '이메일 인증을 완료하는 중입니다.'
+    : email.value
+      ? `${email.value} 주소로 보낸 인증 메일을 확인해주세요.`
+      : '가입한 이메일 주소로 보낸 인증 메일을 확인해주세요.',
+)
+const subtitle = computed(() =>
+  isEmailVerificationAction.value
+    ? '인증 링크를 확인하고 있습니다'
+    : '메일함에서 인증 링크를 확인해주세요',
 )
 const message = computed(() => statusMessage.value || defaultMessage.value)
-const canResend = computed(() => !isResending.value && resendCooldown.value === 0)
+const canResend = computed(
+  () => !isApplyingAction.value && !isResending.value && resendCooldown.value === 0,
+)
+const showWaitingActions = computed(() => !isEmailVerificationAction.value || isError.value)
+const isFirebaseAuthenticated = computed(() => Boolean(authStore.firebaseUser))
 
 const firebaseErrorMessages = {
+  'auth/expired-action-code': '인증 링크가 만료되었습니다. 인증 메일을 다시 받아주세요.',
+  'auth/invalid-action-code': '인증 링크가 올바르지 않거나 이미 사용되었습니다.',
   'auth/too-many-requests': '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+  'auth/user-disabled': '비활성화된 계정입니다.',
   'auth/network-request-failed': '네트워크 연결을 확인해주세요.',
 }
 
 const setMessage = (messageText, error = false) => {
   statusMessage.value = messageText
   isError.value = error
+}
+
+const syncVerifiedUser = async () => {
+  const user = auth.currentUser
+
+  if (!user) {
+    return false
+  }
+
+  await user.reload()
+  const refreshedUser = auth.currentUser
+
+  if (!refreshedUser?.emailVerified) {
+    return false
+  }
+
+  await refreshedUser.getIdToken(true)
+  await authStore.verifyEmail()
+  await authStore.refreshMe()
+  return true
+}
+
+const completeEmailAction = async () => {
+  if (isApplyingAction.value || !isEmailVerificationAction.value) return
+
+  isApplyingAction.value = true
+  setMessage('이메일 인증을 완료하는 중입니다.')
+
+  try {
+    await applyActionCode(auth, actionCode.value)
+
+    if (!auth.currentUser) {
+      setMessage('이메일 인증이 완료되었습니다. 다시 로그인해주세요.')
+      router.replace('/login')
+      return
+    }
+
+    const synced = await syncVerifiedUser()
+
+    if (!synced) {
+      setMessage('인증은 완료되었지만 로그인 정보를 갱신하지 못했습니다. 다시 로그인해주세요.')
+      router.replace('/login')
+      return
+    }
+
+    router.replace('/')
+  } catch (error) {
+    setMessage(firebaseErrorMessages[error.code] || '이메일 인증을 완료하지 못했습니다.', true)
+  } finally {
+    isApplyingAction.value = false
+  }
 }
 
 const startResendCooldown = () => {
@@ -77,34 +149,8 @@ const resendVerificationEmail = async () => {
   }
 }
 
-const checkVerification = async () => {
-  if (isChecking.value) return
-
-  const user = auth.currentUser
-  if (!user) {
-    router.replace('/login')
-    return
-  }
-
-  isChecking.value = true
-  try {
-    await user.reload()
-    const refreshedUser = auth.currentUser
-
-    if (!refreshedUser?.emailVerified) {
-      setMessage('아직 이메일 인증이 완료되지 않았습니다.', true)
-      return
-    }
-
-    await refreshedUser.getIdToken(true)
-    await authStore.verifyEmail()
-    await authStore.refreshMe()
-    router.replace('/')
-  } catch (error) {
-    setMessage(error.response?.data?.message || '이메일 인증 상태를 확인하지 못했습니다.', true)
-  } finally {
-    isChecking.value = false
-  }
+const goLogin = () => {
+  router.replace('/login')
 }
 
 const logout = async () => {
@@ -112,7 +158,12 @@ const logout = async () => {
   router.replace('/login')
 }
 
-onMounted(() => {
+onMounted(async () => {
+  if (isEmailVerificationAction.value) {
+    await completeEmailAction()
+    return
+  }
+
   if (!auth.currentUser) {
     router.replace('/login')
     return
@@ -176,7 +227,7 @@ onBeforeUnmount(() => {
           </div>
           <h1 class="font-sketch text-5xl font-black text-ink leading-none">이메일 인증</h1>
           <div class="w-32 h-2.5 bg-[#ffe066]/85 mt-1 mb-2.5 rounded-sm"></div>
-          <p class="text-[11px] font-bold text-ink/50">메일함에서 인증 링크를 확인해주세요</p>
+          <p class="text-[11px] font-bold text-ink/50">{{ subtitle }}</p>
         </div>
 
         <div
@@ -189,21 +240,12 @@ onBeforeUnmount(() => {
           "
           aria-live="polite"
         >
-          <span v-if="isError">⚠️ </span>{{ message }}
+          {{ message }}
         </div>
 
-        <div class="flex flex-col gap-3">
+        <div v-if="showWaitingActions" class="flex flex-col gap-3">
           <button
-            type="button"
-            class="verify-btn primary-btn"
-            :disabled="isChecking"
-            @click="checkVerification"
-          >
-            <CheckBadgeIcon class="h-5 w-5" />
-            <span>{{ isChecking ? '확인 중' : '인증 완료했어요' }}</span>
-          </button>
-
-          <button
+            v-if="isFirebaseAuthenticated"
             type="button"
             class="verify-btn secondary-btn"
             :disabled="!canResend"
@@ -218,12 +260,23 @@ onBeforeUnmount(() => {
           </button>
 
           <button
+            v-if="isFirebaseAuthenticated"
             type="button"
             class="logout-link mt-1"
             @click="logout"
           >
             <ArrowRightOnRectangleIcon class="h-5 w-5" />
             <span>로그아웃</span>
+          </button>
+
+          <button
+            v-else
+            type="button"
+            class="verify-btn secondary-btn"
+            @click="goLogin"
+          >
+            <ArrowRightOnRectangleIcon class="h-5 w-5" />
+            <span>로그인으로 이동</span>
           </button>
         </div>
       </div>
@@ -262,12 +315,6 @@ onBeforeUnmount(() => {
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
-.primary-btn {
-  background: #ffe066;
-  color: #1c1712;
-  box-shadow: 2px 3px 0 rgba(28, 23, 18, 0.45);
-}
-
 .secondary-btn {
   background: rgba(255, 255, 255, 0.55);
   border-color: rgba(28, 23, 18, 0.18);
@@ -291,10 +338,6 @@ onBeforeUnmount(() => {
 .verify-btn:not(:disabled):hover,
 .logout-link:hover {
   transform: translate(-1px, -1px);
-}
-
-.primary-btn:not(:disabled):hover {
-  box-shadow: 3px 4px 0 rgba(28, 23, 18, 0.45);
 }
 
 .verify-btn:not(:disabled):active,
