@@ -28,11 +28,11 @@ const images = ref([])
 const fileInput = ref(null)
 
 const COMPRESSION_OPTIONS = {
-  maxSizeMB: 0.8,
+  maxSizeMB: 1.5,
   maxWidthOrHeight: 1920,
   useWebWorker: true,
 }
-const MAX_FILE_SIZE = 5 * 1024 * 1024
+const MAX_FILE_SIZE = 8 * 1024 * 1024
 const MAX_IMAGES = 5
 
 const handleFileChange = async (e) => {

@@ -42,18 +42,9 @@ const loginHandler = async () => {
   const isEmailEmpty = !email.value.trim()
   const isPasswordEmpty = !password.value.trim()
   invalidFields.value = { email: isEmailEmpty, password: isPasswordEmpty }
-  if (isEmailEmpty && isPasswordEmpty) {
-    formErrorMessage.value = '이메일과 비밀번호를 입력해주세요'
-    return
-  }
-  if (isEmailEmpty) {
-    formErrorMessage.value = '이메일을 입력해주세요'
-    return
-  }
-  if (isPasswordEmpty) {
-    formErrorMessage.value = '비밀번호를 입력해주세요'
-    return
-  }
+  if (isEmailEmpty && isPasswordEmpty) { formErrorMessage.value = '이메일과 비밀번호를 입력해주세요'; return }
+  if (isEmailEmpty) { formErrorMessage.value = '이메일을 입력해주세요'; return }
+  if (isPasswordEmpty) { formErrorMessage.value = '비밀번호를 입력해주세요'; return }
   if (!emailPattern.test(email.value.trim())) {
     invalidFields.value.email = true
     formErrorMessage.value = '올바른 이메일 형식이 아닙니다'
@@ -93,53 +84,47 @@ const googleLoginHandler = async () => {
 
 <template>
   <main class="wall min-h-screen flex items-center justify-center px-6 py-16">
+
     <!-- SVG 필터: 찢긴 종이 가장자리 -->
-    <svg style="position: absolute; width: 0; height: 0; overflow: hidden" aria-hidden="true">
+    <svg style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
       <defs>
         <filter id="torn-edge" x="-8%" y="-8%" width="116%" height="116%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.048" numOctaves="4" seed="11" result="noise" />
-          <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G" />
+          <feTurbulence type="fractalNoise" baseFrequency="0.048" numOctaves="4" seed="11" result="noise"/>
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G"/>
         </filter>
       </defs>
     </svg>
 
     <!-- 포스트잇 래퍼 (전체 애니메이션 대상) -->
     <div class="note-wrapper relative w-full max-w-sm">
+
       <!-- 핑크 테이프 -->
-      <div
-        class="tape absolute z-20"
-        style="
-          top: -17px;
-          left: 50%;
-          width: 105px;
-          height: 30px;
-          background: rgba(242, 182, 178, 0.83);
-          border-radius: 3px;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.09);
-          transform: translateX(-50%);
-        "
-      ></div>
+      <div class="tape absolute z-20"
+           style="top:-17px; left:50%; width:105px; height:30px;
+                  background:rgba(242,182,178,0.83);
+                  border-radius:3px;
+                  box-shadow:0 2px 6px rgba(0,0,0,0.09);
+                  transform:translateX(-50%);">
+      </div>
 
       <!-- 파란 포스트잇 배경 (찢긴 가장자리 필터) -->
-      <div
-        class="absolute inset-0"
-        style="background: #bdd8f2; filter: url(#torn-edge); border-radius: 4px; z-index: 0"
-      ></div>
+      <div class="absolute inset-0"
+           style="background:#bdd8f2;
+                  filter:url(#torn-edge);
+                  border-radius:4px;
+                  z-index:0;">
+      </div>
 
       <!-- 그림자 -->
-      <div
-        class="absolute inset-0"
-        style="
-          box-shadow:
-            4px 10px 28px rgba(0, 0, 0, 0.14),
-            0 2px 6px rgba(0, 0, 0, 0.07);
-          border-radius: 4px;
-          z-index: 0;
-        "
-      ></div>
+      <div class="absolute inset-0"
+           style="box-shadow:4px 10px 28px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.07);
+                  border-radius:4px;
+                  z-index:0;">
+      </div>
 
       <!-- 콘텐츠 (필터 없음) -->
       <div class="relative z-10 px-9 pt-12 pb-9">
+
         <!-- 타이틀 -->
         <div class="mb-7">
           <h1 class="font-sketch text-5xl font-black text-ink leading-none">낙서장</h1>
@@ -151,7 +136,7 @@ const googleLoginHandler = async () => {
         <div
           v-if="isFormError"
           class="mb-5 px-3 py-2 text-xs font-bold text-red-700 rounded-xl"
-          style="background: rgba(255, 255, 255, 0.55); border: 1px solid rgba(239, 68, 68, 0.35)"
+          style="background:rgba(255,255,255,0.55); border:1px solid rgba(239,68,68,0.35);"
           aria-live="polite"
           id="login-form-message"
         >
@@ -194,7 +179,7 @@ const googleLoginHandler = async () => {
             type="submit"
             :disabled="isSubmitting || isGoogleSubmitting"
             class="login-btn mt-1 py-3 rounded-xl border-2 border-ink bg-[#ffe066] text-ink font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            style="box-shadow: 2px 3px 0 rgba(28, 23, 18, 0.45)"
+            style="box-shadow:2px 3px 0 rgba(28,23,18,0.45);"
           >
             {{ isSubmitting ? '로그인 중...' : '로그인 ✓' }}
           </button>
@@ -212,10 +197,10 @@ const googleLoginHandler = async () => {
           type="button"
           :disabled="isSubmitting || isGoogleSubmitting"
           class="google-btn w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-ink transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          style="background: rgba(255, 255, 255, 0.55); border: 1px solid rgba(28, 23, 18, 0.18)"
+          style="background:rgba(255,255,255,0.55); border:1px solid rgba(28,23,18,0.18);"
           @click="googleLoginHandler"
         >
-          <span class="font-extrabold" style="color: #4285f4">G</span>
+          <span class="font-extrabold" style="color:#4285F4">G</span>
           {{ isGoogleSubmitting ? '연결 중...' : 'Google로 계속하기' }}
         </button>
 
@@ -229,8 +214,10 @@ const googleLoginHandler = async () => {
             회원가입
           </RouterLink>
         </p>
+
       </div>
     </div>
+
   </main>
 </template>
 
@@ -242,23 +229,11 @@ const googleLoginHandler = async () => {
 
 /* 포스트잇이 벽에 붙으며 흔들리는 애니메이션 */
 @keyframes note-stick {
-  0% {
-    opacity: 0;
-    transform: rotate(-10deg) translateY(-44px) scale(0.9);
-  }
-  52% {
-    opacity: 1;
-    transform: rotate(1.5deg) translateY(6px) scale(1.01);
-  }
-  70% {
-    transform: rotate(-0.8deg) translateY(-2px) scale(1);
-  }
-  85% {
-    transform: rotate(0.4deg) translateY(0.5px);
-  }
-  100% {
-    transform: rotate(0deg) translateY(0);
-  }
+  0%   { opacity: 0; transform: rotate(-10deg) translateY(-44px) scale(0.9); }
+  52%  { opacity: 1; transform: rotate(1.5deg) translateY(6px) scale(1.01); }
+  70%  { transform: rotate(-0.8deg) translateY(-2px) scale(1); }
+  85%  { transform: rotate(0.4deg) translateY(0.5px); }
+  100% { transform: rotate(0deg) translateY(0); }
 }
 
 .note-wrapper {
