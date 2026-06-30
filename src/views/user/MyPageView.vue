@@ -774,7 +774,7 @@ watch(selectedSaleStatus, () => {
                     >
                       <span>{{ profile.nickname }}</span>
                       <!-- 별 위치 조절: -ml은 왼쪽으로 붙이고, -mt는 위로 올립니다. 숫자를 키우면 더 많이 이동합니다. -->
-                      <TrustBadge :score="profileData.trustScore" size="sm" class="-ml-1 -mt-5" />
+                      <TrustBadge :score="profileData.trustScore" size="sm" class="-ml-1 -mt-1" />
                     </h3>
                     <div class="mt-2 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
                       <span

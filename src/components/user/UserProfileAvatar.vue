@@ -194,9 +194,14 @@ defineExpose({ openProfile })
                 <UserCircleIcon v-else class="h-16 w-16" />
               </div>
 
-              <h3 class="mt-4 flex items-center justify-center gap-2 text-2xl font-extrabold text-ink">
+              <h3 class="mt-4 flex items-center justify-center gap-1 text-2xl font-extrabold text-ink">
                 <span>{{ displayNickname }}</span>
-                <TrustBadge :score="profile?.trustScore ?? 50" size="md" />
+                <!-- 프로필 모달 이름 옆 별 위치 조절: class의 ml/mt 값만 바꾸면 됩니다. -->
+                <TrustBadge
+                  :score="profile?.trustScore ?? 50"
+                  size="md"
+                  class="-ml-1 -mt-2"
+                />
               </h3>
               <p class="mt-2 rounded-full border border-ink bg-[#ffe066]/60 px-3 py-1 text-xs font-bold text-ink">
                 {{ profile?.cohort || '-' }}
@@ -223,6 +228,7 @@ defineExpose({ openProfile })
                   <ShieldCheckIcon class="h-3.5 w-3.5 shrink-0 text-primary" />
                   <span class="text-xs font-bold text-[#8c7e6e]">신뢰도</span>
                 </div>
+                <!-- 큰 신뢰도 영역 별은 중앙 정렬 유지용이라 위치 class를 주지 않았습니다. -->
                 <TrustBadge :score="profile?.trustScore ?? 50" size="lg" />
               </div>
 
