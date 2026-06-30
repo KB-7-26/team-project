@@ -26,6 +26,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (needsVerification.value) return '/verify-email'
     return '/mypage'
   })
+  const isAdmin = computed(() => user.value?.role === 'ADMIN')
 
   function applyMeResponse(response) {
     profileRequired.value = response.profileRequired
@@ -111,6 +112,7 @@ export const useAuthStore = defineStore('auth', () => {
     needsVerification,
     needsSignupCompletion,
     signupCompletionPath,
+    isAdmin,
     initializeAuth,
     refreshMe,
     completeProfile,

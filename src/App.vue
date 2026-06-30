@@ -9,6 +9,7 @@ import ToastNotification from './components/common/ToastNotification.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useChatStore } from '@/stores/chat'
 import { auth } from '@/firebase'
+import { WS_BASE_URL } from '@/config/env'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -33,7 +34,7 @@ async function connectNotification() {
   if (!token) return
 
   const client = new Client({
-    brokerURL: 'ws://localhost:8080/ws',
+    brokerURL: WS_BASE_URL,
     reconnectDelay: 5000,
     connectHeaders: { Authorization: `Bearer ${token}` },
     onConnect: () => {

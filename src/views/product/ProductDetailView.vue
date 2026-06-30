@@ -22,6 +22,7 @@ import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 import AuthRequiredModal from '@/components/common/AuthRequiredModal.vue'
 import UserProfileAvatar from '@/components/user/UserProfileAvatar.vue'
 import { useAuthRequiredModal } from '@/composables/useAuthRequiredModal'
+import TrustBadge from '@/components/user/TrustBadge.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -254,7 +255,10 @@ watch(() => route.params.id, () => {
                   :imageUrl="product.sellerProfileImageUrl"
                   :reportProductId="product.id"
                 />
-                <p class="font-bold text-ink">{{ product.sellerNickname }}</p>
+                <div class="flex min-w-0 items-center gap-1.5">
+                  <p class="truncate font-bold text-ink">{{ product.sellerNickname }}</p>
+                  <TrustBadge :score="product.sellerTrustScore ?? 50" size="xs" />
+                </div>
               </div>
               <template v-if="authStore.user?.id === product.sellerId">
                 <button
@@ -274,7 +278,7 @@ watch(() => route.params.id, () => {
               </template>
               <template v-else>
                 <button
-                  @click="requireAuth() && pcProfileRef.openProfile()"
+                  @click="requireVerified() && pcProfileRef.openProfile()"
                   class="action-btn flex items-center justify-center gap-2 bg-white border-2 border-ink text-ink font-bold py-3 rounded-xl text-sm shadow-[3px_3px_0_#1c1712] transition-all"
                 >
                   <UserIcon class="w-5 h-5" />
@@ -323,7 +327,10 @@ watch(() => route.params.id, () => {
               :imageUrl="product.sellerProfileImageUrl"
               :reportProductId="product.id"
             />
-            <p class="font-bold text-ink">{{ product.sellerNickname }}</p>
+            <div class="flex min-w-0 items-center gap-1.5">
+              <p class="truncate font-bold text-ink">{{ product.sellerNickname }}</p>
+              <TrustBadge :score="product.sellerTrustScore ?? 50" size="xs" />
+            </div>
           </div>
           <template v-if="authStore.user?.id === product.sellerId">
             <button
@@ -343,7 +350,7 @@ watch(() => route.params.id, () => {
           </template>
           <template v-else>
             <button
-              @click="requireAuth() && mobileProfileRef.openProfile()"
+              @click="requireVerified() && mobileProfileRef.openProfile()"
               class="action-btn flex items-center justify-center gap-2 bg-white border-2 border-ink text-ink font-bold py-3 rounded-xl text-sm shadow-[3px_3px_0_#1c1712] transition-all"
             >
               <UserIcon class="w-5 h-5" />

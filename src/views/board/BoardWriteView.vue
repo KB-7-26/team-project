@@ -1,17 +1,19 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeftIcon, CameraIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
 import { useToastStore } from '@/stores/toast'
-
+import { useAuthStore } from '@/stores/auth'
 const router = useRouter()
 const route = useRoute()
+const auth = useAuthStore()
 
-const CATEGORIES = ['자유게시판', '공지', '전공', '비전공', '취업']
+const ALL_CATEGORIES = ['자유게시판', '공지', '전공', '비전공', '취업']
+const CATEGORIES = computed(() => auth.isAdmin ? ALL_CATEGORIES : ALL_CATEGORIES.filter(c => c !== '공지'))
 
-const initialCategory = CATEGORIES.includes(route.query.category) ? route.query.category : '자유게시판'
+const initialCategory = ALL_CATEGORIES.includes(route.query.category) && (route.query.category !== '공지' || auth.isAdmin) ? route.query.category : '자유게시판'
 const category = ref(initialCategory)
 const title = ref('')
 const content = ref('')
@@ -21,13 +23,38 @@ const contentError = ref(false)
 const { isLoading: isSubmitting, error: submitError, request } = useApiRequest()
 const toast = useToastStore()
 
+const images = ref([])
+const fileInput = ref(null)
+
+const handleFileChange = (e) => {
+  const files = Array.from(e.target.files)
+  const remaining = 5 - images.value.length
+  files.slice(0, remaining).forEach(file => {
+    images.value.push({ file, url: URL.createObjectURL(file) })
+  })
+  e.target.value = ''
+}
+
+const removeImage = (index) => {
+  URL.revokeObjectURL(images.value[index].url)
+  images.value.splice(index, 1)
+}
+
 const submit = async () => {
   titleError.value = !title.value.trim()
   contentError.value = !content.value.trim()
   if (titleError.value || contentError.value || isSubmitting.value) return
 
   const { ok, data } = await request(
-    () => boardApi.createPost(title.value.trim(), content.value.trim(), category.value),
+    async () => {
+      const post = await boardApi.createPost(title.value.trim(), content.value.trim(), category.value)
+      if (images.value.length > 0) {
+        const formData = new FormData()
+        images.value.forEach(({ file }) => formData.append('images', file))
+        await boardApi.uploadPostImages(post.id, formData)
+      }
+      return post
+    },
     { errorMessage: '게시글 등록에 실패했습니다. 다시 시도해주세요.' },
   )
   if (ok) {
@@ -94,6 +121,38 @@ const submit = async () => {
                 :class="contentError ? 'border-red-400 focus:border-red-400' : 'border-[#c8bca8] focus:border-ink'"
               />
               <p v-if="contentError" class="text-xs text-red-400 font-medium">내용을 입력해주세요</p>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-bold text-ink">
+                이미지 첨부
+                <span class="font-normal text-[#8c7e6e]">(선택, 최대 5장)</span>
+              </label>
+              <div class="flex gap-2 flex-wrap">
+                <div
+                  v-if="images.length < 5"
+                  @click="fileInput.click()"
+                  class="w-20 h-20 border-2 border-dashed border-[#c8bca8] rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-ink hover:bg-[#ffe066]/10 transition-all"
+                >
+                  <CameraIcon class="w-5 h-5 text-[#8c7e6e]" />
+                  <span class="text-[10px] text-[#8c7e6e] font-bold">{{ images.length }}/5</span>
+                </div>
+                <div
+                  v-for="(img, index) in images"
+                  :key="index"
+                  class="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-ink shadow-[2px_2px_0_#1c1712]"
+                >
+                  <img :src="img.url" class="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    @click="removeImage(index)"
+                    class="absolute top-1 right-1 bg-ink rounded-full p-0.5 hover:scale-110 transition-transform cursor-pointer"
+                  >
+                    <XMarkIcon class="w-3 h-3 text-paper" />
+                  </button>
+                </div>
+                <input ref="fileInput" type="file" accept="image/*" multiple class="hidden" @change="handleFileChange" />
+              </div>
             </div>
 
             <p v-if="submitError" class="text-sm text-red-400">{{ submitError }}</p>

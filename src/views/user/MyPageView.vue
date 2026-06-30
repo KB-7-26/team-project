@@ -22,7 +22,7 @@ import {
 import ProductCard from '@/components/product/ProductCard.vue'
 import BoardPostCard from '@/components/board/BoardPostCard.vue'
 import ReauthModal from '@/components/user/ReauthModal.vue'
-import TrustStars from '@/components/user/TrustStars.vue'
+import TrustBadge from '@/components/user/TrustBadge.vue'
 import { productApi } from '@/api/productApi'
 import { useAuthStore } from '@/stores/auth'
 import { userBoardActivityApi } from '@/api/userBoardActivityApi'
@@ -112,7 +112,7 @@ const fallbackProfile = {
   email: 'minsu.swap@example.com',
   cohort: 'KB IT 5기',
   gender: 'M',
-  trustScore: 86,
+  trustScore: 50,
   isVerified: true,
   createdAt: '2026-03-18T10:30:00',
 }
@@ -770,14 +770,11 @@ watch(selectedSaleStatus, () => {
 
                   <div class="flex-1 text-center sm:text-left">
                     <h3
-                      class="flex flex-wrap items-center justify-center gap-3 text-2xl font-extrabold text-ink sm:justify-start"
+                      class="flex flex-wrap items-center justify-center gap-1 text-2xl font-extrabold text-ink sm:justify-start"
                     >
                       <span>{{ profile.nickname }}</span>
-                      <TrustStars
-                        :score="profileData.trustScore"
-                        size="sm"
-                        class="rounded-full border border-ink/30 bg-white/80 px-2 py-1"
-                      />
+                      <!-- 별 위치 조절: -ml은 왼쪽으로 붙이고, -mt는 위로 올립니다. 숫자를 키우면 더 많이 이동합니다. -->
+                      <TrustBadge :score="profileData.trustScore" size="sm" class="-ml-1 -mt-5" />
                     </h3>
                     <div class="mt-2 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
                       <span
@@ -1235,6 +1232,22 @@ watch(selectedSaleStatus, () => {
                 >
                   탈퇴하기
                 </button>
+              </div>
+
+              <div
+                v-if="authStore.isAdmin"
+                class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <p class="text-sm font-bold text-[#cc5a3a]">관리자 페이지</p>
+                  <p class="text-xs text-[#8c7e6e] mt-0.5">공지·신고·유저를 관리합니다</p>
+                </div>
+                <RouterLink
+                  to="/admin"
+                  class="h-9 inline-flex items-center rounded-xl border-2 border-[#cc5a3a] bg-white px-4 text-sm font-extrabold text-[#cc5a3a] shadow-[2px_2px_0_#1c1712] transition hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_#1c1712]"
+                >
+                  이동하기
+                </RouterLink>
               </div>
 
               <div class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
