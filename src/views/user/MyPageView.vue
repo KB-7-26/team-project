@@ -219,14 +219,16 @@ const saleStatusMap = {
   hidden: '숨김',
 }
 
-const boardActivityMenuIds = ['myPosts', 'commentedPosts']
+const boardActivityMenuIds = ['myPosts', 'commentedPosts', 'likedPosts']
 const boardActivityDescriptions = {
   myPosts: '내가 작성한 낙서장 글을 모아봅니다',
   commentedPosts: '내가 댓글을 남긴 낙서장 글을 모아봅니다',
+  likedPosts: '내가 좋아요한 낙서장 글을 모아봅니다',
 }
 const boardActivityEmptyMessages = {
   myPosts: '아직 작성한 글이 없습니다',
   commentedPosts: '아직 댓글을 남긴 글이 없습니다',
+  likedPosts: '아직 좋아요한 글이 없습니다',
 }
 const menuItems = computed(() => menuSections.flatMap((section) => section.items))
 const activeMenu = computed(() => menuItems.value.find((item) => item.id === selectedMenu.value) || menuItems.value[0])
@@ -385,7 +387,9 @@ const fetchBoardActivityPosts = async (page = 0) => {
     const pageData =
       selectedMenu.value === 'myPosts'
         ? await userBoardActivityApi.getMyPosts(page, 10)
-        : await userBoardActivityApi.getMyCommentedPosts(page, 10)
+        : selectedMenu.value === 'commentedPosts'
+          ? await userBoardActivityApi.getMyCommentedPosts(page, 10)
+          : await userBoardActivityApi.getMyLikedPosts(page, 10)
 
     boardActivityPosts.value = pageData.content
     boardActivityTotalPages.value = pageData.totalPages
