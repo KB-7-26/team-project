@@ -19,7 +19,9 @@ import {
   UserIcon,
 } from '@heroicons/vue/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
+import AuthRequiredModal from '@/components/common/AuthRequiredModal.vue'
 import UserProfileAvatar from '@/components/user/UserProfileAvatar.vue'
+import { useAuthRequiredModal } from '@/composables/useAuthRequiredModal'
 import TrustBadge from '@/components/user/TrustBadge.vue'
 
 const route = useRoute()
@@ -34,9 +36,15 @@ const recentlyViewed = ref([])
 const showDeleteConfirm = ref(false)
 const isDeleting = ref(false)
 const copied = ref(false)
-const showLoginPrompt = ref(false)
 const pcProfileRef = ref(null)
 const mobileProfileRef = ref(null)
+const {
+  authRequiredModalOpen,
+  authRequiredModalMode,
+  closeAuthRequiredModal,
+  confirmAuthRequired,
+  requireVerified,
+} = useAuthRequiredModal()
 
 async function deleteProduct() {
   if (isDeleting.value) return
@@ -83,26 +91,21 @@ const next = () => {
   startAutoSlide()
 }
 
-function requireAuth() {
-  if (!authStore.isLoggedIn) { showLoginPrompt.value = true; return false }
-  return true
-}
-
 async function shareProduct() {
-  if (!requireAuth()) return
+  if (!requireVerified()) return
   await navigator.clipboard.writeText(window.location.href)
   copied.value = true
   setTimeout(() => { copied.value = false }, 2000)
 }
 
 async function startChat() {
-  if (!requireAuth()) return
+  if (!requireVerified()) return
   const { data } = await chatApi.createChatRoom(product.value.id)
   router.push(`/chats/${data.data.chatRoomId}`)
 }
 
 const toggleLike = async () => {
-  if (!requireAuth()) return
+  if (!requireVerified()) return
   const prev = liked.value
   liked.value = !liked.value
   try {
@@ -122,7 +125,7 @@ async function loadProduct() {
     product.value = data
     startAutoSlide()
 
-    if (authStore.isLoggedIn) {
+    if (authStore.isVerified) {
       const { data: favorites } = await productApi.getMyFavorites()
       liked.value = favorites.some((p) => p.id === data.id)
     }
@@ -153,7 +156,7 @@ async function loadProduct() {
 function handleKeydown(e) {
   if (e.key !== 'Escape') return
   if (showDeleteConfirm.value) { showDeleteConfirm.value = false; return }
-  if (showLoginPrompt.value) { showLoginPrompt.value = false; return }
+  if (authRequiredModalOpen.value) { closeAuthRequiredModal(); return }
 }
 
 onMounted(() => {
@@ -275,7 +278,7 @@ watch(() => route.params.id, () => {
               </template>
               <template v-else>
                 <button
-                  @click="requireAuth() && pcProfileRef.openProfile()"
+                  @click="requireVerified() && pcProfileRef.openProfile()"
                   class="action-btn flex items-center justify-center gap-2 bg-white border-2 border-ink text-ink font-bold py-3 rounded-xl text-sm shadow-[3px_3px_0_#1c1712] transition-all"
                 >
                   <UserIcon class="w-5 h-5" />
@@ -347,7 +350,7 @@ watch(() => route.params.id, () => {
           </template>
           <template v-else>
             <button
-              @click="requireAuth() && mobileProfileRef.openProfile()"
+              @click="requireVerified() && mobileProfileRef.openProfile()"
               class="action-btn flex items-center justify-center gap-2 bg-white border-2 border-ink text-ink font-bold py-3 rounded-xl text-sm shadow-[3px_3px_0_#1c1712] transition-all"
             >
               <UserIcon class="w-5 h-5" />
@@ -453,25 +456,11 @@ watch(() => route.params.id, () => {
       </div>
     </Teleport>
 
-  <!-- 로그인 유도 모달 -->
-  <Teleport to="body">
-    <div v-if="showLoginPrompt" class="fixed inset-0 z-50 flex items-center justify-center bg-ink/40" @click.self="showLoginPrompt = false">
-      <div class="bg-white border-2 border-ink rounded-2xl shadow-[6px_6px_0_#1c1712] p-6 w-80 flex flex-col gap-4">
-        <p class="font-bold text-ink text-lg">로그인이 필요해요</p>
-        <p class="text-sm text-[#8c7e6e] -mt-2">로그인 후 이용할 수 있어요.</p>
-        <div class="flex gap-3">
-          <button
-            @click="showLoginPrompt = false"
-            class="flex-1 py-2.5 rounded-xl border-2 border-ink font-bold text-sm text-ink hover:bg-gray-50 transition shadow-[2px_2px_0_#1c1712]"
-          >취소</button>
-          <button
-            @click="router.push('/login')"
-            class="flex-1 py-2.5 rounded-xl bg-[#ffe066] border-2 border-ink font-bold text-sm text-ink hover:bg-primary/20 transition shadow-[2px_2px_0_#1c1712]"
-          >로그인</button>
-        </div>
-      </div>
-    </div>
-  </Teleport>
+  <AuthRequiredModal
+    v-model:open="authRequiredModalOpen"
+    :mode="authRequiredModalMode"
+    @confirm="confirmAuthRequired"
+  />
 
   <!-- URL 복사 토스트 -->
   <Teleport to="body">
@@ -503,4 +492,3 @@ watch(() => route.params.id, () => {
 .toast-enter-from { opacity: 0; transform: translateX(-50%) translateY(12px); }
 .toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(12px); }
 </style>
-

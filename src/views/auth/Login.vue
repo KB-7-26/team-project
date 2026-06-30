@@ -34,7 +34,17 @@ const clearError = (field) => {
 }
 
 const routeAfterLogin = () => {
-  router.push(authStore.needsProfile ? '/signup/profile' : '/')
+  if (authStore.needsProfile) {
+    router.push('/signup/profile')
+    return
+  }
+
+  if (authStore.needsVerification) {
+    router.push('/verify-email')
+    return
+  }
+
+  router.push('/')
 }
 
 const loginHandler = async () => {
