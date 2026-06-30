@@ -257,7 +257,12 @@ watch(() => route.params.id, () => {
                 />
                 <div class="flex min-w-0 items-center gap-1.5">
                   <p class="truncate font-bold text-ink">{{ product.sellerNickname }}</p>
-                  <TrustBadge :score="product.sellerTrustScore ?? 50" size="xs" />
+                  <!-- 상품 상세 이름 옆 별 위치 조절: class의 ml/mt 값만 바꾸면 됩니다. -->
+                  <TrustBadge
+                    :score="product.sellerTrustScore ?? 50"
+                    size="xs"
+                    class="-ml-1 -mt-1"
+                  />
                 </div>
               </div>
               <template v-if="authStore.user?.id === product.sellerId">
@@ -329,7 +334,12 @@ watch(() => route.params.id, () => {
             />
             <div class="flex min-w-0 items-center gap-1.5">
               <p class="truncate font-bold text-ink">{{ product.sellerNickname }}</p>
-              <TrustBadge :score="product.sellerTrustScore ?? 50" size="xs" />
+              <!-- 상품 상세 이름 옆 별 위치 조절: class의 ml/mt 값만 바꾸면 됩니다. -->
+              <TrustBadge
+                :score="product.sellerTrustScore ?? 50"
+                size="xs"
+                class="-ml-1 -mt-1"
+              />
             </div>
           </div>
           <template v-if="authStore.user?.id === product.sellerId">
