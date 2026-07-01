@@ -2,6 +2,7 @@ export const saleStatusMap = {
   available: '판매중',
   reserved: '거래중',
   sold: '거래완료',
+  completed: '판매완료',
 }
 
 export function mapProduct(p) {
