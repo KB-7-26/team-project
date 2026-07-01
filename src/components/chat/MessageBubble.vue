@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import { PencilSquareIcon } from '@heroicons/vue/24/outline'
 import UserProfileAvatar from '@/components/user/UserProfileAvatar.vue'
 
 defineProps({
@@ -45,7 +46,10 @@ function onTouchStar(event, i) {
   <!-- 별점 말풍선 - 내 메시지처럼 오른쪽 정렬 -->
   <div v-if="type === 'review'" class="flex justify-end">
     <div class="w-[85%] max-w-xs bg-white border-2 border-ink rounded-2xl rounded-br-sm shadow-[2px_2px_0_#1c1712] p-4 flex flex-col gap-3">
-      <p class="font-bold text-center text-sm text-ink">거래 어떠셨나요? ✏️</p>
+      <p class="font-bold text-center text-sm text-ink inline-flex items-center justify-center gap-1.5">
+        <span>거래 어떠셨나요?</span>
+        <PencilSquareIcon class="w-4 h-4 shrink-0" />
+      </p>
       <p class="text-xs text-center text-[#8c7e6e]">
         <span class="font-bold text-ink">{{ opponentName }}</span>님과의 거래가 만족스러우셨나요?
       </p>
@@ -82,11 +86,11 @@ function onTouchStar(event, i) {
       <!-- 별점 텍스트 -->
       <p class="text-xs font-bold text-center text-ink min-h-4">
         <template v-if="(reviewHover || reviewRating) === 0">별을 선택해주세요</template>
-        <template v-else-if="(reviewHover || reviewRating) <= 1">😢 별로였어요</template>
-        <template v-else-if="(reviewHover || reviewRating) <= 2">😕 아쉬웠어요</template>
-        <template v-else-if="(reviewHover || reviewRating) <= 3">😐 보통이에요</template>
-        <template v-else-if="(reviewHover || reviewRating) <= 4">😊 좋았어요</template>
-        <template v-else>🤩 최고였어요!</template>
+        <template v-else-if="(reviewHover || reviewRating) <= 1">별로였어요</template>
+        <template v-else-if="(reviewHover || reviewRating) <= 2">아쉬웠어요</template>
+        <template v-else-if="(reviewHover || reviewRating) <= 3">보통이에요</template>
+        <template v-else-if="(reviewHover || reviewRating) <= 4">좋았어요</template>
+        <template v-else>최고였어요!</template>
       </p>
 
       <!-- 버튼 -->

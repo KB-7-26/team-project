@@ -63,6 +63,7 @@ const reportButtonClass = computed(() => [
   reportStatus.value === 'done' ? 'text-primary' : 'text-red-500',
 ])
 const canReport = computed(() => (
+  authStore.isVerified &&
   Boolean(props.userId && props.reportProductId) &&
   Number(props.userId) !== authStore.user?.id
 ))
@@ -208,7 +209,7 @@ defineExpose({ openProfile })
               </p>
             </div>
 
-            <div class="mt-6 flex flex-col gap-2">
+            <div class="mt-3 flex flex-col gap-2">
               <div class="grid grid-cols-2 gap-2">
                 <div
                   v-for="stat in profileStats"
@@ -221,15 +222,6 @@ defineExpose({ openProfile })
                   </div>
                   <span class="shrink-0 text-base font-extrabold text-ink">{{ stat.value }}</span>
                 </div>
-              </div>
-
-              <div class="flex flex-col items-center gap-2 rounded-xl border border-[#c8bca8] bg-sub-bg px-4 py-3">
-                <div class="flex items-center gap-1.5">
-                  <ShieldCheckIcon class="h-3.5 w-3.5 shrink-0 text-primary" />
-                  <span class="text-xs font-bold text-[#8c7e6e]">신뢰도</span>
-                </div>
-                <!-- 큰 신뢰도 영역 별은 중앙 정렬 유지용이라 위치 class를 주지 않았습니다. -->
-                <TrustBadge :score="profile?.trustScore ?? 50" size="lg" />
               </div>
 
               <p

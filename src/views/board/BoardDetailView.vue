@@ -1,18 +1,26 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { TrashIcon, PencilSquareIcon, ArrowLeftIcon, HeartIcon, FlagIcon } from '@heroicons/vue/24/outline'
+import { TrashIcon, PencilSquareIcon, ArrowLeftIcon, HeartIcon, FlagIcon, EyeIcon } from '@heroicons/vue/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 import BoardCommentSection from '@/components/board/BoardCommentSection.vue'
 import ImageViewerModal from '@/components/common/ImageViewerModal.vue'
 import BoardReportModal from '@/components/board/BoardReportModal.vue'
+import AuthRequiredModal from '@/components/common/AuthRequiredModal.vue'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
+import { useAuthRequiredModal } from '@/composables/useAuthRequiredModal'
 import { useToastStore } from '@/stores/toast'
 import { formatDate } from '@/utils/formatDate'
 
 const route = useRoute()
 const router = useRouter()
+const {
+  authRequiredModalOpen,
+  authRequiredModalMode,
+  confirmAuthRequired,
+  requireVerified,
+} = useAuthRequiredModal()
 
 const postId = Number(route.params.id)
 const post = ref(null)
@@ -38,6 +46,7 @@ const openImageViewer = (index) => {
 }
 
 const submitPostReport = async (reason) => {
+  if (!requireVerified()) return
   if (isReporting.value) return
   isReporting.value = true
   try {
@@ -70,6 +79,7 @@ onMounted(async () => {
 })
 
 const togglePostLike = async () => {
+  if (!requireVerified()) return
   if (isLiking.value) return
   isLiking.value = true
   try {
@@ -151,8 +161,11 @@ const deletePost = async () => {
                 }"
               >{{ post.category }}</span>
               <span class="font-bold text-[#2d5a48] bg-[#96d4b4]/30 px-2 py-0.5 rounded-full">{{ post.displayName }}</span>
-              <span>{{ formatDate(post.createdAt) }}</span>
-              <span>👁 {{ post.viewCount }}</span>
+                <span>{{ formatDate(post.createdAt) }}</span>
+                <span class="inline-flex items-center gap-1">
+                  <EyeIcon class="w-3.5 h-3.5 shrink-0" />
+                  <span>{{ post.viewCount }}</span>
+                </span>
             </div>
             <p class="text-base text-ink leading-relaxed whitespace-pre-line">{{ post.content }}</p>
 
@@ -191,7 +204,7 @@ const deletePost = async () => {
               </button>
               <button
                 v-if="!post.isOwner"
-                @click="showPostReportModal = true"
+                @click="openPostReport"
                 class="flex items-center gap-1 text-xs text-[#8c7e6e] hover:text-red-400 border border-[#e8e0d4] hover:border-red-200 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer font-medium"
               >
                 <FlagIcon class="w-3.5 h-3.5" />

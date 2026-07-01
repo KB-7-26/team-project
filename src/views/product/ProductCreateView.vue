@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { CameraIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { CameraIcon, ExclamationTriangleIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { productApi, categoryApi } from '@/api/productApi'
 import { conditions, useProductForm } from '@/composables/useProductForm'
 
@@ -50,6 +50,10 @@ async function submitForm() {
     errorMessage.value = '가격을 입력해주세요'
     return
   }
+  if (images.value.filter((img) => !img.loading).length === 0) {
+    errorMessage.value = '이미지를 1장 이상 등록해주세요'
+    return
+  }
 
   isSubmitting.value = true
   errorMessage.value = ''
@@ -67,9 +71,10 @@ async function submitForm() {
 
     const productId = createRes.id
 
-    if (images.value.length > 0) {
+    const readyImages = images.value.filter((img) => !img.loading)
+    if (readyImages.length > 0) {
       const formData = new FormData()
-      images.value.forEach(({ file }) => {
+      readyImages.forEach(({ file }) => {
         formData.append('images', file)
       })
       await productApi.uploadImages(productId, formData)
@@ -92,7 +97,10 @@ async function submitForm() {
 
     <!-- 페이지 헤더 -->
     <div class="max-w-2xl mx-auto px-4 md:px-6 pt-10 pb-6">
-      <span class="inline-block -rotate-1 mb-4 px-3 py-0.5 text-sm text-[#8c7e6e] border-2 border-[#c8bca8] rounded-md">✏️ 새 상품 등록</span>
+      <span class="inline-flex items-center gap-1.5 -rotate-1 mb-4 px-3 py-0.5 text-sm text-[#8c7e6e] border-2 border-[#c8bca8] rounded-md">
+        <PencilSquareIcon class="w-4 h-4 shrink-0" />
+        <span>새 상품 등록</span>
+      </span>
       <h1 class="font-bold text-3xl text-ink leading-tight">판매 물품 등록</h1>
       <p class="text-sm text-[#8c7e6e] mt-1">상품 정보를 꼼꼼하게 작성하면 더 빠르게 거래할 수 있어요</p>
     </div>
@@ -118,17 +126,27 @@ async function submitForm() {
               :key="index"
               class="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-ink shadow-[2px_2px_0_#1c1712]"
             >
-              <img :src="img.url" class="w-full h-full object-cover" />
-              <button
-                @click="removeImage(index)"
-                class="absolute top-1 right-1 bg-ink rounded-full p-0.5 hover:scale-110 transition-transform"
+              <!-- 압축 중 로딩 플레이스홀더 -->
+              <div
+                v-if="img.loading"
+                class="w-full h-full flex items-center justify-center bg-[#f0ece4]"
               >
-                <XMarkIcon class="w-3 h-3 text-paper" />
-              </button>
-              <span
-                v-if="index === 0"
-                class="absolute bottom-0 left-0 right-0 text-center text-xs font-bold text-paper bg-ink/80 py-0.5"
-              >대표</span>
+                <div class="w-6 h-6 border-2 border-ink border-t-transparent rounded-full animate-spin"></div>
+              </div>
+              <!-- 압축 완료된 이미지 -->
+              <template v-else>
+                <img :src="img.url" class="w-full h-full object-cover" />
+                <button
+                  @click="removeImage(index)"
+                  class="absolute top-1 right-1 bg-ink rounded-full p-0.5 hover:scale-110 transition-transform"
+                >
+                  <XMarkIcon class="w-3 h-3 text-paper" />
+                </button>
+                <span
+                  v-if="index === 0"
+                  class="absolute bottom-0 left-0 right-0 text-center text-xs font-bold text-paper bg-ink/80 py-0.5"
+                >대표</span>
+              </template>
             </div>
             <input ref="fileInput" type="file" accept="image/*" multiple class="hidden" @change="handleFileChange" />
           </div>
@@ -252,8 +270,9 @@ async function submitForm() {
         </div>
 
         <!-- 에러 메시지 -->
-        <p v-if="errorMessage" class="text-sm text-red-500 font-bold text-center -mt-2 border-2 border-red-300 bg-red-50 rounded-xl py-2 px-4">
-          ⚠️ {{ errorMessage }}
+        <p v-if="errorMessage" class="text-sm text-red-500 font-bold text-center -mt-2 border-2 border-red-300 bg-red-50 rounded-xl py-2 px-4 inline-flex items-center justify-center gap-1.5">
+          <ExclamationTriangleIcon class="w-4 h-4 shrink-0" />
+          <span>{{ errorMessage }}</span>
         </p>
 
         <!-- 버튼 영역 -->

@@ -11,17 +11,17 @@ const router = createRouter({
     {
       path: '/product/create',
       component: () => import('@/views/product/ProductCreateView.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresVerified: true },
     },
     {
       path: '/product/edit/:id',
       component: () => import('@/views/product/ProductEditView.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresVerified: true },
     },
     {
       path: '/chats',
       component: () => import('@/views/chat/ChatLayout.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresVerified: true },
       children: [{ path: ':chatRoomId', component: () => import('@/views/chat/ChatRoomView.vue'), meta: { hideNavMobile: true } }],
     },
     {
@@ -40,6 +40,11 @@ const router = createRouter({
       meta: { hideNav: true },
     },
     {
+      path: '/verify-email',
+      component: () => import('@/views/auth/VerifyEmailView.vue'),
+      meta: { hideNav: true },
+    },
+    {
       path: '/products',
       component: () => import('@/views/product/ProductListView.vue'),
     },
@@ -54,12 +59,12 @@ const router = createRouter({
     {
       path: '/board/write',
       component: () => import('@/views/board/BoardWriteView.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresVerified: true },
     },
     {
       path: '/board/:id/edit',
       component: () => import('@/views/board/BoardEditView.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresVerified: true },
     },
     {
       path: '/board/:id',
@@ -68,12 +73,12 @@ const router = createRouter({
     {
       path: '/mypage',
       component: () => import('@/views/user/MyPageView.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresVerified: true },
     },
     {
       path: '/admin',
       component: () => import('@/views/admin/AdminView.vue'),
-      meta: { requiresAuth: true, requiresAdmin: true, hideNav: true },
+      meta: { requiresAuth: true, requiresVerified: true, requiresAdmin: true, hideNav: true },
     },
   ],
 })
@@ -82,12 +87,32 @@ router.beforeEach(async (to) => {
   const authStore = useAuthStore()
   await authStore.initializeAuth()
 
+  const isEmailVerificationAction =
+    to.path === '/verify-email' && to.query.mode === 'verifyEmail' && Boolean(to.query.oobCode)
+
+  if (isEmailVerificationAction) {
+    return undefined
+  }
+
   if (authStore.needsProfile && to.path !== '/signup/profile') {
     return '/signup/profile'
   }
 
   if (to.path === '/signup/profile' && !authStore.needsProfile) {
-    return authStore.isLoggedIn ? '/' : '/login'
+    if (authStore.needsVerification) return '/verify-email'
+    return authStore.isVerified ? '/' : '/login'
+  }
+
+  if (to.path === '/verify-email') {
+    if (!authStore.isFirebaseAuthenticated) return '/login'
+    if (authStore.needsProfile) return '/signup/profile'
+    if (!authStore.needsVerification) return authStore.isVerified ? '/' : '/login'
+    return undefined
+  }
+
+  if (to.meta.requiresVerified && !authStore.isVerified) {
+    if (!authStore.isFirebaseAuthenticated) return '/login'
+    return authStore.signupCompletionPath
   }
 
   if (to.meta.requiresAuth && !authStore.isLoggedIn) {
@@ -98,8 +123,10 @@ router.beforeEach(async (to) => {
     return '/'
   }
 
-  if ((to.path === '/login' || to.path === '/signup') && authStore.isLoggedIn) {
-    return '/'
+  if ((to.path === '/login' || to.path === '/signup') && authStore.isFirebaseAuthenticated) {
+    if (authStore.needsProfile) return '/signup/profile'
+    if (authStore.needsVerification) return '/verify-email'
+    if (authStore.isVerified) return '/'
   }
 })
 
