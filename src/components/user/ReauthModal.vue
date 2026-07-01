@@ -13,9 +13,13 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  mode: {
+    type: String,
+    default: 'password-change',
+  },
 })
 
-const emit = defineEmits(['close', 'changed'])
+const emit = defineEmits(['close', 'changed', 'authenticated'])
 
 const currentPassword = ref('')
 const newPassword = ref('')
@@ -23,9 +27,20 @@ const newPasswordConfirm = ref('')
 const errorMessage = ref('')
 const isSubmitting = ref(false)
 
-const canSubmit = computed(
-  () => currentPassword.value && newPassword.value && newPasswordConfirm.value && !isSubmitting.value,
+const isWithdrawalMode = computed(() => props.mode === 'withdrawal')
+const title = computed(() => (isWithdrawalMode.value ? '회원 탈퇴 확인' : '비밀번호 변경'))
+const description = computed(() =>
+  isWithdrawalMode.value ? '계정 보호를 위해 현재 비밀번호를 한 번 더 확인합니다' : '계정 확인 후 새 비밀번호를 저장합니다',
 )
+const submitLabel = computed(() => {
+  if (isSubmitting.value) return isWithdrawalMode.value ? '확인 중...' : '변경 중...'
+  return isWithdrawalMode.value ? '인증하고 탈퇴' : '변경하기'
+})
+const canSubmit = computed(() => {
+  if (isSubmitting.value || !currentPassword.value) return false
+  if (isWithdrawalMode.value) return true
+  return Boolean(newPassword.value && newPasswordConfirm.value)
+})
 
 const firebaseErrorMessages = {
   'auth/invalid-credential': '현재 비밀번호가 올바르지 않습니다.',
@@ -50,6 +65,7 @@ const closeModal = () => {
 
 const validateForm = () => {
   if (!currentPassword.value) return '현재 비밀번호를 입력해주세요.'
+  if (isWithdrawalMode.value) return ''
   if (!newPassword.value) return '새 비밀번호를 입력해주세요.'
   if (newPassword.value.length < 8) return '새 비밀번호는 8자 이상 입력해주세요.'
   if (newPassword.value !== newPasswordConfirm.value) return '새 비밀번호가 일치하지 않습니다.'
@@ -57,7 +73,7 @@ const validateForm = () => {
   return ''
 }
 
-const changePassword = async () => {
+const submitForm = async () => {
   const validationMessage = validateForm()
   errorMessage.value = validationMessage
 
@@ -73,11 +89,18 @@ const changePassword = async () => {
   try {
     const credential = EmailAuthProvider.credential(user.email, currentPassword.value)
     await reauthenticateWithCredential(user, credential)
+    if (isWithdrawalMode.value) {
+      emit('authenticated', await user.getIdToken(true))
+      resetForm()
+      return
+    }
     await updatePassword(user, newPassword.value)
     emit('changed')
     resetForm()
   } catch (error) {
-    errorMessage.value = firebaseErrorMessages[error.code] || '비밀번호 변경에 실패했습니다.'
+    errorMessage.value =
+      firebaseErrorMessages[error.code] ||
+      (isWithdrawalMode.value ? '계정 인증에 실패했습니다.' : '비밀번호 변경에 실패했습니다.')
   } finally {
     isSubmitting.value = false
   }
@@ -101,8 +124,8 @@ watch(
       <div class="relative flex items-center justify-between gap-4 border-b-2 border-ink px-6 py-5">
         <div class="absolute left-1/2 -top-3 h-5 w-20 -translate-x-1/2 rounded-sm border border-ink/20 bg-[#b3d4ff]/80"></div>
         <div>
-          <h2 class="text-xl font-extrabold text-ink">비밀번호 변경</h2>
-          <p class="mt-1 text-sm text-[#8c7e6e]">계정 확인 후 새 비밀번호를 저장합니다</p>
+          <h2 class="text-xl font-extrabold text-ink">{{ title }}</h2>
+          <p class="mt-1 text-sm text-[#8c7e6e]">{{ description }}</p>
         </div>
         <button
           type="button"
@@ -114,7 +137,7 @@ watch(
         </button>
       </div>
 
-      <form class="px-6 py-6" @submit.prevent="changePassword">
+      <form class="px-6 py-6" @submit.prevent="submitForm">
         <div class="flex flex-col gap-4">
           <label class="block">
             <span class="text-sm font-extrabold text-ink">현재 비밀번호</span>
@@ -126,7 +149,7 @@ watch(
             />
           </label>
 
-          <label class="block">
+          <label v-if="!isWithdrawalMode" class="block">
             <span class="text-sm font-extrabold text-ink">새 비밀번호</span>
             <input
               v-model="newPassword"
@@ -136,7 +159,7 @@ watch(
             />
           </label>
 
-          <label class="block">
+          <label v-if="!isWithdrawalMode" class="block">
             <span class="text-sm font-extrabold text-ink">새 비밀번호 확인</span>
             <input
               v-model="newPasswordConfirm"
@@ -165,7 +188,7 @@ watch(
             class="h-10 rounded-xl border-2 border-ink bg-[#ffe066] px-5 text-sm font-extrabold text-ink shadow-[2px_2px_0_#1c1712] transition hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_#1c1712] disabled:cursor-not-allowed disabled:opacity-50"
             :disabled="!canSubmit"
           >
-            {{ isSubmitting ? '변경 중...' : '변경하기' }}
+            {{ submitLabel }}
           </button>
         </div>
       </form>

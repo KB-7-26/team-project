@@ -56,7 +56,7 @@ async function fetchPosts(page = 0) {
 
 async function fetchNotices() {
   const pageData = await boardApi.getPosts(0, 20, null, 'all', '공지')
-  notices.value = pageData.content
+  notices.value = pageData.content.filter((post) => post.category === '공지')
 }
 
 function selectMode(mode) {
@@ -104,6 +104,11 @@ const currentLabel = computed(() => {
   if (selectedMode.value === 'all') return '전체글보기'
   if (selectedMode.value === 'hot') return '인기글'
   return CATEGORIES.find((c) => c.value === selectedMode.value)?.label ?? selectedMode.value
+})
+
+const currentTotalElements = computed(() => {
+  if (selectedMode.value === '공지') return notices.value.length
+  return totalElements.value
 })
 
 onMounted(() => {
@@ -224,7 +229,7 @@ onMounted(() => {
           <FireIcon v-if="selectedMode === 'hot'" class="w-4 h-4 text-[#e85d04]" />
           <MegaphoneIcon v-else-if="selectedMode === '공지'" class="w-4 h-4 text-[#2d5a48]" />
           <h2 class="text-sm font-bold text-ink">{{ currentLabel }}</h2>
-          <span v-if="selectedMode !== 'hot' && !keyword" class="text-xs text-[#8c7e6e]">({{ totalElements }})</span>
+          <span v-if="selectedMode !== 'hot' && !keyword" class="text-xs text-[#8c7e6e]">({{ currentTotalElements }})</span>
           <span v-if="keyword" class="text-xs text-[#8c7e6e]">
             — "<span class="font-bold text-ink">{{ keyword }}</span>" 검색 결과
           </span>

@@ -327,12 +327,6 @@ onBeforeUnmount(() => {
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
-.primary-btn {
-  background: #ffe066;
-  color: #1c1712;
-  box-shadow: 2px 3px 0 rgba(28, 23, 18, 0.45);
-}
-
 .secondary-btn {
   background: rgba(255, 255, 255, 0.55);
   border-color: rgba(28, 23, 18, 0.18);
@@ -356,10 +350,6 @@ onBeforeUnmount(() => {
 .verify-btn:not(:disabled):hover,
 .logout-link:hover {
   transform: translate(-1px, -1px);
-}
-
-.primary-btn:not(:disabled):hover {
-  box-shadow: 3px 4px 0 rgba(28, 23, 18, 0.45);
 }
 
 .verify-btn:not(:disabled):active,

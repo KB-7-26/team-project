@@ -250,7 +250,7 @@ const submitHandler = () => {
             />
           </label>
 
-          <label class="block">
+          <label v-if="!isResetMode" class="block">
             <span class="block text-[11px] font-bold text-ink/60 mb-1.5">비밀번호</span>
             <input
               v-model="password"
