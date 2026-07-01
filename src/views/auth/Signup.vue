@@ -1,9 +1,9 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth'
+import { createUserWithEmailAndPassword, sendEmailVerification, signInWithPopup } from 'firebase/auth'
 import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
-import { auth } from '@/firebase'
+import { auth, googleProvider } from '@/firebase'
 import { useAuthStore } from '@/stores/auth'
 
 defineOptions({
@@ -15,6 +15,7 @@ const authStore = useAuthStore()
 const defaultFormMessage = '회원 정보를 입력해주세요'
 const formErrorMessage = ref('')
 const isSubmitting = ref(false)
+const isGoogleSubmitting = ref(false)
 const signupForm = ref({
   email: '',
   password: '',
@@ -48,6 +49,8 @@ const emptyMessages = {
 const firebaseErrorMessages = {
   'auth/email-already-in-use': '이미 가입된 이메일입니다',
   'auth/invalid-email': '올바른 이메일 형식이 아닙니다',
+  'auth/popup-closed-by-user': 'Google 로그인이 취소되었습니다',
+  'auth/user-disabled': '비활성화된 계정입니다',
   'auth/weak-password': '비밀번호는 6자 이상 입력해주세요',
   'auth/network-request-failed': '네트워크 연결을 확인해주세요',
 }
@@ -76,8 +79,22 @@ const clearError = (field) => {
   }
 }
 
+const routeAfterAuth = () => {
+  if (authStore.needsProfile) {
+    router.push('/signup/profile')
+    return
+  }
+
+  if (authStore.needsVerification) {
+    router.push('/verify-email')
+    return
+  }
+
+  router.push('/')
+}
+
 const signupHandler = async () => {
-  if (isSubmitting.value) return
+  if (isSubmitting.value || isGoogleSubmitting.value) return
 
   const nextInvalidFields = requiredFields.reduce((result, field) => {
     result[field] = !String(signupForm.value[field]).trim()
@@ -137,6 +154,25 @@ const signupHandler = async () => {
       firebaseErrorMessages[error.code] || error.response?.data?.message || '회원가입에 실패했습니다'
   } finally {
     isSubmitting.value = false
+  }
+}
+
+const googleSignupHandler = async () => {
+  if (isSubmitting.value || isGoogleSubmitting.value) return
+
+  formErrorMessage.value = ''
+  isGoogleSubmitting.value = true
+
+  try {
+    const credential = await signInWithPopup(auth, googleProvider)
+    await credential.user.getIdToken(true)
+    await authStore.refreshMe()
+    routeAfterAuth()
+  } catch (error) {
+    console.error('Google signup error:', error.code, error.message)
+    formErrorMessage.value = firebaseErrorMessages[error.code] || 'Google로 계속하지 못했습니다'
+  } finally {
+    isGoogleSubmitting.value = false
   }
 }
 </script>
@@ -343,15 +379,32 @@ const signupHandler = async () => {
             </label>
           </div>
 
-          <button
-            type="submit"
-            :disabled="isSubmitting"
-            class="signup-btn mt-2 py-3 rounded-xl border-2 border-ink bg-[#ffe066] text-ink font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            style="box-shadow: 2px 3px 0 rgba(28, 23, 18, 0.45)"
-          >
-            {{ isSubmitting ? '가입 중...' : '가입하기 ✓' }}
-          </button>
+            <button
+              type="submit"
+              :disabled="isSubmitting || isGoogleSubmitting"
+              class="signup-btn mt-2 py-3 rounded-xl border-2 border-ink bg-[#ffe066] text-ink font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              style="box-shadow: 2px 3px 0 rgba(28, 23, 18, 0.45)"
+            >
+              {{ isSubmitting ? '가입 중...' : '가입하기 ✓' }}
+            </button>
         </form>
+
+        <div class="flex items-center gap-3 my-4">
+          <div class="flex-1 border-t border-ink/20"></div>
+          <span class="text-[10px] font-bold text-ink/30">또는</span>
+          <div class="flex-1 border-t border-ink/20"></div>
+        </div>
+
+        <button
+          type="button"
+          :disabled="isSubmitting || isGoogleSubmitting"
+          class="google-btn w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-ink transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          style="background: rgba(255, 255, 255, 0.55); border: 1px solid rgba(28, 23, 18, 0.18)"
+          @click="googleSignupHandler"
+        >
+          <span class="font-extrabold" style="color: #5c9f73">G</span>
+          {{ isGoogleSubmitting ? '연결 중...' : 'Google로 계속하기' }}
+        </button>
 
         <!-- 로그인 링크 -->
         <p class="mt-5 text-center text-xs text-ink/50">
@@ -414,5 +467,10 @@ const signupHandler = async () => {
 .signup-btn:not(:disabled):active {
   transform: translate(1px, 1px);
   box-shadow: none !important;
+}
+
+.google-btn:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.82) !important;
+  transform: translateY(-1px);
 }
 </style>

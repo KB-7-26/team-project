@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
+import { sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
 import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 import { auth, googleProvider } from '@/firebase'
 import { useAuthStore } from '@/stores/auth'
@@ -12,19 +12,32 @@ const router = useRouter()
 const authStore = useAuthStore()
 const email = ref('')
 const password = ref('')
-const defaultFormMessage = '로그인하여 계속하세요'
+const authMode = ref('login')
 const formErrorMessage = ref('')
+const formSuccessMessage = ref('')
 const invalidFields = ref({ email: false, password: false })
 const isSubmitting = ref(false)
 const isGoogleSubmitting = ref(false)
+const isResetSending = ref(false)
 
-const formMessage = computed(() => formErrorMessage.value || defaultFormMessage)
+const isResetMode = computed(() => authMode.value === 'reset')
+const pageSubtitle = computed(() =>
+  isResetMode.value ? '비밀번호 재설정 메일을 보내드릴게요' : '캠퍼스 중고거래 플랫폼',
+)
+const defaultFormMessage = computed(() =>
+  isResetMode.value ? '가입한 이메일 주소를 입력해주세요' : '로그인하여 계속하세요',
+)
+const formMessage = computed(() => formErrorMessage.value || formSuccessMessage.value || defaultFormMessage.value)
 const isFormError = computed(() => Boolean(formErrorMessage.value))
+const isFormSuccess = computed(() => !formErrorMessage.value && Boolean(formSuccessMessage.value))
+const hasFormMessage = computed(() => isFormError.value || isFormSuccess.value)
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const firebaseErrorMessages = {
   'auth/invalid-credential': '이메일 또는 비밀번호가 올바르지 않습니다',
   'auth/invalid-email': '올바른 이메일 형식이 아닙니다',
+  'auth/missing-email': '이메일을 입력해주세요',
   'auth/user-disabled': '비활성화된 계정입니다',
+  'auth/user-not-found': '가입된 이메일을 찾을 수 없습니다',
   'auth/popup-closed-by-user': 'Google 로그인이 취소되었습니다',
   'auth/network-request-failed': '네트워크 연결을 확인해주세요',
 }
@@ -32,6 +45,22 @@ const firebaseErrorMessages = {
 const clearError = (field) => {
   invalidFields.value[field] = false
   if (!invalidFields.value.email && !invalidFields.value.password) formErrorMessage.value = ''
+  formSuccessMessage.value = ''
+}
+
+const switchToResetMode = () => {
+  authMode.value = 'reset'
+  password.value = ''
+  invalidFields.value = { email: false, password: false }
+  formErrorMessage.value = ''
+  formSuccessMessage.value = ''
+}
+
+const switchToLoginMode = () => {
+  authMode.value = 'login'
+  invalidFields.value = { email: false, password: false }
+  formErrorMessage.value = ''
+  formSuccessMessage.value = ''
 }
 
 const routeAfterLogin = () => {
@@ -49,7 +78,8 @@ const routeAfterLogin = () => {
 }
 
 const loginHandler = async () => {
-  if (isSubmitting.value) return
+  if (isSubmitting.value || isGoogleSubmitting.value || isResetSending.value) return
+  formSuccessMessage.value = ''
   const isEmailEmpty = !email.value.trim()
   const isPasswordEmpty = !password.value.trim()
   invalidFields.value = { email: isEmailEmpty, password: isPasswordEmpty }
@@ -76,8 +106,9 @@ const loginHandler = async () => {
 }
 
 const googleLoginHandler = async () => {
-  if (isGoogleSubmitting.value) return
+  if (isSubmitting.value || isGoogleSubmitting.value || isResetSending.value) return
   formErrorMessage.value = ''
+  formSuccessMessage.value = ''
   isGoogleSubmitting.value = true
   try {
     const credential = await signInWithPopup(auth, googleProvider)
@@ -90,6 +121,46 @@ const googleLoginHandler = async () => {
   } finally {
     isGoogleSubmitting.value = false
   }
+}
+
+const passwordResetHandler = async () => {
+  if (isSubmitting.value || isGoogleSubmitting.value || isResetSending.value) return
+
+  const targetEmail = email.value.trim()
+  formErrorMessage.value = ''
+  formSuccessMessage.value = ''
+
+  if (!targetEmail) {
+    invalidFields.value.email = true
+    formErrorMessage.value = '비밀번호를 재설정할 이메일을 입력해주세요'
+    return
+  }
+
+  if (!emailPattern.test(targetEmail)) {
+    invalidFields.value.email = true
+    formErrorMessage.value = '올바른 이메일 형식이 아닙니다'
+    return
+  }
+
+  isResetSending.value = true
+  try {
+    await sendPasswordResetEmail(auth, targetEmail)
+    formSuccessMessage.value = '비밀번호 재설정 메일을 보냈습니다.'
+  } catch (error) {
+    formErrorMessage.value =
+      firebaseErrorMessages[error.code] || '비밀번호 재설정 메일을 보내지 못했습니다'
+  } finally {
+    isResetSending.value = false
+  }
+}
+
+const submitHandler = () => {
+  if (isResetMode.value) {
+    passwordResetHandler()
+    return
+  }
+
+  loginHandler()
 }
 </script>
 
@@ -140,26 +211,31 @@ const googleLoginHandler = async () => {
         <div class="mb-7">
           <h1 class="font-sketch text-5xl font-black text-ink leading-none">낙서장</h1>
           <div class="w-32 h-2.5 bg-[#ffe066]/85 mt-1 mb-2.5 rounded-sm"></div>
-          <p class="text-[11px] font-bold text-ink/50">캠퍼스 중고거래 플랫폼</p>
+          <p class="text-[11px] font-bold text-ink/50">{{ pageSubtitle }}</p>
         </div>
 
         <!-- 에러 메시지 -->
         <div
-          v-if="isFormError"
-          class="mb-5 px-3 py-2 text-xs font-bold text-red-700 rounded-xl"
-          style="background:rgba(255,255,255,0.55); border:1px solid rgba(239,68,68,0.35);"
+          v-if="hasFormMessage"
+          class="mb-5 px-3 py-2 text-xs font-bold rounded-xl"
+          :class="isFormError ? 'text-red-700' : 'text-green-700'"
+          :style="
+            isFormError
+              ? 'background: rgba(255, 255, 255, 0.55); border: 1px solid rgba(239, 68, 68, 0.35)'
+              : 'background: rgba(255, 255, 255, 0.55); border: 1px solid rgba(22, 163, 74, 0.35)'
+          "
           aria-live="polite"
           id="login-form-message"
         >
           <span class="inline-flex items-center gap-1.5">
-            <ExclamationTriangleIcon class="w-4 h-4" />
+            <ExclamationTriangleIcon v-if="isFormError" class="w-4 h-4" />
             {{ formMessage }}
           </span>
         </div>
 
         <!-- 폼 -->
-        <form class="flex flex-col gap-4" @submit.prevent="loginHandler">
-          <label class="block">
+        <form class="flex flex-col gap-4" @submit.prevent="submitHandler">
+          <label v-if="!isResetMode" class="block">
             <span class="block text-[11px] font-bold text-ink/60 mb-1.5">이메일</span>
             <input
               v-model="email"
@@ -191,16 +267,21 @@ const googleLoginHandler = async () => {
 
           <button
             type="submit"
-            :disabled="isSubmitting || isGoogleSubmitting"
+            :disabled="isSubmitting || isGoogleSubmitting || isResetSending"
             class="login-btn mt-1 py-3 rounded-xl border-2 border-ink bg-[#ffe066] text-ink font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             style="box-shadow:2px 3px 0 rgba(28,23,18,0.45);"
           >
-            {{ isSubmitting ? '로그인 중...' : '로그인 ✓' }}
+            <template v-if="isResetMode">
+              {{ isResetSending ? '발송 중...' : '재설정 메일 보내기' }}
+            </template>
+            <template v-else>
+              {{ isSubmitting ? '로그인 중...' : '로그인 ✓' }}
+            </template>
           </button>
         </form>
 
         <!-- 구분선 -->
-        <div class="flex items-center gap-3 my-4">
+        <div v-if="!isResetMode" class="flex items-center gap-3 my-4">
           <div class="flex-1 border-t border-ink/20"></div>
           <span class="text-[10px] font-bold text-ink/30">또는</span>
           <div class="flex-1 border-t border-ink/20"></div>
@@ -208,8 +289,9 @@ const googleLoginHandler = async () => {
 
         <!-- Google 로그인 -->
         <button
+          v-if="!isResetMode"
           type="button"
-          :disabled="isSubmitting || isGoogleSubmitting"
+          :disabled="isSubmitting || isGoogleSubmitting || isResetSending"
           class="google-btn w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-ink transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           style="background:rgba(255,255,255,0.55); border:1px solid rgba(28,23,18,0.18);"
           @click="googleLoginHandler"
@@ -218,8 +300,21 @@ const googleLoginHandler = async () => {
           {{ isGoogleSubmitting ? '연결 중...' : 'Google로 계속하기' }}
         </button>
 
+        <p class="mt-5 text-center text-xs text-ink/50">
+          <template v-if="isResetMode">로그인하시겠어요?</template>
+          <template v-else>비밀번호를 잊으셨나요?</template>
+          <button
+            type="button"
+            :disabled="isSubmitting || isGoogleSubmitting || isResetSending"
+            class="reset-link ml-1 font-bold text-ink underline decoration-[#ffe066] decoration-2 underline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="isResetMode ? switchToLoginMode() : switchToResetMode()"
+          >
+            {{ isResetMode ? '로그인으로 돌아가기' : '재설정 메일 받기' }}
+          </button>
+        </p>
+
         <!-- 회원가입 -->
-        <p class="mt-6 text-center text-xs text-ink/50">
+        <p class="mt-3 text-center text-xs text-ink/50">
           계정이 없으신가요?
           <RouterLink
             to="/signup"
@@ -281,5 +376,9 @@ const googleLoginHandler = async () => {
 .google-btn:not(:disabled):hover {
   background: rgba(255, 255, 255, 0.82) !important;
   transform: translateY(-1px);
+}
+
+.reset-link:not(:disabled):hover {
+  color: rgba(28, 23, 18, 0.72);
 }
 </style>
