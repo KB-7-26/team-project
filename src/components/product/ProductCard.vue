@@ -32,7 +32,7 @@ function onImageLoad(e) {
             product.status === '판매완료' ? 'filter-[grayscale(40%)]' : ''
           ]"
           @load="onImageLoad"
-          @error="(e) => { e.target.onerror = null; e.target.src = `https://picsum.photos/seed/${product.id}/400/300` }"
+          @error="(e) => { e.target.style.display = 'none' }"
         />
       </div>
 

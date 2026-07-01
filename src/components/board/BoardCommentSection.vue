@@ -1,9 +1,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { ChatBubbleLeftRightIcon, PencilSquareIcon } from '@heroicons/vue/24/outline'
 import BoardCommentItem from '@/components/board/BoardCommentItem.vue'
 import BoardReportModal from '@/components/board/BoardReportModal.vue'
+import AuthRequiredModal from '@/components/common/AuthRequiredModal.vue'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
+import { useAuthRequiredModal } from '@/composables/useAuthRequiredModal'
 import { useToastStore } from '@/stores/toast'
 
 const props = defineProps({
@@ -24,6 +27,12 @@ const newReply = ref('')
 const { isLoading: isSubmitting, error: submitError, request } = useApiRequest()
 const { isLoading: isSubmittingReply, request: requestReply } = useApiRequest()
 const toast = useToastStore()
+const {
+  authRequiredModalOpen,
+  authRequiredModalMode,
+  confirmAuthRequired,
+  requireVerified,
+} = useAuthRequiredModal()
 
 const commentLikes = ref({})
 
@@ -48,6 +57,7 @@ onMounted(async () => {
 })
 
 const submitComment = async () => {
+  if (!requireVerified()) return
   if (!newComment.value.trim() || isSubmitting.value) return
   const { ok, data } = await request(
     () => boardApi.createComment(props.postId, newComment.value.trim()),
@@ -61,6 +71,7 @@ const submitComment = async () => {
 }
 
 const toggleReplyInput = (comment) => {
+  if (!requireVerified()) return
   if (replyingToId.value === comment.id) {
     replyingToId.value = null
     newReply.value = ''
@@ -71,6 +82,7 @@ const toggleReplyInput = (comment) => {
 }
 
 const submitReply = async (parentCommentId) => {
+  if (!requireVerified()) return
   if (!newReply.value.trim() || isSubmittingReply.value) return
   const { ok, data } = await requestReply(
     () => boardApi.createComment(props.postId, newReply.value.trim(), parentCommentId),
@@ -86,6 +98,7 @@ const submitReply = async (parentCommentId) => {
 }
 
 const updateComment = async (commentId, content) => {
+  if (!requireVerified()) return
   const { ok, data } = await request(
     () => boardApi.updateComment(props.postId, commentId, content),
     {
@@ -110,6 +123,7 @@ const updateComment = async (commentId, content) => {
 }
 
 const toggleCommentLike = async (commentId) => {
+  if (!requireVerified()) return
   try {
     const data = await boardApi.toggleCommentLike(props.postId, commentId)
     commentLikes.value[commentId] = { liked: data.liked, likeCount: data.likeCount }
@@ -123,10 +137,12 @@ const commentReportModalRef = ref(null)
 const isReportingComment = ref(false)
 
 const openCommentReport = (commentId) => {
+  if (!requireVerified()) return
   reportingCommentId.value = commentId
 }
 
 const submitCommentReport = async (reason) => {
+  if (!requireVerified()) return
   if (isReportingComment.value) return
   isReportingComment.value = true
   try {
@@ -145,6 +161,7 @@ const submitCommentReport = async (reason) => {
 }
 
 const deleteComment = async (commentId) => {
+  if (!requireVerified()) return
   if (!confirm('댓글을 삭제하시겠습니까?')) return
   const { ok } = await request(
     () => boardApi.deleteComment(props.postId, commentId),
@@ -174,11 +191,17 @@ const deleteComment = async (commentId) => {
   <div class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
     <div class="h-1.5 bg-[#f4b8c8]" />
     <div class="p-6">
-      <p class="font-sans font-bold text-lg text-ink mb-5">💬 댓글 {{ totalCommentCount }}</p>
+      <p class="font-sans font-bold text-lg text-ink mb-5 inline-flex items-center gap-2">
+        <ChatBubbleLeftRightIcon class="w-5 h-5 shrink-0 text-[#2d5a48]" />
+        <span>댓글 {{ totalCommentCount }}</span>
+      </p>
 
       <ul class="flex flex-col divide-y-2 divide-dashed divide-[#e8e0d4] mb-6">
         <li v-if="comments.length === 0" class="py-8 text-center text-sm text-[#8c7e6e]">
-          첫 번째 댓글을 남겨보세요 ✏️
+          <span class="inline-flex items-center justify-center gap-1.5">
+            첫 번째 댓글을 남겨보세요
+            <PencilSquareIcon class="w-4 h-4 shrink-0" />
+          </span>
         </li>
         <li v-for="comment in comments" :key="comment.id">
           <BoardCommentItem
@@ -278,5 +301,11 @@ const deleteComment = async (commentId) => {
     target="comment"
     @submit="submitCommentReport"
     @close="reportingCommentId = null"
+  />
+
+  <AuthRequiredModal
+    v-model:open="authRequiredModalOpen"
+    :mode="authRequiredModalMode"
+    @confirm="confirmAuthRequired"
   />
 </template>

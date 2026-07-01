@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
+import { ChatBubbleLeftRightIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import ChatRoomCard from '@/components/chat/ChatRoomCard.vue'
 import { chatApi } from '@/api/chatApi'
 import { useChatStore } from '@/stores/chat'
@@ -103,7 +103,7 @@ onMounted(loadChatRooms)
     <div class="flex-1 overflow-y-auto">
       <!-- 로딩 -->
       <div v-if="isLoading" class="flex flex-col items-center justify-center py-16 gap-2 text-[#8c7e6e]">
-        <span class="text-3xl animate-pulse">💬</span>
+        <ChatBubbleLeftRightIcon class="w-8 h-8 animate-pulse" />
         <p class="text-sm">불러오는 중...</p>
       </div>
 

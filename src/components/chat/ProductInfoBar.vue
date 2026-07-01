@@ -1,4 +1,6 @@
 <script setup>
+import { CubeIcon } from '@heroicons/vue/24/outline'
+
 defineProps({
   productImage: String,
   productTitle: String,
@@ -16,7 +18,7 @@ const emit = defineEmits(['complete-trade'])
     <div class="w-12 h-12 rounded-xl overflow-hidden border-2 border-ink shrink-0 shadow-[2px_2px_0_#1c1712]">
       <img v-if="productImage" :src="productImage" class="w-full h-full object-cover" />
       <div v-else class="w-full h-full bg-[#c8bca8] flex items-center justify-center">
-        <span class="text-lg opacity-60">📦</span>
+        <CubeIcon class="w-5 h-5 text-ink/50" />
       </div>
     </div>
     <!-- 정보 -->

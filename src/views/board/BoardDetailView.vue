@@ -1,17 +1,26 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { TrashIcon, PencilSquareIcon, ArrowLeftIcon, HeartIcon, FlagIcon } from '@heroicons/vue/24/outline'
+import { TrashIcon, PencilSquareIcon, ArrowLeftIcon, HeartIcon, FlagIcon, EyeIcon } from '@heroicons/vue/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 import BoardCommentSection from '@/components/board/BoardCommentSection.vue'
+import ImageViewerModal from '@/components/common/ImageViewerModal.vue'
 import BoardReportModal from '@/components/board/BoardReportModal.vue'
+import AuthRequiredModal from '@/components/common/AuthRequiredModal.vue'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
+import { useAuthRequiredModal } from '@/composables/useAuthRequiredModal'
 import { useToastStore } from '@/stores/toast'
 import { formatDate } from '@/utils/formatDate'
 
 const route = useRoute()
 const router = useRouter()
+const {
+  authRequiredModalOpen,
+  authRequiredModalMode,
+  confirmAuthRequired,
+  requireVerified,
+} = useAuthRequiredModal()
 
 const postId = Number(route.params.id)
 const post = ref(null)
@@ -28,7 +37,16 @@ const showPostReportModal = ref(false)
 const postReportModalRef = ref(null)
 const isReporting = ref(false)
 
+const showImageViewer = ref(false)
+const selectedImageIndex = ref(0)
+
+const openImageViewer = (index) => {
+  selectedImageIndex.value = index
+  showImageViewer.value = true
+}
+
 const submitPostReport = async (reason) => {
+  if (!requireVerified()) return
   if (isReporting.value) return
   isReporting.value = true
   try {
@@ -61,6 +79,7 @@ onMounted(async () => {
 })
 
 const togglePostLike = async () => {
+  if (!requireVerified()) return
   if (isLiking.value) return
   isLiking.value = true
   try {
@@ -142,8 +161,11 @@ const deletePost = async () => {
                 }"
               >{{ post.category }}</span>
               <span class="font-bold text-[#2d5a48] bg-[#96d4b4]/30 px-2 py-0.5 rounded-full">{{ post.displayName }}</span>
-              <span>{{ formatDate(post.createdAt) }}</span>
-              <span>👁 {{ post.viewCount }}</span>
+                <span>{{ formatDate(post.createdAt) }}</span>
+                <span class="inline-flex items-center gap-1">
+                  <EyeIcon class="w-3.5 h-3.5 shrink-0" />
+                  <span>{{ post.viewCount }}</span>
+                </span>
             </div>
             <p class="text-base text-ink leading-relaxed whitespace-pre-line">{{ post.content }}</p>
 
@@ -152,12 +174,20 @@ const deletePost = async () => {
               class="mt-5 grid gap-2"
               :class="post.images.length === 1 ? 'grid-cols-1' : post.images.length === 2 ? 'grid-cols-2' : 'grid-cols-3'"
             >
-              <img
-                v-for="img in post.images"
+              <button
+                v-for="(img, index) in post.images"
                 :key="img.id"
-                :src="img.imageUrl"
-                class="w-full rounded-xl border-2 border-[#c8bca8] object-cover aspect-[4/3]"
-              />
+                type="button"
+                class="group overflow-hidden rounded-xl border-2 border-[#c8bca8] bg-white aspect-[4/3] cursor-zoom-in"
+                aria-label="이미지 크게 보기"
+                @click="openImageViewer(index)"
+              >
+                <img
+                  :src="img.imageUrl"
+                  class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                  draggable="false"
+                />
+              </button>
             </div>
 
             <div class="flex items-center justify-between mt-6 pt-4 border-t-2 border-dashed border-[#e8e0d4]">
@@ -174,7 +204,7 @@ const deletePost = async () => {
               </button>
               <button
                 v-if="!post.isOwner"
-                @click="showPostReportModal = true"
+                @click="openPostReport"
                 class="flex items-center gap-1 text-xs text-[#8c7e6e] hover:text-red-400 border border-[#e8e0d4] hover:border-red-200 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer font-medium"
               >
                 <FlagIcon class="w-3.5 h-3.5" />
@@ -196,5 +226,11 @@ const deletePost = async () => {
     target="post"
     @submit="submitPostReport"
     @close="showPostReportModal = false"
+  />
+  <ImageViewerModal
+    v-if="showImageViewer"
+    :images="post?.images ?? []"
+    :initial-index="selectedImageIndex"
+    @close="showImageViewer = false"
   />
 </template>

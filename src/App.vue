@@ -24,7 +24,7 @@ const contentClass = computed(() => {
 let notificationClient = null
 
 async function connectNotification() {
-  if (!authStore.isLoggedIn || !authStore.user?.id) return
+  if (!authStore.isVerified || !authStore.user?.id) return
   // 기존 연결 먼저 끊기
   if (notificationClient) {
     notificationClient.deactivate()
@@ -64,13 +64,13 @@ function disconnectNotification() {
 }
 
 // 로그인 상태 바뀔 때 연결/해제
-watch(() => authStore.isLoggedIn, (loggedIn) => {
-  if (loggedIn) connectNotification()
+watch(() => authStore.isVerified, (verified) => {
+  if (verified) connectNotification()
   else disconnectNotification()
 })
 
 onMounted(() => {
-  if (authStore.isLoggedIn) connectNotification()
+  if (authStore.isVerified) connectNotification()
 })
 onUnmounted(disconnectNotification)
 </script>

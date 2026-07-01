@@ -1,4 +1,6 @@
 <script setup>
+import { PhotoIcon } from '@heroicons/vue/24/outline'
+import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 import { formatDate } from '@/utils/formatDate'
 
 const props = defineProps({
@@ -6,6 +8,10 @@ const props = defineProps({
   rank: Number,
   from: String,
 })
+
+function hasPostImage(post) {
+  return Boolean(post?.hasImage || post?.imageCount > 0 || post?.images?.length > 0)
+}
 </script>
 
 <template>
@@ -29,6 +35,9 @@ const props = defineProps({
         }"
       >{{ post.category }}</span>
       <p class="text-sm font-bold text-ink line-clamp-1 group-hover:text-[#2d5a48] transition-colors">{{ post.title }}</p>
+      <span v-if="hasPostImage(post)" class="shrink-0 inline-flex items-center" title="이미지 포함">
+        <PhotoIcon class="w-3.5 h-3.5 text-[#8c7e6e]" />
+      </span>
       <span v-if="post.commentCount > 0" class="shrink-0 text-[11px] font-bold text-[#2d5a48]">[{{ post.commentCount }}]</span>
     </div>
 
@@ -39,6 +48,9 @@ const props = defineProps({
     <span class="hidden md:block w-12 shrink-0 text-xs text-center text-[#8c7e6e] tabular-nums">{{ post.viewCount }}</span>
 
     <!-- 추천 -->
-    <span class="hidden md:block w-12 shrink-0 text-center text-xs font-bold text-[#e85d04] tabular-nums">♥ {{ post.likeCount ?? 0 }}</span>
+    <span class="hidden md:inline-flex w-12 shrink-0 items-center justify-center gap-1 text-xs font-bold text-[#e85d04] tabular-nums">
+      <HeartSolidIcon class="w-3.5 h-3.5 shrink-0" />
+      <span>{{ post.likeCount ?? 0 }}</span>
+    </span>
   </RouterLink>
 </template>

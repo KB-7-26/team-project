@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { reauthenticateWithPopup } from 'firebase/auth'
 import {
   AcademicCapIcon,
   ArchiveBoxIcon,
@@ -27,6 +28,7 @@ import { productApi } from '@/api/productApi'
 import { useAuthStore } from '@/stores/auth'
 import { userBoardActivityApi } from '@/api/userBoardActivityApi'
 import { userProfileApi } from '@/api/userProfileApi'
+import { auth, googleProvider } from '@/firebase'
 import { useRouter } from 'vue-router'
 
 defineOptions({
@@ -47,6 +49,9 @@ const profileEditError = ref('')
 const profileEditSuccess = ref('')
 const isPasswordChangeModalOpen = ref(false)
 const passwordChangeSuccess = ref('')
+const isWithdrawalReauthModalOpen = ref(false)
+const isWithdrawing = ref(false)
+const withdrawalError = ref('')
 const boardActivityPosts = ref([])
 const boardActivityCurrentPage = ref(0)
 const boardActivityTotalPages = ref(0)
@@ -202,7 +207,7 @@ const menuSections = [
   },
   {
     id: 'settings',
-    items: [{ id: 'settings', label: '환경설정', icon: Cog6ToothIcon }],
+    items: [{ id: 'settings', label: '계정설정', icon: Cog6ToothIcon }],
   },
 ]
 
@@ -219,14 +224,16 @@ const saleStatusMap = {
   hidden: '숨김',
 }
 
-const boardActivityMenuIds = ['myPosts', 'commentedPosts']
+const boardActivityMenuIds = ['myPosts', 'commentedPosts', 'likedPosts']
 const boardActivityDescriptions = {
   myPosts: '내가 작성한 낙서장 글을 모아봅니다',
   commentedPosts: '내가 댓글을 남긴 낙서장 글을 모아봅니다',
+  likedPosts: '내가 좋아요한 낙서장 글을 모아봅니다',
 }
 const boardActivityEmptyMessages = {
   myPosts: '아직 작성한 글이 없습니다',
   commentedPosts: '아직 댓글을 남긴 글이 없습니다',
+  likedPosts: '아직 좋아요한 글이 없습니다',
 }
 const menuItems = computed(() => menuSections.flatMap((section) => section.items))
 const activeMenu = computed(() => menuItems.value.find((item) => item.id === selectedMenu.value) || menuItems.value[0])
@@ -245,6 +252,51 @@ const logout = async () => {
   router.push('/login')
 }
 
+const performWithdrawal = async (idToken) => {
+  if (isWithdrawing.value) return
+
+  isWithdrawing.value = true
+  withdrawalError.value = ''
+
+  try {
+    await userProfileApi.withdraw(idToken)
+    await authStore.logout()
+    router.push('/login')
+  } catch (error) {
+    withdrawalError.value = error.response?.data?.message || error.message || '회원 탈퇴에 실패했습니다.'
+  } finally {
+    isWithdrawing.value = false
+  }
+}
+
+const withdrawAccount = async () => {
+  if (isWithdrawing.value) return
+
+  const confirmed = window.confirm(
+    '정말로 탈퇴하시겠습니까?\n계정 정보와 낙서장터 기록이 삭제됩니다.\n낙서판 글과 댓글은 탈퇴한 사용자로 표시됩니다.',
+  )
+  if (!confirmed) return
+
+  withdrawalError.value = ''
+
+  if (isEmailPasswordAccount.value) {
+    isWithdrawalReauthModalOpen.value = true
+    return
+  }
+
+  if (isGoogleAccount.value && auth.currentUser) {
+    try {
+      const credential = await reauthenticateWithPopup(auth.currentUser, googleProvider)
+      await performWithdrawal(await credential.user.getIdToken(true))
+    } catch (error) {
+      withdrawalError.value = error.response?.data?.message || error.message || '계정 인증에 실패했습니다.'
+    }
+    return
+  }
+
+  await performWithdrawal()
+}
+
 const openPasswordChangeModal = () => {
   if (!isEmailPasswordAccount.value) return
 
@@ -259,6 +311,16 @@ const closePasswordChangeModal = () => {
 const handlePasswordChanged = () => {
   passwordChangeSuccess.value = '비밀번호가 변경되었습니다.'
   closePasswordChangeModal()
+}
+
+const closeWithdrawalReauthModal = () => {
+  if (isWithdrawing.value) return
+  isWithdrawalReauthModalOpen.value = false
+}
+
+const handleWithdrawalAuthenticated = async (idToken) => {
+  isWithdrawalReauthModalOpen.value = false
+  await performWithdrawal(idToken)
 }
 
 const navigateFromStat = (index) => {
@@ -281,7 +343,7 @@ const mapProductListItem = (product) => ({
   title: product.title,
   price: product.price ?? 0,
   isFree: product.isFree,
-  image: product.thumbnailUrl || `https://picsum.photos/seed/${product.id}/400/300`,
+  image: product.thumbnailUrl,
   status: saleStatusMap[product.saleStatus] ?? product.saleStatus,
   views: product.viewCount ?? 0,
   favoriteCount: product.favoriteCount ?? 0,
@@ -385,7 +447,9 @@ const fetchBoardActivityPosts = async (page = 0) => {
     const pageData =
       selectedMenu.value === 'myPosts'
         ? await userBoardActivityApi.getMyPosts(page, 10)
-        : await userBoardActivityApi.getMyCommentedPosts(page, 10)
+        : selectedMenu.value === 'commentedPosts'
+          ? await userBoardActivityApi.getMyCommentedPosts(page, 10)
+          : await userBoardActivityApi.getMyLikedPosts(page, 10)
 
     boardActivityPosts.value = pageData.content
     boardActivityTotalPages.value = pageData.totalPages
@@ -774,7 +838,7 @@ watch(selectedSaleStatus, () => {
                     >
                       <span>{{ profile.nickname }}</span>
                       <!-- 별 위치 조절: -ml은 왼쪽으로 붙이고, -mt는 위로 올립니다. 숫자를 키우면 더 많이 이동합니다. -->
-                      <TrustBadge :score="profileData.trustScore" size="sm" class="-ml-1 -mt-5" />
+                      <TrustBadge :score="profileData.trustScore" size="sm" class="-ml-1 -mt-1" />
                     </h3>
                     <div class="mt-2 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
                       <span
@@ -1182,17 +1246,33 @@ watch(selectedSaleStatus, () => {
             </div>
           </template>
 
-          <!-- 환경설정 -->
+          <!-- 계정설정 -->
           <template v-else-if="selectedMenu === 'settings'">
             <div
               class="relative overflow-hidden rounded-2xl border-2 border-ink bg-white p-6 shadow-[4px_4px_0_#1c1712] md:p-8"
             >
               <div class="absolute left-0 top-0 h-full w-1.5 bg-[#c8bca8]"></div>
-              <h2 class="text-2xl font-extrabold text-ink">환경설정</h2>
-              <p class="mt-1 text-sm text-[#8c7e6e]">계정 및 앱 설정을 관리합니다</p>
+              <h2 class="text-2xl font-extrabold text-ink">계정설정</h2>
+              <p class="mt-1 text-sm text-[#8c7e6e]">계정 설정을 관리합니다</p>
             </div>
             <div class="mt-5 rounded-2xl border-2 border-ink bg-white p-6 shadow-[4px_4px_0_#1c1712]">
               <h3 class="text-base font-extrabold text-ink mb-4">계정</h3>
+              <div
+                class="flex flex-col gap-3 border-b border-dashed border-ink/15 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <p class="text-sm font-bold text-ink">로그아웃</p>
+                  <p class="text-xs text-[#8c7e6e] mt-0.5">현재 기기에서 로그아웃합니다</p>
+                </div>
+                <button
+                  type="button"
+                  class="h-9 rounded-xl border-2 border-ink bg-white px-4 text-sm font-extrabold text-ink shadow-[2px_2px_0_#1c1712] transition hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_#1c1712] hover:bg-red-50 hover:border-red-400 hover:text-red-500"
+                  @click="logout"
+                >
+                  로그아웃
+                </button>
+              </div>
+
               <div
                 class="flex flex-col gap-3 border-b border-dashed border-ink/15 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
@@ -1223,14 +1303,25 @@ watch(selectedSaleStatus, () => {
               >
                 <div>
                   <p class="text-sm font-bold text-ink">회원 탈퇴</p>
-                  <p class="text-xs text-[#8c7e6e] mt-0.5">!!!!!!!!!선행 작업 중!!!!!!!!!!!</p>
+                  <p class="text-xs text-[#8c7e6e] mt-0.5">
+                    계정 정보를 삭제합니다
+                  </p>
+                  <p v-if="withdrawalError" class="mt-2 text-xs font-bold text-red-500">
+                    {{ withdrawalError }}
+                  </p>
                 </div>
                 <button
                   type="button"
-                  class="h-9 cursor-not-allowed rounded-xl border-2 border-ink bg-[#f0ebe0] px-4 text-sm font-extrabold text-[#8c7e6e] opacity-70 shadow-[2px_2px_0_#1c1712]"
-                  disabled
+                  class="h-9 rounded-xl border-2 border-ink px-4 text-sm font-extrabold shadow-[2px_2px_0_#1c1712] transition"
+                  :class="
+                    isWithdrawing
+                      ? 'cursor-not-allowed bg-[#f0ebe0] text-[#8c7e6e] opacity-70'
+                      : 'bg-white text-red-500 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:border-red-400 hover:bg-red-50 hover:shadow-[3px_3px_0_#1c1712]'
+                  "
+                  :disabled="isWithdrawing"
+                  @click="withdrawAccount"
                 >
-                  탈퇴하기
+                  {{ isWithdrawing ? '탈퇴 중...' : '탈퇴하기' }}
                 </button>
               </div>
 
@@ -1248,20 +1339,6 @@ watch(selectedSaleStatus, () => {
                 >
                   이동하기
                 </RouterLink>
-              </div>
-
-              <div class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p class="text-sm font-bold text-ink">로그아웃</p>
-                  <p class="text-xs text-[#8c7e6e] mt-0.5">현재 기기에서 로그아웃합니다</p>
-                </div>
-                <button
-                  type="button"
-                  class="h-9 rounded-xl border-2 border-ink bg-white px-4 text-sm font-extrabold text-ink shadow-[2px_2px_0_#1c1712] transition hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_#1c1712] hover:bg-red-50 hover:border-red-400 hover:text-red-500"
-                  @click="logout"
-                >
-                  로그아웃
-                </button>
               </div>
             </div>
           </template>
@@ -1284,6 +1361,13 @@ watch(selectedSaleStatus, () => {
     :is-open="isPasswordChangeModalOpen"
     @close="closePasswordChangeModal"
     @changed="handlePasswordChanged"
+  />
+
+  <ReauthModal
+    :is-open="isWithdrawalReauthModalOpen"
+    mode="withdrawal"
+    @close="closeWithdrawalReauthModal"
+    @authenticated="handleWithdrawalAuthenticated"
   />
 
   <!-- ── 프로필 수정 모달 ── -->
