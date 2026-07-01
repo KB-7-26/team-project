@@ -14,7 +14,18 @@ export const useAuthStore = defineStore('auth', () => {
   let authReadyPromise = null
 
   const isLoggedIn = computed(() => Boolean(firebaseUser.value && user.value))
+  const isFirebaseAuthenticated = computed(() => Boolean(firebaseUser.value))
+  const isVerified = computed(() => Boolean(firebaseUser.value && user.value?.isVerified))
   const needsProfile = computed(() => Boolean(firebaseUser.value && profileRequired.value))
+  const needsVerification = computed(() =>
+    Boolean(firebaseUser.value && user.value && !isVerified.value),
+  )
+  const needsSignupCompletion = computed(() => needsProfile.value || needsVerification.value)
+  const signupCompletionPath = computed(() => {
+    if (needsProfile.value) return '/signup/profile'
+    if (needsVerification.value) return '/verify-email'
+    return '/mypage'
+  })
   const isAdmin = computed(() => user.value?.role === 'ADMIN')
 
   function applyMeResponse(response) {
@@ -77,6 +88,12 @@ export const useAuthStore = defineStore('auth', () => {
     return data.user
   }
 
+  async function verifyEmail() {
+    const { data } = await authApi.verifyEmail()
+    applyMeResponse(data)
+    return data.user
+  }
+
   async function logout() {
     await signOut(auth)
     clearAppUser()
@@ -89,11 +106,17 @@ export const useAuthStore = defineStore('auth', () => {
     isReady,
     profileRequired,
     isLoggedIn,
+    isFirebaseAuthenticated,
+    isVerified,
     needsProfile,
+    needsVerification,
+    needsSignupCompletion,
+    signupCompletionPath,
     isAdmin,
     initializeAuth,
     refreshMe,
     completeProfile,
+    verifyEmail,
     logout,
   }
 })

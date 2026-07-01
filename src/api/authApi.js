@@ -8,4 +8,8 @@ export const authApi = {
   createProfile(body) {
     return api.post('/auth/profile', body)
   },
+
+  verifyEmail() {
+    return api.post('/auth/verify-email')
+  },
 }

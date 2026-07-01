@@ -12,4 +12,9 @@ export const userBoardActivityApi = {
     const response = await api.get('/users/me/commented-board-posts', { params: { page, size } })
     return unwrapData(response)
   },
+
+  async getMyLikedPosts(page = 0, size = 10) {
+    const response = await api.get('/users/me/liked-board-posts', { params: { page, size } })
+    return unwrapData(response)
+  },
 }
