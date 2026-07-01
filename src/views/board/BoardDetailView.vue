@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { TrashIcon, PencilSquareIcon, ArrowLeftIcon, HeartIcon, FlagIcon } from '@heroicons/vue/24/outline'
+import { TrashIcon, PencilSquareIcon, ArrowLeftIcon, HeartIcon, FlagIcon, EyeIcon } from '@heroicons/vue/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 import BoardCommentSection from '@/components/board/BoardCommentSection.vue'
 import BoardReportModal from '@/components/board/BoardReportModal.vue'
@@ -157,8 +157,11 @@ const deletePost = async () => {
                 }"
               >{{ post.category }}</span>
               <span class="font-bold text-[#2d5a48] bg-[#96d4b4]/30 px-2 py-0.5 rounded-full">{{ post.displayName }}</span>
-              <span>{{ formatDate(post.createdAt) }}</span>
-              <span>👁 {{ post.viewCount }}</span>
+                <span>{{ formatDate(post.createdAt) }}</span>
+                <span class="inline-flex items-center gap-1">
+                  <EyeIcon class="w-3.5 h-3.5 shrink-0" />
+                  <span>{{ post.viewCount }}</span>
+                </span>
             </div>
             <p class="text-base text-ink leading-relaxed whitespace-pre-line">{{ post.content }}</p>
 
