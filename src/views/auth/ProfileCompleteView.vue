@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 import { useAuthStore } from '@/stores/auth'
 
 defineOptions({
@@ -157,7 +158,10 @@ const logout = async () => {
           aria-live="polite"
           id="profile-form-message"
         >
-          ⚠️ {{ formMessage }}
+          <span class="inline-flex items-center gap-1.5">
+            <ExclamationTriangleIcon class="w-4 h-4 shrink-0" />
+            <span>{{ formMessage }}</span>
+          </span>
         </div>
 
         <form class="flex flex-col gap-3" @submit.prevent="submitProfile">

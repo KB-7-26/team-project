@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { CameraIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { CameraIcon, ExclamationTriangleIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { productApi, categoryApi } from '@/api/productApi'
 import { conditions, useProductForm } from '@/composables/useProductForm'
 
@@ -97,7 +97,10 @@ async function submitForm() {
 
     <!-- 페이지 헤더 -->
     <div class="max-w-2xl mx-auto px-4 md:px-6 pt-10 pb-6">
-      <span class="inline-block -rotate-1 mb-4 px-3 py-0.5 text-sm text-[#8c7e6e] border-2 border-[#c8bca8] rounded-md">✏️ 새 상품 등록</span>
+      <span class="inline-flex items-center gap-1.5 -rotate-1 mb-4 px-3 py-0.5 text-sm text-[#8c7e6e] border-2 border-[#c8bca8] rounded-md">
+        <PencilSquareIcon class="w-4 h-4 shrink-0" />
+        <span>새 상품 등록</span>
+      </span>
       <h1 class="font-bold text-3xl text-ink leading-tight">판매 물품 등록</h1>
       <p class="text-sm text-[#8c7e6e] mt-1">상품 정보를 꼼꼼하게 작성하면 더 빠르게 거래할 수 있어요</p>
     </div>
@@ -267,8 +270,9 @@ async function submitForm() {
         </div>
 
         <!-- 에러 메시지 -->
-        <p v-if="errorMessage" class="text-sm text-red-500 font-bold text-center -mt-2 border-2 border-red-300 bg-red-50 rounded-xl py-2 px-4">
-          ⚠️ {{ errorMessage }}
+        <p v-if="errorMessage" class="text-sm text-red-500 font-bold text-center -mt-2 border-2 border-red-300 bg-red-50 rounded-xl py-2 px-4 inline-flex items-center justify-center gap-1.5">
+          <ExclamationTriangleIcon class="w-4 h-4 shrink-0" />
+          <span>{{ errorMessage }}</span>
         </p>
 
         <!-- 버튼 영역 -->
