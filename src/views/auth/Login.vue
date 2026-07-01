@@ -208,8 +208,11 @@ const submitHandler = () => {
 
         <!-- 타이틀 -->
         <div class="mb-7">
-          <h1 class="font-sketch text-5xl font-black text-ink leading-none">낙서장</h1>
-          <div class="w-32 h-2.5 bg-[#ffe066]/85 mt-1 mb-2.5 rounded-sm"></div>
+          <RouterLink to="/" class="inline-flex items-center gap-2.5">
+            <img src="/favicon.png" alt="" class="h-10 w-10 object-contain shrink-0" />
+            <h1 class="font-sketch text-5xl font-black text-ink leading-none">낙서장</h1>
+          </RouterLink>
+          <div class="w-45 h-2.5 bg-[#ffe066]/85 mb-2.5 rounded-sm"></div>
           <p class="text-[11px] font-bold text-ink/50">{{ pageSubtitle }}</p>
         </div>
 

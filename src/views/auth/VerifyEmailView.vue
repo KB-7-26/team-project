@@ -36,9 +36,7 @@ const email = computed(() => authStore.user?.email || authStore.firebaseUser?.em
 const defaultMessage = computed(() =>
   isEmailVerificationAction.value
     ? '이메일 인증을 완료하는 중입니다.'
-    : email.value
-      ? `${email.value} 주소로 보낸 인증 메일을 확인해주세요.`
-      : '가입한 이메일 주소로 보낸 인증 메일을 확인해주세요.',
+    : '가입한 이메일 주소로 보낸 인증 메일을 확인해주세요.',
 )
 const subtitle = computed(() =>
   isEmailVerificationAction.value
@@ -236,7 +234,7 @@ onBeforeUnmount(() => {
             <span>EMAIL VERIFY</span>
           </div>
           <h1 class="font-sketch text-5xl font-black text-ink leading-none">이메일 인증</h1>
-          <div class="w-32 h-2.5 bg-[#ffe066]/85 mt-1 mb-2.5 rounded-sm"></div>
+          <div class="w-55 h-2.5 bg-[#ffe066]/85 mt-1 mb-2.5 rounded-sm"></div>
           <p class="text-[11px] font-bold text-ink/50">{{ subtitle }}</p>
         </div>
 
@@ -251,6 +249,14 @@ onBeforeUnmount(() => {
           aria-live="polite"
         >
           {{ message }}
+        </div>
+
+        <div
+          v-if="email && showWaitingActions"
+          class="mb-5 rounded-xl border border-white/40 bg-white/45 px-3 py-2.5"
+        >
+          <p class="text-[10px] font-black uppercase tracking-[0.08em] text-ink/42">가입한 이메일 주소</p>
+          <p class="mt-1 break-all text-sm font-black text-ink">{{ email }}</p>
         </div>
 
         <div v-if="showWaitingActions" class="flex flex-col gap-3">
