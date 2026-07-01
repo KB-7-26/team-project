@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { logPageView } from '@/firebase'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -128,6 +129,10 @@ router.beforeEach(async (to) => {
     if (authStore.needsVerification) return '/verify-email'
     if (authStore.isVerified) return '/'
   }
+})
+
+router.afterEach((to) => {
+  logPageView(to.fullPath)
 })
 
 export default router
