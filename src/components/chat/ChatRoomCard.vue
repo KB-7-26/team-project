@@ -1,4 +1,6 @@
 <script setup>
+import { CubeIcon, StarIcon } from '@heroicons/vue/24/outline'
+
 defineProps({
   productImage: String,
   opponentName: String,
@@ -26,7 +28,7 @@ defineProps({
     <div class="shrink-0 w-14 h-14 rounded-xl overflow-hidden border-2 border-ink shadow-[2px_2px_0_#1c1712]">
       <img v-if="productImage" :src="productImage" class="w-full h-full object-cover" />
       <div v-else class="w-full h-full bg-[#c8bca8] flex items-center justify-center">
-        <span class="text-xl opacity-50">📦</span>
+        <CubeIcon class="w-6 h-6 text-ink/45" />
       </div>
     </div>
 
@@ -41,9 +43,11 @@ defineProps({
         <span class="text-[13px] text-[#8c7e6e] truncate">{{ lastMessage }}</span>
         <span
           v-if="hasPendingReview"
-          class="text-base shrink-0"
+          class="shrink-0 text-[#c9a227]"
           title="별점을 남겨주세요!"
-        >⭐</span>
+        >
+          <StarIcon class="w-5 h-5" />
+        </span>
         <span
           v-else-if="unreadCount > 0"
           class="bg-[#ffe066] border-2 border-ink text-ink text-[11px] font-bold min-w-5 h-5 px-1 rounded-full flex items-center justify-center shrink-0 shadow-[1px_1px_0_#1c1712]"

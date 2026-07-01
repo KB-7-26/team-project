@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth'
+import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 import { auth } from '@/firebase'
 import { useAuthStore } from '@/stores/auth'
 
@@ -204,7 +205,10 @@ const signupHandler = async () => {
           aria-live="polite"
           id="signup-form-message"
         >
-          ⚠️ {{ formMessage }}
+          <span class="inline-flex items-center gap-1.5">
+            <ExclamationTriangleIcon class="w-4 h-4" />
+            {{ formMessage }}
+          </span>
         </div>
 
         <!-- 폼 -->

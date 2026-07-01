@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ArrowLeftIcon, CameraIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeftIcon, CameraIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import imageCompression from 'browser-image-compression'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
@@ -110,7 +110,10 @@ const submit = async () => {
       <div class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
         <div class="h-1.5 bg-[#ffe066]" />
         <div class="p-6">
-          <h1 class="font-sketch font-bold text-2xl text-ink mb-7">✏️ 게시글 작성</h1>
+          <h1 class="font-sketch font-bold text-2xl text-ink mb-7 flex items-center gap-2">
+            <PencilSquareIcon class="w-6 h-6" />
+            게시글 작성
+          </h1>
 
           <div class="flex flex-col gap-5">
             <div class="flex flex-col gap-1.5">

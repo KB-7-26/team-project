@@ -7,6 +7,7 @@ import {
   ArrowRightOnRectangleIcon,
   CheckBadgeIcon,
   EnvelopeIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/vue/24/outline'
 import { auth } from '@/firebase'
 import { useAuthStore } from '@/stores/auth'
@@ -189,7 +190,8 @@ onBeforeUnmount(() => {
           "
           aria-live="polite"
         >
-          <span v-if="isError">⚠️ </span>{{ message }}
+          <ExclamationTriangleIcon v-if="isError" class="inline-block w-3.5 h-3.5 mr-1 align-[-2px]" />
+          {{ message }}
         </div>
 
         <div class="flex flex-col gap-3">

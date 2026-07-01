@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import { PencilSquareIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
   show: Boolean,
@@ -66,7 +67,10 @@ async function handleSubmit() {
 
         <!-- 헤더 -->
         <div class="flex flex-col items-center gap-1">
-          <p class="font-sketch font-bold text-xl text-ink">거래 어떠셨나요? ✏️</p>
+          <p class="font-sketch font-bold text-xl text-ink flex items-center gap-1.5">
+            거래 어떠셨나요?
+            <PencilSquareIcon class="w-5 h-5" />
+          </p>
           <p class="text-sm text-[#8c7e6e]">
             <span class="font-bold text-ink">{{ opponentName }}</span>님과의 거래가 만족스러우셨나요?
           </p>
@@ -132,11 +136,11 @@ async function handleSubmit() {
           <!-- 별점 텍스트 -->
           <p class="text-sm font-bold text-ink min-h-5">
             <template v-if="(hoverRating || rating) === 0">별을 선택해주세요</template>
-            <template v-else-if="(hoverRating || rating) <= 1">😢 별로였어요</template>
-            <template v-else-if="(hoverRating || rating) <= 2">😕 아쉬웠어요</template>
-            <template v-else-if="(hoverRating || rating) <= 3">😐 보통이에요</template>
-            <template v-else-if="(hoverRating || rating) <= 4">😊 좋았어요</template>
-            <template v-else>🤩 최고였어요!</template>
+            <template v-else-if="(hoverRating || rating) <= 1">별로였어요</template>
+            <template v-else-if="(hoverRating || rating) <= 2">아쉬웠어요</template>
+            <template v-else-if="(hoverRating || rating) <= 3">보통이에요</template>
+            <template v-else-if="(hoverRating || rating) <= 4">좋았어요</template>
+            <template v-else>최고였어요!</template>
           </p>
         </div>
 

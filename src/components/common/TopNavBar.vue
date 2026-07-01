@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import { PencilIcon } from '@heroicons/vue/24/outline'
 import { useAuthStore } from '@/stores/auth'
 import { useChatStore } from '@/stores/chat'
 
@@ -24,10 +25,13 @@ onMounted(() => {
   <div>
     <nav class="fixed top-0 left-0 right-0 z-50 flex h-15 items-center justify-between overflow-visible border-b-2 border-ink bg-paper/95 px-4 backdrop-blur-[10px] md:px-10">
 
-      <!-- 로고 -->
-      <RouterLink to="/">
-        <span class="logo font-sketch font-bold text-2xl md:text-[26px] text-ink leading-none">낙서장 ✏️</span>
-      </RouterLink>
+        <!-- 로고 -->
+        <RouterLink to="/">
+          <span class="logo font-sketch font-bold text-2xl md:text-[26px] text-ink leading-none inline-flex items-center gap-2">
+            낙서장
+            <PencilIcon class="w-6 h-6 text-[#ff6b57]" />
+          </span>
+        </RouterLink>
 
       <!-- PC 네비 -->
       <div class="flex items-center gap-6 md:gap-10">

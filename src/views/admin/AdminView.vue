@@ -1,7 +1,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { TrashIcon } from '@heroicons/vue/24/outline'
+import {
+  CalendarDaysIcon,
+  ExclamationTriangleIcon,
+  MegaphoneIcon,
+  Squares2X2Icon,
+  TrashIcon,
+  UsersIcon,
+} from '@heroicons/vue/24/outline'
 import { boardApi } from '@/api/boardApi'
 import { adminApi } from '@/api/adminApi'
 import { useToastStore } from '@/stores/toast'
@@ -20,10 +27,10 @@ const toast = useToastStore()
 const activePage = ref('dashboard')
 
 const NAV_ITEMS = [
-  { key: 'dashboard', icon: '◫', label: '대시보드' },
-  { key: 'notices',   icon: '📢', label: '공지 관리' },
-  { key: 'reports',   icon: '🚨', label: '신고 관리' },
-  { key: 'users',     icon: '👥', label: '유저 관리' },
+  { key: 'dashboard', icon: Squares2X2Icon, label: '대시보드' },
+  { key: 'notices',   icon: MegaphoneIcon, label: '공지 관리' },
+  { key: 'reports',   icon: ExclamationTriangleIcon, label: '신고 관리' },
+  { key: 'users',     icon: UsersIcon, label: '유저 관리' },
 ]
 
 function selectPage(key) {
@@ -242,7 +249,7 @@ onMounted(async () => {
             ? 'bg-primary text-white'
             : 'text-white/55 hover:text-white hover:bg-white/8'"
         >
-          <span class="text-base">{{ item.icon }}</span>
+          <component :is="item.icon" class="w-4 h-4" />
           <span>{{ item.label }}</span>
         </button>
       </nav>
@@ -265,10 +272,13 @@ onMounted(async () => {
       <!-- ===== 대시보드 ===== -->
       <div v-if="activePage === 'dashboard'" class="p-8">
         <!-- 헤더 -->
-        <div class="flex items-center justify-between mb-7">
-          <h1 class="text-2xl font-bold text-ink">대시보드</h1>
-          <span class="text-sm text-[#8c7e6e]">📅 {{ today }} 기준</span>
-        </div>
+          <div class="flex items-center justify-between mb-7">
+            <h1 class="text-2xl font-bold text-ink">대시보드</h1>
+            <span class="text-sm text-[#8c7e6e] inline-flex items-center gap-1.5">
+              <CalendarDaysIcon class="w-4 h-4" />
+              {{ today }} 기준
+            </span>
+          </div>
 
         <!-- KPI 카드 -->
         <div class="grid grid-cols-4 gap-4 mb-5">

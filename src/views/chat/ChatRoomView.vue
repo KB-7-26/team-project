@@ -178,10 +178,10 @@ async function connectWebSocket() {
     reconnectDelay: 5000,
     connectHeaders: {
       Authorization: `Bearer ${token}`,
-    },
-    onStompError: (frame) => {
-      console.error('❌ STOMP 에러:', frame)
-    },
+      },
+      onStompError: (frame) => {
+        console.error('STOMP 에러:', frame)
+      },
     onConnect: () => {
       // 재연결 시 중복 구독 방지: 이 클라이언트가 여전히 활성 클라이언트인지 확인
       if (stompClient !== client) return
