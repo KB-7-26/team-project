@@ -171,6 +171,16 @@ onMounted(async () => {
 
   if (authStore.isVerified) {
     router.replace('/')
+    return
+  }
+
+  try {
+    const synced = await syncVerifiedUser()
+    if (synced) {
+      router.replace('/')
+    }
+  } catch {
+    setMessage('이메일 인증 상태를 확인하지 못했습니다.', true)
   }
 })
 

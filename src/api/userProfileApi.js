@@ -1,4 +1,5 @@
 import api from './axios'
+import { auth } from '@/firebase'
 
 export const userProfileApi = {
   getMyProfile() {
@@ -19,5 +20,22 @@ export const userProfileApi = {
 
   deleteProfileImage() {
     return api.delete('/users/me/profile-image')
+  },
+
+  async withdraw(idToken) {
+    const resolvedIdToken = idToken || (await auth.currentUser?.getIdToken(true))
+    if (!resolvedIdToken) {
+      throw new Error('로그인 토큰을 확인할 수 없습니다. 다시 로그인해주세요.')
+    }
+
+    return api.post(
+      '/users/me/withdraw',
+      { idToken: resolvedIdToken },
+      {
+        headers: {
+          'X-Firebase-Id-Token': resolvedIdToken,
+        },
+      },
+    )
   },
 }
