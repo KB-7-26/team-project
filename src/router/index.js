@@ -87,6 +87,13 @@ router.beforeEach(async (to) => {
   const authStore = useAuthStore()
   await authStore.initializeAuth()
 
+  const isEmailVerificationAction =
+    to.path === '/verify-email' && to.query.mode === 'verifyEmail' && Boolean(to.query.oobCode)
+
+  if (isEmailVerificationAction) {
+    return undefined
+  }
+
   if (authStore.needsProfile && to.path !== '/signup/profile') {
     return '/signup/profile'
   }
