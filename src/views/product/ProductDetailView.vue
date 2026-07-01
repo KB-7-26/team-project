@@ -119,9 +119,6 @@ async function loadProduct() {
   try {
     const { data } = await productApi.getProduct(route.params.id)
     data.imageUrls = (data.images || []).map((img) => img.imageUrl)
-    if (data.imageUrls.length === 0) {
-      data.imageUrls = [`https://picsum.photos/seed/${data.id}/600/450`]
-    }
     product.value = data
     startAutoSlide()
 

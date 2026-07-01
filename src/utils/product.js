@@ -10,7 +10,7 @@ export function mapProduct(p) {
     title: p.title,
     price: p.price,
     isFree: p.isFree,
-    image: p.thumbnailUrl || `https://picsum.photos/seed/${p.id}/400/300`,
+    image: p.thumbnailUrl,
     status: saleStatusMap[p.saleStatus] ?? p.saleStatus,
     views: p.viewCount ?? 0,
   }

@@ -283,7 +283,7 @@ const mapProductListItem = (product) => ({
   title: product.title,
   price: product.price ?? 0,
   isFree: product.isFree,
-  image: product.thumbnailUrl || `https://picsum.photos/seed/${product.id}/400/300`,
+  image: product.thumbnailUrl,
   status: saleStatusMap[product.saleStatus] ?? product.saleStatus,
   views: product.viewCount ?? 0,
   favoriteCount: product.favoriteCount ?? 0,
