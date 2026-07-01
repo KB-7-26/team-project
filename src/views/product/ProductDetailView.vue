@@ -29,6 +29,13 @@ import ImageViewerModal from '@/components/common/ImageViewerModal.vue'
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const {
+  authRequiredModalOpen,
+  authRequiredModalMode,
+  closeAuthRequiredModal,
+  confirmAuthRequired,
+  requireVerified,
+} = useAuthRequiredModal()
 
 const product = ref(null)
 const liked = ref(false)
