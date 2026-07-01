@@ -1,7 +1,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { MagnifyingGlassIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import {
+  FireIcon,
+  MagnifyingGlassIcon,
+  MegaphoneIcon,
+  PencilSquareIcon,
+  XMarkIcon,
+} from '@heroicons/vue/24/outline'
+import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 import BoardPostCard from '@/components/board/BoardPostCard.vue'
 import AuthRequiredModal from '@/components/common/AuthRequiredModal.vue'
 import { boardApi } from '@/api/boardApi'
@@ -28,7 +35,7 @@ const searchInput = ref('')
 const selectedMode = ref('all') // 'all' | 'hot' | category value string
 
 const CATEGORIES = [
-  { value: '공지', label: '공지사항', icon: '📌' },
+  { value: '공지', label: '공지사항' },
   { value: '자유게시판', label: '자유게시판', icon: null },
   { value: '전공', label: '전공', icon: null },
   { value: '비전공', label: '비전공', icon: null },
@@ -95,7 +102,7 @@ const writeUrl = computed(() => {
 
 const currentLabel = computed(() => {
   if (selectedMode.value === 'all') return '전체글보기'
-  if (selectedMode.value === 'hot') return '🔥 인기글'
+  if (selectedMode.value === 'hot') return '인기글'
   return CATEGORIES.find((c) => c.value === selectedMode.value)?.label ?? selectedMode.value
 })
 
@@ -145,8 +152,11 @@ onMounted(() => {
           <li
             @click="selectMode('hot')"
             :class="selectedMode === 'hot' ? 'bg-[#2d5a48] text-white border-ink shadow-[2px_2px_0_#1c1712]' : 'text-ink hover:bg-[#2d5a48]/10 border-transparent'"
-            class="mx-2 my-1 px-4 py-2 cursor-pointer rounded-lg border-2 transition-all"
-          >🔥 인기글</li>
+            class="mx-2 my-1 px-4 py-2 cursor-pointer rounded-lg border-2 transition-all inline-flex items-center gap-2"
+          >
+            <FireIcon class="w-4 h-4 shrink-0" />
+            <span>인기글</span>
+          </li>
           <hr class="mx-4 my-1 border-[#c8bca8]" />
           <li
             v-for="cat in CATEGORIES"
@@ -170,9 +180,12 @@ onMounted(() => {
           >전체</button>
           <button
             @click="selectMode('hot')"
-            class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer whitespace-nowrap"
+            class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer whitespace-nowrap inline-flex items-center gap-1"
             :class="selectedMode === 'hot' ? 'bg-[#2d5a48] text-white border-[#2d5a48] shadow-[2px_2px_0_#1c1712]' : 'bg-white border-[#c8bca8] text-[#8c7e6e]'"
-          >🔥 인기글</button>
+          >
+            <FireIcon class="w-3.5 h-3.5 shrink-0" />
+            <span>인기글</span>
+          </button>
           <button
             v-for="cat in CATEGORIES"
             :key="cat.value"
@@ -213,6 +226,8 @@ onMounted(() => {
         <!-- 현재 섹션 레이블 -->
         <div class="flex items-center gap-2 mb-3">
           <span class="w-1 h-4 bg-[#2d5a48] rounded-full" />
+          <FireIcon v-if="selectedMode === 'hot'" class="w-4 h-4 shrink-0 text-[#e85d04]" />
+          <MegaphoneIcon v-else-if="selectedMode === '공지'" class="w-4 h-4 shrink-0 text-[#2d5a48]" />
           <h2 class="text-sm font-bold text-ink">{{ currentLabel }}</h2>
           <span v-if="selectedMode !== 'hot' && !keyword" class="text-xs text-[#8c7e6e]">({{ currentTotalElements }})</span>
           <span v-if="keyword" class="text-xs text-[#8c7e6e]">
@@ -232,7 +247,8 @@ onMounted(() => {
             <div class="pushpin-dot" />
             <div class="flex items-center gap-2.5">
               <span class="shrink-0 inline-flex items-center gap-1 text-[11px] font-bold text-[#7a6010] bg-[#ffe066] border border-[#c8aa40] px-2 py-0.5 rounded-full">
-                📌 공지
+                <MegaphoneIcon class="w-3 h-3 shrink-0" />
+                <span>공지</span>
               </span>
               <p class="text-sm font-bold text-ink flex-1">{{ notice.title }}</p>
               <span class="text-[11px] text-[#8c7e6e] shrink-0">{{ formatDate(notice.createdAt) }}</span>
@@ -274,7 +290,10 @@ onMounted(() => {
               </RouterLink>
               <span class="w-16 shrink-0 text-center text-[11px] text-[#8c7e6e]">{{ formatDate(post.createdAt) }}</span>
               <span class="hidden md:block w-12 shrink-0 text-center text-xs text-[#8c7e6e] tabular-nums">{{ post.viewCount }}</span>
-              <span class="w-12 shrink-0 text-center text-xs font-bold text-[#e85d04]">♥ {{ post.likeCount ?? 0 }}</span>
+              <span class="w-12 shrink-0 text-xs font-bold text-[#e85d04] inline-flex items-center justify-center gap-1">
+                <HeartSolidIcon class="w-3.5 h-3.5 shrink-0" />
+                <span>{{ post.likeCount ?? 0 }}</span>
+              </span>
             </li>
           </ul>
           <p v-else class="text-center text-[#8c7e6e] py-16">인기글이 없습니다.</p>
@@ -296,7 +315,11 @@ onMounted(() => {
             </li>
           </ul>
           <p v-else class="text-center text-[#8c7e6e] py-16">
-            {{ keyword ? '검색 결과가 없습니다.' : '오늘 첫 글을 작성해보세요 ✏️' }}
+            <template v-if="keyword">검색 결과가 없습니다.</template>
+            <span v-else class="inline-flex items-center justify-center gap-1.5">
+              오늘 첫 글을 작성해보세요
+              <PencilSquareIcon class="w-4 h-4 shrink-0" />
+            </span>
           </p>
         </div>
 

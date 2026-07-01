@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { ChatBubbleLeftRightIcon, PencilSquareIcon } from '@heroicons/vue/24/outline'
 import BoardCommentItem from '@/components/board/BoardCommentItem.vue'
 import BoardReportModal from '@/components/board/BoardReportModal.vue'
 import AuthRequiredModal from '@/components/common/AuthRequiredModal.vue'
@@ -190,11 +191,17 @@ const deleteComment = async (commentId) => {
   <div class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
     <div class="h-1.5 bg-[#f4b8c8]" />
     <div class="p-6">
-      <p class="font-sans font-bold text-lg text-ink mb-5">💬 댓글 {{ totalCommentCount }}</p>
+      <p class="font-sans font-bold text-lg text-ink mb-5 inline-flex items-center gap-2">
+        <ChatBubbleLeftRightIcon class="w-5 h-5 shrink-0 text-[#2d5a48]" />
+        <span>댓글 {{ totalCommentCount }}</span>
+      </p>
 
       <ul class="flex flex-col divide-y-2 divide-dashed divide-[#e8e0d4] mb-6">
         <li v-if="comments.length === 0" class="py-8 text-center text-sm text-[#8c7e6e]">
-          첫 번째 댓글을 남겨보세요 ✏️
+          <span class="inline-flex items-center justify-center gap-1.5">
+            첫 번째 댓글을 남겨보세요
+            <PencilSquareIcon class="w-4 h-4 shrink-0" />
+          </span>
         </li>
         <li v-for="comment in comments" :key="comment.id">
           <BoardCommentItem

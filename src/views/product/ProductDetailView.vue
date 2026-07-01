@@ -17,6 +17,7 @@ import {
   PencilSquareIcon,
   TrashIcon,
   UserIcon,
+  BookmarkIcon,
 } from '@heroicons/vue/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 import AuthRequiredModal from '@/components/common/AuthRequiredModal.vue'
@@ -299,8 +300,11 @@ watch(() => route.params.id, () => {
               </template>
             </div>
             <!-- 최근 본 상품 -->
-            <div class="w-full bg-white border-2 border-ink rounded-2xl p-5 shadow-[4px_4px_0_#1c1712]">
-              <p class="font-bold text-ink text-sm mb-2">📌 최근 본 상품</p>
+              <div class="w-full bg-white border-2 border-ink rounded-2xl p-5 shadow-[4px_4px_0_#1c1712]">
+                <p class="font-bold text-ink text-sm mb-2 inline-flex items-center gap-1.5">
+                  <BookmarkIcon class="w-4 h-4 shrink-0 text-[#2d5a48]" />
+                  <span>최근 본 상품</span>
+                </p>
               <p v-if="recentlyViewed.length === 0" class="text-xs text-[#8c7e6e] text-center py-2">아직 본 상품이 없어요</p>
               <div v-else class="flex flex-col gap-1">
                 <RouterLink
@@ -421,8 +425,11 @@ watch(() => route.params.id, () => {
         </div>
 
         <!-- 최근 본 상품 (모바일) -->
-        <div class="lg:hidden bg-white border-2 border-ink rounded-2xl p-5 shadow-[4px_4px_0_#1c1712]">
-          <p class="font-bold text-ink text-sm mb-2">📌 최근 본 상품</p>
+          <div class="lg:hidden bg-white border-2 border-ink rounded-2xl p-5 shadow-[4px_4px_0_#1c1712]">
+            <p class="font-bold text-ink text-sm mb-2 inline-flex items-center gap-1.5">
+              <BookmarkIcon class="w-4 h-4 shrink-0 text-[#2d5a48]" />
+              <span>최근 본 상품</span>
+            </p>
           <p v-if="recentlyViewed.length === 0" class="text-xs text-[#8c7e6e] text-center py-2">아직 본 상품이 없어요</p>
           <div v-else class="flex flex-col gap-1">
             <RouterLink
