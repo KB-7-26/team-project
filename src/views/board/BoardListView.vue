@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   FireIcon,
@@ -24,6 +24,10 @@ const {
 } = useAuthRequiredModal()
 
 const notices = ref([])
+const currentNoticeIndex = ref(0)
+let noticeTimer = null
+
+const currentNotice = computed(() => notices.value[currentNoticeIndex.value])
 
 const posts = ref([])
 const currentPage = ref(0)
@@ -55,9 +59,16 @@ async function fetchPosts(page = 0) {
 }
 
 async function fetchNotices() {
-  const pageData = await boardApi.getPosts(0, 20, null, 'all', '공지')
-  notices.value = pageData.content.filter((post) => post.category === '공지')
+  const pageData = await boardApi.getPosts(0, 5, null, 'title', '공지')
+  notices.value = pageData.content
+  if (notices.value.length > 1) {
+    noticeTimer = setInterval(() => {
+      currentNoticeIndex.value = (currentNoticeIndex.value + 1) % notices.value.length
+    }, 4000)
+  }
 }
+
+onBeforeUnmount(() => clearInterval(noticeTimer))
 
 function selectMode(mode) {
   selectedMode.value = mode
@@ -235,29 +246,61 @@ onMounted(() => {
           </span>
         </div>
 
-        <!-- 공지사항 핀 (전체 / 공지 카테고리에서만) -->
-        <div v-if="(selectedMode === 'all' || selectedMode === '공지') && notices.length > 0 && !keyword" class="mb-4 flex flex-col gap-2">
-          <RouterLink
-            v-for="(notice, i) in notices"
-            :key="notice.id"
-            :to="`/board/${notice.id}?from=${selectedMode}`"
-            class="notice-pin relative bg-[#fff9c4] border-2 border-ink rounded-xl px-4 py-3 shadow-[2px_2px_0_#1c1712] block hover:bg-[#fff3a0] transition-colors"
-            :style="`transform: rotate(${i % 2 === 0 ? '-0.4deg' : '0.3deg'})`"
+        <!-- 공지사항 핀 (전체글보기에서만, 세로 캐러셀) -->
+        <div v-if="selectedMode === 'all' && notices.length > 0 && !keyword" class="mb-4">
+          <div
+            class="notice-pin relative bg-[#fff9c4] border-2 border-ink rounded-xl px-4 py-3 shadow-[2px_2px_0_#1c1712]"
+            style="transform: rotate(-0.4deg)"
           >
             <div class="pushpin-dot" />
-            <div class="flex items-center gap-2.5">
+            <div class="flex items-center gap-2.5 h-6">
               <span class="shrink-0 inline-flex items-center gap-1 text-[11px] font-bold text-[#7a6010] bg-[#ffe066] border border-[#c8aa40] px-2 py-0.5 rounded-full">
                 <MegaphoneIcon class="w-3 h-3 shrink-0" />
                 <span>공지</span>
               </span>
-              <p class="text-sm font-bold text-ink flex-1">{{ notice.title }}</p>
-              <span class="text-[11px] text-[#8c7e6e] shrink-0">{{ formatDate(notice.createdAt) }}</span>
+              <div class="flex-1 min-w-0 relative h-full overflow-hidden">
+                <Transition name="notice-slot" mode="out-in">
+                  <RouterLink
+                    :key="currentNotice?.id"
+                    :to="`/board/${currentNotice?.id}?from=all`"
+                    class="absolute inset-0 flex items-center text-sm font-bold text-ink hover:text-[#2d5a48] truncate transition-colors"
+                  >{{ currentNotice?.title }}</RouterLink>
+                </Transition>
+              </div>
+              <span class="text-[11px] text-[#8c7e6e] shrink-0">{{ formatDate(currentNotice?.createdAt) }}</span>
+              <span v-if="notices.length > 1" class="text-[10px] text-[#8c7e6e]/60 font-bold shrink-0">
+                {{ currentNoticeIndex + 1 }}/{{ notices.length }}
+              </span>
             </div>
-          </RouterLink>
+          </div>
         </div>
-        <!-- 공지 탭: 게시글 없을 때 -->
-        <div v-if="selectedMode === '공지' && notices.length === 0 && !keyword" class="text-center text-[#8c7e6e] py-16">
-          등록된 공지사항이 없습니다.
+
+        <!-- 공지 탭: 번호 리스트 -->
+        <div v-if="selectedMode === '공지'" class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
+          <div class="h-1.5 bg-[#ffe066]" />
+          <div class="flex items-center py-2 px-4 border-b-2 border-[#e8e0d4] bg-[#faf7f0]">
+            <span class="w-10 shrink-0 text-center text-[11px] font-bold text-[#8c7e6e]">번호</span>
+            <span class="flex-1 px-3 text-[11px] font-bold text-[#8c7e6e]">제목</span>
+            <span class="w-20 shrink-0 text-center text-[11px] font-bold text-[#8c7e6e]">작성일</span>
+          </div>
+          <ul v-if="notices.length > 0" class="divide-y divide-dashed divide-[#e8e0d4]">
+            <li
+              v-for="(notice, index) in notices"
+              :key="notice.id"
+              class="flex items-center px-4 py-2.5 hover:bg-[#fffef5] transition-colors"
+            >
+              <span class="w-10 shrink-0 text-center text-xs font-mono tabular-nums text-[#8c7e6e]">{{ index + 1 }}</span>
+              <RouterLink
+                :to="`/board/${notice.id}?from=공지`"
+                class="flex-1 min-w-0 px-3 flex items-center gap-1.5"
+              >
+                <span class="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md border text-orange-600 bg-orange-50 border-orange-200">공지</span>
+                <span class="text-sm font-bold text-ink hover:text-[#2d5a48] truncate transition-colors">{{ notice.title }}</span>
+              </RouterLink>
+              <span class="w-20 shrink-0 text-[11px] text-center text-[#8c7e6e]">{{ formatDate(notice.createdAt) }}</span>
+            </li>
+          </ul>
+          <p v-else class="text-center text-[#8c7e6e] py-16">등록된 공지사항이 없습니다.</p>
         </div>
 
         <!-- 인기글 목록 -->
@@ -353,6 +396,17 @@ onMounted(() => {
   background-color: #2d5a48;
   box-shadow: 0 4px 0 #1c1712;
 }
+
+.notice-slot-enter-active,
+.notice-slot-leave-active {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+  position: absolute;
+  width: 100%;
+}
+.notice-slot-enter-from { transform: translateY(100%); opacity: 0; }
+.notice-slot-leave-to  { transform: translateY(-100%); opacity: 0; }
+.notice-slot-enter-to,
+.notice-slot-leave-from { transform: translateY(0); opacity: 1; }
 
 .pushpin-dot {
   position: absolute;

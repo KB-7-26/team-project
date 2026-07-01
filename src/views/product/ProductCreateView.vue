@@ -50,6 +50,10 @@ async function submitForm() {
     errorMessage.value = '가격을 입력해주세요'
     return
   }
+  if (images.value.filter((img) => !img.loading).length === 0) {
+    errorMessage.value = '이미지를 1장 이상 등록해주세요'
+    return
+  }
 
   isSubmitting.value = true
   errorMessage.value = ''

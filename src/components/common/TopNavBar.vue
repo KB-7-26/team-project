@@ -22,8 +22,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
-    <nav class="fixed top-0 left-0 right-0 z-50 flex h-15 items-center justify-between overflow-visible border-b-2 border-ink bg-paper/95 px-4 backdrop-blur-[10px] md:px-10">
+  <nav class="fixed top-0 left-0 right-0 z-50 flex h-15 items-center justify-between overflow-visible border-b-2 border-ink bg-paper/95 px-4 backdrop-blur-[10px] md:px-10">
 
         <!-- 로고 -->
         <RouterLink to="/">
@@ -68,9 +67,6 @@ onMounted(() => {
           <li v-if="authStore.isAdmin">
             <RouterLink to="/admin" class="nav-link text-base text-[#cc5a3a] hover:text-ink font-bold transition-colors">관리자</RouterLink>
           </li>
-          <li v-if="authStore.isAdmin">
-            <RouterLink to="/admin" class="nav-link text-base text-[#cc5a3a] hover:text-ink font-bold transition-colors">관리자</RouterLink>
-          </li>
         </ul>
 
         <div class="hidden md:flex items-center gap-2">
@@ -90,8 +86,7 @@ onMounted(() => {
           >로그인</RouterLink>
         </div>
       </div>
-    </nav>
-  </div>
+  </nav>
 </template>
 
 <style scoped>
