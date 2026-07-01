@@ -99,6 +99,11 @@ const currentLabel = computed(() => {
   return CATEGORIES.find((c) => c.value === selectedMode.value)?.label ?? selectedMode.value
 })
 
+const currentTotalElements = computed(() => {
+  if (selectedMode.value === '공지') return notices.value.length
+  return totalElements.value
+})
+
 onMounted(() => {
   const modeFromQuery = route.query.mode
   const keywordFromQuery = route.query.keyword
@@ -209,7 +214,7 @@ onMounted(() => {
         <div class="flex items-center gap-2 mb-3">
           <span class="w-1 h-4 bg-[#2d5a48] rounded-full" />
           <h2 class="text-sm font-bold text-ink">{{ currentLabel }}</h2>
-          <span v-if="selectedMode !== 'hot' && !keyword" class="text-xs text-[#8c7e6e]">({{ totalElements }})</span>
+          <span v-if="selectedMode !== 'hot' && !keyword" class="text-xs text-[#8c7e6e]">({{ currentTotalElements }})</span>
           <span v-if="keyword" class="text-xs text-[#8c7e6e]">
             — "<span class="font-bold text-ink">{{ keyword }}</span>" 검색 결과
           </span>
