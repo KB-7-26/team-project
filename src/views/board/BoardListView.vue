@@ -49,7 +49,7 @@ async function fetchPosts(page = 0) {
 
 async function fetchNotices() {
   const pageData = await boardApi.getPosts(0, 20, null, 'all', '공지')
-  notices.value = pageData.content
+  notices.value = pageData.content.filter((post) => post.category === '공지')
 }
 
 function selectMode(mode) {
