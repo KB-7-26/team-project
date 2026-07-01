@@ -8,11 +8,11 @@ export const conditions = [
 ]
 
 const COMPRESSION_OPTIONS = {
-  maxSizeMB: 0.8,
+  maxSizeMB: 1.5,
   maxWidthOrHeight: 1920,
   useWebWorker: true,
 }
-const MAX_FILE_SIZE = 5 * 1024 * 1024
+const MAX_RAW_FILE_SIZE = 50 * 1024 * 1024 // 압축 전 상한 50MB
 const MAX_IMAGES = 10
 
 export function useProductForm(productForm) {
@@ -51,8 +51,8 @@ export function useProductForm(productForm) {
       if (images.value.length >= MAX_IMAGES) break
       const file = files[i]
 
-      if (file.size > MAX_FILE_SIZE) {
-        toast.show(`${i + 1}번째 사진이 용량이 커서 업로드 실패`, 'error')
+      if (file.size > MAX_RAW_FILE_SIZE) {
+        toast.show(`${i + 1}번째 사진이 너무 커서 업로드할 수 없습니다 (최대 50MB)`, 'error')
         continue
       }
 
