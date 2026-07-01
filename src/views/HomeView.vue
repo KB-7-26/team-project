@@ -422,8 +422,8 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
     <section class="max-w-275 mx-auto px-6 md:px-10 py-13">
       <div class="flex items-baseline justify-between mb-8">
         <h2 class="sec-title font-bold text-[26px] inline-flex items-center gap-2">
-          <span>인기글</span>
           <PencilSquareIcon class="w-6 h-6 shrink-0" />
+          <span>인기글</span>
         </h2>
         <RouterLink
           to="/board?mode=hot"
@@ -476,8 +476,8 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
     <section class="max-w-275 mx-auto px-6 md:px-10 py-13">
       <div class="flex items-baseline justify-between mb-8">
         <h2 class="sec-title font-bold text-[26px] inline-flex items-center gap-2">
-          <span>인기 상품</span>
           <FireIcon class="w-6 h-6 shrink-0 text-[#e85d04]" />
+          <span>인기 상품</span>
         </h2>
         <RouterLink
           to="/products"
@@ -651,7 +651,8 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
 
 .sec-title {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
 }
 .sec-title::after {
   content: '';
