@@ -30,14 +30,19 @@ function selectCondition(value) {
   if (productForm.value.price === '0') productForm.value.price = ''
 }
 
+function resolveCategoryId(product) {
+  if (product.categoryId) return product.categoryId
+  return categories.value.find((cat) => cat.name === product.categoryName)?.id ?? null
+}
+
 onMounted(async () => {
   const catRes = await categoryApi.getCategories()
-  categories.value = Array.isArray(catRes.data) ? catRes.data : []
+  categories.value = Array.isArray(catRes.data) ? catRes.data : (catRes.data?.data ?? [])
 
   const { data } = await productApi.getProduct(route.params.id)
   productForm.value = {
     title: data.title,
-    categoryId: data.categoryId,
+    categoryId: resolveCategoryId(data),
     productCondition: data.productCondition,
     price: data.price,
     isFree: data.isFree,
