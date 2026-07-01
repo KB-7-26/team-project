@@ -1,5 +1,4 @@
 <script setup>
-import { ref } from 'vue'
 import { HeartIcon } from '@heroicons/vue/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 
@@ -9,29 +8,18 @@ defineProps({
 })
 
 defineEmits(['toggle-like'])
-
-const isPortrait = ref(false)
-
-function onImageLoad(e) {
-  const { naturalWidth, naturalHeight } = e.target
-  isPortrait.value = naturalHeight > naturalWidth
-}
 </script>
 
 <template>
   <div class="relative border-2 border-ink bg-white rounded-2xl overflow-hidden transition-all duration-200 hover:-translate-y-1.5 hover:shadow-[4px_6px_0_#1c1712]">
     <RouterLink :to="`/products/${product.id}`" class="block">
       <!-- 이미지 -->
-      <div class="relative" :class="isPortrait ? 'bg-black' : 'bg-gray-100'">
+      <div class="relative">
         <img
           :src="product.image"
           :alt="product.title"
-          class="w-full h-36 md:h-48"
-          :class="[
-            isPortrait ? 'object-contain' : 'object-cover',
-            product.status === '판매완료' ? 'filter-[grayscale(40%)]' : ''
-          ]"
-          @load="onImageLoad"
+          class="w-full h-36 md:h-48 object-cover"
+          :class="product.status === '판매완료' ? 'filter-[grayscale(40%)]' : ''"
           @error="(e) => { e.target.onerror = null; e.target.src = `https://picsum.photos/seed/${product.id}/400/300` }"
         />
       </div>

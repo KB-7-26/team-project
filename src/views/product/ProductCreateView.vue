@@ -67,10 +67,9 @@ async function submitForm() {
 
     const productId = createRes.id
 
-    const readyImages = images.value.filter((img) => !img.loading)
-    if (readyImages.length > 0) {
+    if (images.value.length > 0) {
       const formData = new FormData()
-      readyImages.forEach(({ file }) => {
+      images.value.forEach(({ file }) => {
         formData.append('images', file)
       })
       await productApi.uploadImages(productId, formData)
@@ -119,27 +118,17 @@ async function submitForm() {
               :key="index"
               class="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-ink shadow-[2px_2px_0_#1c1712]"
             >
-              <!-- 압축 중 로딩 플레이스홀더 -->
-              <div
-                v-if="img.loading"
-                class="w-full h-full flex items-center justify-center bg-[#f0ece4]"
+              <img :src="img.url" class="w-full h-full object-cover" />
+              <button
+                @click="removeImage(index)"
+                class="absolute top-1 right-1 bg-ink rounded-full p-0.5 hover:scale-110 transition-transform"
               >
-                <div class="w-6 h-6 border-2 border-ink border-t-transparent rounded-full animate-spin"></div>
-              </div>
-              <!-- 압축 완료된 이미지 -->
-              <template v-else>
-                <img :src="img.url" class="w-full h-full object-cover" />
-                <button
-                  @click="removeImage(index)"
-                  class="absolute top-1 right-1 bg-ink rounded-full p-0.5 hover:scale-110 transition-transform"
-                >
-                  <XMarkIcon class="w-3 h-3 text-paper" />
-                </button>
-                <span
-                  v-if="index === 0"
-                  class="absolute bottom-0 left-0 right-0 text-center text-xs font-bold text-paper bg-ink/80 py-0.5"
-                >대표</span>
-              </template>
+                <XMarkIcon class="w-3 h-3 text-paper" />
+              </button>
+              <span
+                v-if="index === 0"
+                class="absolute bottom-0 left-0 right-0 text-center text-xs font-bold text-paper bg-ink/80 py-0.5"
+              >대표</span>
             </div>
             <input ref="fileInput" type="file" accept="image/*" multiple class="hidden" @change="handleFileChange" />
           </div>

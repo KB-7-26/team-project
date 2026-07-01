@@ -29,11 +29,6 @@ const props = defineProps({
         }"
       >{{ post.category }}</span>
       <p class="text-sm font-bold text-ink line-clamp-1 group-hover:text-[#2d5a48] transition-colors">{{ post.title }}</p>
-      <span v-if="post.hasImage" class="shrink-0" title="이미지 포함">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-[#8c7e6e]" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
-        </svg>
-      </span>
       <span v-if="post.commentCount > 0" class="shrink-0 text-[11px] font-bold text-[#2d5a48]">[{{ post.commentCount }}]</span>
     </div>
 
