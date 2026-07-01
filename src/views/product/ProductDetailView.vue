@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { productApi } from '@/api/productApi'
 import { chatApi } from '@/api/chatApi'
@@ -21,6 +21,7 @@ import {
 import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 import UserProfileAvatar from '@/components/user/UserProfileAvatar.vue'
 import TrustBadge from '@/components/user/TrustBadge.vue'
+import ImageViewerModal from '@/components/common/ImageViewerModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -37,6 +38,16 @@ const copied = ref(false)
 const showLoginPrompt = ref(false)
 const pcProfileRef = ref(null)
 const mobileProfileRef = ref(null)
+const showProductImageViewer = ref(false)
+const selectedProductImageIndex = ref(0)
+const productViewerImages = computed(() => (
+  product.value?.imageUrls?.map((imageUrl, index) => ({ id: index, imageUrl })) ?? []
+))
+
+const openProductImageViewer = (index = currentIndex.value) => {
+  selectedProductImageIndex.value = index
+  showProductImageViewer.value = true
+}
 
 async function deleteProduct() {
   if (isDeleting.value) return
@@ -215,7 +226,20 @@ watch(() => route.params.id, () => {
           <div class="flex-1 min-w-0">
             <div class="relative border-2 border-ink rounded-2xl overflow-hidden bg-gray-100 shadow-[4px_4px_0_#1c1712]">
               <Transition name="fade" mode="out-in">
-                <img :key="currentIndex" :src="product.imageUrls[currentIndex]" :alt="product.title" class="w-full h-72 lg:h-96 object-cover" />
+                <button
+                  :key="currentIndex"
+                  type="button"
+                  class="block h-72 w-full cursor-zoom-in overflow-hidden lg:h-96"
+                  aria-label="Open product image viewer"
+                  @click="openProductImageViewer(currentIndex)"
+                >
+                  <img
+                    :src="product.imageUrls[currentIndex]"
+                    :alt="product.title"
+                    class="h-full w-full object-cover transition-transform duration-200 hover:scale-[1.02]"
+                    draggable="false"
+                  />
+                </button>
               </Transition>
               <span class="absolute bottom-3 right-3 bg-ink text-white text-xs px-2.5 py-1 rounded-full">
                 {{ currentIndex + 1 }} / {{ product.imageUrls.length }}
@@ -496,6 +520,12 @@ watch(() => route.params.id, () => {
     </Transition>
   </Teleport>
 
+  <ImageViewerModal
+    v-if="showProductImageViewer"
+    :images="productViewerImages"
+    :initial-index="selectedProductImageIndex"
+    @close="showProductImageViewer = false"
+  />
   </div>
 </template>
 

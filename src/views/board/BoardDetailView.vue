@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { TrashIcon, PencilSquareIcon, ArrowLeftIcon, HeartIcon, FlagIcon } from '@heroicons/vue/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 import BoardCommentSection from '@/components/board/BoardCommentSection.vue'
+import ImageViewerModal from '@/components/common/ImageViewerModal.vue'
 import BoardReportModal from '@/components/board/BoardReportModal.vue'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
@@ -27,6 +28,14 @@ const toast = useToastStore()
 const showPostReportModal = ref(false)
 const postReportModalRef = ref(null)
 const isReporting = ref(false)
+
+const showImageViewer = ref(false)
+const selectedImageIndex = ref(0)
+
+const openImageViewer = (index) => {
+  selectedImageIndex.value = index
+  showImageViewer.value = true
+}
 
 const submitPostReport = async (reason) => {
   if (isReporting.value) return
@@ -152,12 +161,20 @@ const deletePost = async () => {
               class="mt-5 grid gap-2"
               :class="post.images.length === 1 ? 'grid-cols-1' : post.images.length === 2 ? 'grid-cols-2' : 'grid-cols-3'"
             >
-              <img
-                v-for="img in post.images"
+              <button
+                v-for="(img, index) in post.images"
                 :key="img.id"
-                :src="img.imageUrl"
-                class="w-full rounded-xl border-2 border-[#c8bca8] object-cover aspect-[4/3]"
-              />
+                type="button"
+                class="group overflow-hidden rounded-xl border-2 border-[#c8bca8] bg-white aspect-[4/3] cursor-zoom-in"
+                aria-label="이미지 크게 보기"
+                @click="openImageViewer(index)"
+              >
+                <img
+                  :src="img.imageUrl"
+                  class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                  draggable="false"
+                />
+              </button>
             </div>
 
             <div class="flex items-center justify-between mt-6 pt-4 border-t-2 border-dashed border-[#e8e0d4]">
@@ -196,5 +213,11 @@ const deletePost = async () => {
     target="post"
     @submit="submitPostReport"
     @close="showPostReportModal = false"
+  />
+  <ImageViewerModal
+    v-if="showImageViewer"
+    :images="post?.images ?? []"
+    :initial-index="selectedImageIndex"
+    @close="showImageViewer = false"
   />
 </template>
