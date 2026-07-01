@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ArrowLeftIcon, CameraIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import imageCompression from 'browser-image-compression'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
 import { useToastStore } from '@/stores/toast'
@@ -26,17 +27,47 @@ const toast = useToastStore()
 const images = ref([])
 const fileInput = ref(null)
 
-const handleFileChange = (e) => {
+const COMPRESSION_OPTIONS = {
+  maxSizeMB: 1.5,
+  maxWidthOrHeight: 1920,
+  useWebWorker: true,
+}
+const MAX_FILE_SIZE = 8 * 1024 * 1024
+const MAX_IMAGES = 5
+
+const handleFileChange = async (e) => {
   const files = Array.from(e.target.files)
-  const remaining = 5 - images.value.length
-  files.slice(0, remaining).forEach(file => {
-    images.value.push({ file, url: URL.createObjectURL(file) })
-  })
   e.target.value = ''
+
+  for (let i = 0; i < files.length; i++) {
+    if (images.value.length >= MAX_IMAGES) break
+    const file = files[i]
+
+    if (file.size > MAX_FILE_SIZE) {
+      toast.show(`${i + 1}번째 사진이 용량이 커서 업로드 실패`, 'error')
+      continue
+    }
+
+    images.value.push({ loading: true })
+    const placeholderIndex = images.value.length - 1
+
+    try {
+      const compressed = await imageCompression(file, COMPRESSION_OPTIONS)
+      images.value.splice(placeholderIndex, 1, {
+        file: compressed,
+        url: URL.createObjectURL(compressed),
+      })
+    } catch {
+      images.value.splice(placeholderIndex, 1)
+      toast.show(`${i + 1}번째 사진 처리 중 오류가 발생했습니다`, 'error')
+    }
+  }
 }
 
 const removeImage = (index) => {
-  URL.revokeObjectURL(images.value[index].url)
+  const img = images.value[index]
+  if (img.loading) return
+  URL.revokeObjectURL(img.url)
   images.value.splice(index, 1)
 }
 
@@ -48,9 +79,10 @@ const submit = async () => {
   const { ok, data } = await request(
     async () => {
       const post = await boardApi.createPost(title.value.trim(), content.value.trim(), category.value)
-      if (images.value.length > 0) {
+      const readyImages = images.value.filter((img) => !img.loading)
+      if (readyImages.length > 0) {
         const formData = new FormData()
-        images.value.forEach(({ file }) => formData.append('images', file))
+        readyImages.forEach(({ file }) => formData.append('images', file))
         await boardApi.uploadPostImages(post.id, formData)
       }
       return post
@@ -142,14 +174,24 @@ const submit = async () => {
                   :key="index"
                   class="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-ink shadow-[2px_2px_0_#1c1712]"
                 >
-                  <img :src="img.url" class="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    @click="removeImage(index)"
-                    class="absolute top-1 right-1 bg-ink rounded-full p-0.5 hover:scale-110 transition-transform cursor-pointer"
+                  <!-- 압축 중 로딩 플레이스홀더 -->
+                  <div
+                    v-if="img.loading"
+                    class="w-full h-full flex items-center justify-center bg-[#f0ece4]"
                   >
-                    <XMarkIcon class="w-3 h-3 text-paper" />
-                  </button>
+                    <div class="w-5 h-5 border-2 border-ink border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                  <!-- 압축 완료된 이미지 -->
+                  <template v-else>
+                    <img :src="img.url" class="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      @click="removeImage(index)"
+                      class="absolute top-1 right-1 bg-ink rounded-full p-0.5 hover:scale-110 transition-transform cursor-pointer"
+                    >
+                      <XMarkIcon class="w-3 h-3 text-paper" />
+                    </button>
+                  </template>
                 </div>
                 <input ref="fileInput" type="file" accept="image/*" multiple class="hidden" @change="handleFileChange" />
               </div>

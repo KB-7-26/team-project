@@ -216,9 +216,9 @@ watch(() => route.params.id, () => {
 
           <!-- 이미지 갤러리 -->
           <div class="flex-1 min-w-0">
-            <div class="relative border-2 border-ink rounded-2xl overflow-hidden bg-gray-100 shadow-[4px_4px_0_#1c1712]">
+            <div class="relative border-2 border-ink rounded-2xl overflow-hidden bg-black shadow-[4px_4px_0_#1c1712]">
               <Transition name="fade" mode="out-in">
-                <img :key="currentIndex" :src="product.imageUrls[currentIndex]" :alt="product.title" class="w-full h-72 lg:h-96 object-cover" />
+                <img :key="currentIndex" :src="product.imageUrls[currentIndex]" :alt="product.title" class="w-full h-72 lg:h-96 object-contain" />
               </Transition>
               <span class="absolute bottom-3 right-3 bg-ink text-white text-xs px-2.5 py-1 rounded-full">
                 {{ currentIndex + 1 }} / {{ product.imageUrls.length }}
@@ -257,7 +257,12 @@ watch(() => route.params.id, () => {
                 />
                 <div class="flex min-w-0 items-center gap-1.5">
                   <p class="truncate font-bold text-ink">{{ product.sellerNickname }}</p>
-                  <TrustBadge :score="product.sellerTrustScore ?? 50" size="xs" />
+                  <!-- 상품 상세 이름 옆 별 위치 조절: class의 ml/mt 값만 바꾸면 됩니다. -->
+                  <TrustBadge
+                    :score="product.sellerTrustScore ?? 50"
+                    size="xs"
+                    class="-ml-1 -mt-1"
+                  />
                 </div>
               </div>
               <template v-if="authStore.user?.id === product.sellerId">
@@ -329,7 +334,12 @@ watch(() => route.params.id, () => {
             />
             <div class="flex min-w-0 items-center gap-1.5">
               <p class="truncate font-bold text-ink">{{ product.sellerNickname }}</p>
-              <TrustBadge :score="product.sellerTrustScore ?? 50" size="xs" />
+              <!-- 상품 상세 이름 옆 별 위치 조절: class의 ml/mt 값만 바꾸면 됩니다. -->
+              <TrustBadge
+                :score="product.sellerTrustScore ?? 50"
+                size="xs"
+                class="-ml-1 -mt-1"
+              />
             </div>
           </div>
           <template v-if="authStore.user?.id === product.sellerId">
