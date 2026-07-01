@@ -37,10 +37,10 @@ onMounted(() => {
       <div class="flex items-center gap-6 md:gap-10">
         <ul class="hidden md:flex gap-7 list-none">
           <li>
-            <RouterLink to="/products" class="nav-link text-base text-[#8c7e6e] hover:text-ink transition-colors">낙서장터</RouterLink>
+            <RouterLink to="/board" class="nav-link text-base text-[#8c7e6e] hover:text-ink transition-colors">낙서판</RouterLink>
           </li>
           <li>
-            <RouterLink to="/board" class="nav-link text-base text-[#8c7e6e] hover:text-ink transition-colors">낙서판</RouterLink>
+            <RouterLink to="/products" class="nav-link text-base text-[#8c7e6e] hover:text-ink transition-colors">낙서장터</RouterLink>
           </li>
           <li>
             <RouterLink to="/chats" class="nav-link relative inline-flex items-center text-base text-[#8c7e6e] hover:text-ink transition-colors">

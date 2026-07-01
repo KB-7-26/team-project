@@ -273,7 +273,7 @@ const withdrawAccount = async () => {
   if (isWithdrawing.value) return
 
   const confirmed = window.confirm(
-    '회원 탈퇴 시 계정 정보와 장터 글, 거래/채팅 기록이 삭제됩니다. 낙서판 글과 댓글은 탈퇴한 사용자로 남습니다. 계속하시겠어요?',
+    '정말로 탈퇴하시겠습니까?\n계정 정보와 낙서장터 기록이 삭제됩니다.\n낙서판 글과 댓글은 탈퇴한 사용자로 표시됩니다.',
   )
   if (!confirmed) return
 

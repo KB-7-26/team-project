@@ -20,21 +20,32 @@ import {
 import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
 import { productApi } from '@/api/productApi'
 import { boardApi } from '@/api/boardApi'
+import AuthRequiredModal from '@/components/common/AuthRequiredModal.vue'
 import ProductCard from '@/components/product/ProductCard.vue'
+import { useAuthStore } from '@/stores/auth'
+import { useAuthRequiredModal } from '@/composables/useAuthRequiredModal'
 import { mapProduct } from '@/utils/product'
 
 const categories = [
-  { icon: ShoppingBagIcon, title: '낙서장터', desc: '안전한 학생 간 거래', to: '/products', tape: '#ffe066' },
   { icon: ChatBubbleLeftRightIcon, title: '낙서판', desc: '자유로운 소통 공간', to: '/board', tape: '#96d4b4' },
+  { icon: ShoppingBagIcon, title: '낙서장터', desc: '안전한 학생 간 거래', to: '/products', tape: '#ffe066' },
   { icon: ChatBubbleOvalLeftIcon, title: '채팅목록', desc: '실시간 대화', to: '/chats', tape: '#a8c8e8' },
   { icon: UserIcon, title: '마이페이지', desc: '내 정보 관리', to: '/mypage', tape: '#f4a8b8' },
 ]
 
 const router = useRouter()
+const authStore = useAuthStore()
 const searchQuery = ref('')
-const searchType = ref('낙서장터')
+const searchType = ref('낙서판')
 const showTypeDropdown = ref(false)
 const typeDropdownRef = ref(null)
+const likedProductIds = ref([])
+const {
+  authRequiredModalOpen,
+  authRequiredModalMode,
+  confirmAuthRequired,
+  requireVerified,
+} = useAuthRequiredModal()
 
 const selectType = (type) => {
   searchType.value = type
@@ -44,7 +55,7 @@ const selectType = (type) => {
 const searchSubmit = () => {
   const q = searchQuery.value.trim()
   if (!q) return
-  const path = searchType.value === '낙서장터' ? '/products' : '/board'
+  const path = searchType.value === '낙서판' ? '/board' : '/products'
   router.push({ path, query: { keyword: q } })
   searchQuery.value = ''
 }
@@ -57,6 +68,34 @@ const handleTypeOutsideClick = (e) => {
 
 const popularProducts = ref([])
 const popularPosts = ref([])
+
+const fetchFavoriteProducts = async () => {
+  try {
+    const { data } = await productApi.getMyFavorites()
+    const items = Array.isArray(data) ? data : (data.content ?? [])
+    likedProductIds.value = items.map((product) => product.id)
+  } catch (e) {
+    console.error('찜 목록 조회 실패', e)
+  }
+}
+
+const toggleProductLike = async (id) => {
+  if (!requireVerified()) return
+
+  const isLiked = likedProductIds.value.includes(id)
+  likedProductIds.value = isLiked
+    ? likedProductIds.value.filter((likedId) => likedId !== id)
+    : [...likedProductIds.value, id]
+
+  try {
+    await productApi.toggleFavorite(id)
+  } catch (e) {
+    likedProductIds.value = isLiked
+      ? [...likedProductIds.value, id]
+      : likedProductIds.value.filter((likedId) => likedId !== id)
+    console.error('찜 변경 실패', e)
+  }
+}
 
 // ── 교육 진행 계산 ──────────────────────────────────────────
 const ANCHOR_DATE = '2026-06-12' // 이 날짜가 67일차
@@ -152,6 +191,10 @@ onMounted(async () => {
   } else {
     console.error('인기글 조회 실패', postsRes.reason)
   }
+
+  if (authStore.isVerified) {
+    await fetchFavoriteProducts()
+  }
 })
 
 onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideClick))
@@ -166,15 +209,13 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
         <div class="flex-1 min-w-0 relative">
           <span
             class="inline-block rotate-[-1.2deg] mb-6 px-3 py-0.5 font-sketch text-sm text-[#8c7e6e] border-2 border-[#8c7e6e] rounded-md"
-            >✦ 캠퍼스 낙서장터 플랫폼</span
+            >✦ IT's Our Community</span
           >
 
-          <h1 class="font-sketch font-bold leading-[1.05] mb-5 text-[clamp(3rem,7vw,5.5rem)]">
+          <h1 class="font-sketch font-bold leading-[1.05] mb-12 md:mb-14 text-[clamp(3rem,7vw,5.5rem)]">
             우리들의<br />
             <span class="hl-word">낙서장</span>
           </h1>
-
-          <p class="text-lg text-[#8c7e6e] mb-9">다 같이 믿을 수 있는 거래 환경을 만들어요</p>
 
           <div
             class="flex items-center bg-white border-2 border-ink rounded-full px-2 h-12 max-w-140 shadow-[4px_4px_0_#1c1712]"
@@ -196,18 +237,18 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
                 class="absolute left-0 top-full mt-2 bg-white border-2 border-ink rounded-xl shadow-[3px_3px_0_#1c1712] overflow-hidden z-20 min-w-24"
               >
                 <button
-                  @click="selectType('낙서장터')"
-                  :class="searchType === '낙서장터' ? 'bg-[#ffe066]' : 'hover:bg-[#ffe066]/60'"
-                  class="block w-full text-left px-4 py-2.5 text-sm font-bold text-ink transition-colors"
-                >
-                  낙서장터
-                </button>
-                <button
                   @click="selectType('낙서판')"
                   :class="searchType === '낙서판' ? 'bg-[#ffe066]' : 'hover:bg-[#ffe066]/60'"
-                  class="block w-full text-left px-4 py-2.5 text-sm font-bold text-ink transition-colors border-t border-[#c8bca8]"
+                  class="block w-full text-left px-4 py-2.5 text-sm font-bold text-ink transition-colors"
                 >
                   낙서판
+                </button>
+                <button
+                  @click="selectType('낙서장터')"
+                  :class="searchType === '낙서장터' ? 'bg-[#ffe066]' : 'hover:bg-[#ffe066]/60'"
+                  class="block w-full text-left px-4 py-2.5 text-sm font-bold text-ink transition-colors border-t border-[#c8bca8]"
+                >
+                  낙서장터
                 </button>
               </div>
             </div>
@@ -445,9 +486,21 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
         >
       </div>
       <div class="prod-grid grid grid-cols-2 md:grid-cols-4 gap-5">
-        <ProductCard v-for="product in popularProducts" :key="product.id" :product="product" :liked="false" />
+        <ProductCard
+          v-for="product in popularProducts"
+          :key="product.id"
+          :product="product"
+          :liked="likedProductIds.includes(product.id)"
+          @toggle-like="toggleProductLike"
+        />
       </div>
     </section>
+
+    <AuthRequiredModal
+      v-model:open="authRequiredModalOpen"
+      :mode="authRequiredModalMode"
+      @confirm="confirmAuthRequired"
+    />
   </div>
 </template>
 
