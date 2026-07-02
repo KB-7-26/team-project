@@ -134,6 +134,7 @@ onMounted(loadChatRooms)
         :lastMessage="room.lastMessage"
         :unreadCount="room.unreadCount"
         :isActive="room.chatRoomId === activeChatRoomId"
+        :hasPendingReview="Boolean(chatStore.pendingReviewByRoom[room.chatRoomId])"
         @click="$router.push(`/chats/${room.chatRoomId}`)"
       />
     </div>
