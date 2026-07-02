@@ -51,7 +51,7 @@ async function loadChatRooms() {
     chatRooms.value = data.data.map((room) => ({
       chatRoomId: room.chatRoomId,
       productTitle: room.productTitle,
-      productImage: null,
+      productImage: room.productImageUrl,
       opponentName: room.opponentNickname,
       lastMessage: room.lastMessage ?? '',
       lastMessageTime: formatTime(room.lastMessageAt ?? room.createdAt),

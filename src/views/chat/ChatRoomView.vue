@@ -117,6 +117,7 @@ async function loadMessages() {
       messageId: msg.messageId,
       senderId: msg.senderId,
       senderNickname: msg.senderNickname,
+      senderImageUrl: msg.senderProfileImageUrl ?? '',
       senderType: msg.senderId === myId.value ? 'me' : 'other',
       content: msg.content,
       createdAt: formatTime(msg.createdAt),
@@ -144,6 +145,8 @@ async function loadRoomInfo() {
       productInfo.value = {
         productId: room.productId,
         productTitle: room.productTitle,
+        productImage: room.productImageUrl,
+        price: room.productPrice,
       }
       opponentLastReadAt.value = room.opponentLastReadAt ?? null
       isSeller.value = room.sellerId === myId.value
@@ -203,6 +206,7 @@ async function connectWebSocket() {
           messageId: msg.messageId,
           senderId: msg.senderId,
           senderNickname: msg.senderNickname,
+          senderImageUrl: msg.senderProfileImageUrl ?? '',
           senderType: isMyMessage ? 'me' : 'other',
           content: msg.content,
           createdAt: formatTime(msg.createdAt),
@@ -302,6 +306,7 @@ function handleSend(content) {
     messageId: tempId,
     senderId: myId.value,
     senderNickname: authStore.user?.nickname ?? '',
+    senderImageUrl: authStore.user?.profileImageUrl ?? '',
     senderType: 'me',
     content,
     createdAt: formatTime(new Date().toISOString()),
@@ -388,6 +393,7 @@ onUnmounted(() => {
           :senderType="message.senderType"
           :senderId="message.senderId"
           :senderNickname="message.senderNickname"
+          :senderImageUrl="message.senderImageUrl"
           :content="message.content"
           :createdAt="message.createdAt"
           :reportProductId="productInfo.productId"
