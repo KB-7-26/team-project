@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { PlusIcon } from '@heroicons/vue/24/solid'
 import AuthRequiredModal from '@/components/common/AuthRequiredModal.vue'
@@ -12,12 +12,13 @@ import { useAuthRequiredModal } from '@/composables/useAuthRequiredModal'
 import { mapProduct } from '@/utils/product'
 
 const route = useRoute()
+const router = useRouter()
 const likedIds = ref([])
 const currentPage = ref(1)
 const searchQuery = ref('')
 const sortBy = ref('최신순')
 const showSortDropdown = ref(false)
-const selectedCategoryId = ref(null)
+const selectedCategoryId = ref(route.query.categoryId ? Number(route.query.categoryId) : null)
 const totalPages = ref(1)
 const products = ref([])
 const categories = ref([])
@@ -129,6 +130,7 @@ watch(selectedCategoryId, () => {
   currentPage.value = 1
   window.scrollTo({ top: 0, behavior: 'smooth' })
   fetchProducts()
+  router.replace({ query: { ...route.query, categoryId: selectedCategoryId.value ?? undefined } })
 })
 
 watch(includeSold, () => {
