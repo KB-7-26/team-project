@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeftIcon, CameraIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { ChevronLeftIcon, CameraIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
 import { useToastStore } from '@/stores/toast'
@@ -125,9 +125,9 @@ const submit = async () => {
     <div class="max-w-4xl mx-auto px-6 py-8">
       <button
         @click="router.push(`/board/${postId}`)"
-        class="flex items-center gap-1.5 text-sm text-[#8c7e6e] hover:text-ink mb-6 transition-colors cursor-pointer font-medium group"
+        class="mb-6 flex items-center gap-1.5 px-3 py-1.5 bg-white border-2 border-ink rounded-xl text-sm text-ink shadow-[2px_2px_0_#1c1712] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer font-medium"
       >
-        <ArrowLeftIcon class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+        <ChevronLeftIcon class="w-4 h-4" />
         돌아가기
       </button>
 

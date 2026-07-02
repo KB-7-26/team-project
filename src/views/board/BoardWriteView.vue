@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ArrowLeftIcon, CameraIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { ChevronLeftIcon, CameraIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import imageCompression from 'browser-image-compression'
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
@@ -126,10 +126,10 @@ const submit = async () => {
     <div class="max-w-4xl mx-auto px-6 py-8">
       <button
         @click="router.push('/board')"
-        class="flex items-center gap-1.5 text-sm text-[#8c7e6e] hover:text-ink mb-6 transition-colors cursor-pointer font-medium group"
+        class="mb-6 flex items-center gap-1.5 px-3 py-1.5 bg-white border-2 border-ink rounded-xl text-sm text-ink shadow-[2px_2px_0_#1c1712] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer font-medium"
       >
-        <ArrowLeftIcon class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-        목록으로
+        <ChevronLeftIcon class="w-4 h-4" />
+        돌아가기
       </button>
 
       <div class="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#1c1712] overflow-hidden">
