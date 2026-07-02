@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { TrashIcon, PencilSquareIcon, ChevronLeftIcon, HandThumbUpIcon, FlagIcon, EyeIcon } from '@heroicons/vue/24/outline'
 import { HandThumbUpIcon as HandThumbUpSolidIcon } from '@heroicons/vue/24/solid'
@@ -12,6 +12,7 @@ import { useApiRequest } from '@/composables/useApiRequest'
 import { useAuthRequiredModal } from '@/composables/useAuthRequiredModal'
 import { useToastStore } from '@/stores/toast'
 import { formatDate } from '@/utils/formatDate'
+import { linkify } from '@/utils/linkify'
 
 const route = useRoute()
 const router = useRouter()
@@ -39,6 +40,8 @@ const isReporting = ref(false)
 
 const showImageViewer = ref(false)
 const selectedImageIndex = ref(0)
+
+const linkifiedContent = computed(() => linkify(post.value?.content))
 
 const openImageViewer = (index) => {
   selectedImageIndex.value = index
@@ -167,7 +170,7 @@ const deletePost = async () => {
                   <span>{{ post.viewCount }}</span>
                 </span>
             </div>
-            <p class="text-base text-ink leading-relaxed whitespace-pre-line">{{ post.content }}</p>
+            <p class="text-base text-ink leading-relaxed whitespace-pre-line" v-html="linkifiedContent"></p>
 
             <div
               v-if="post.images?.length > 0"
