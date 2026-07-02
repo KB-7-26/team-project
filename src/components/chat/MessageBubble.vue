@@ -123,13 +123,13 @@ function onTouchStar(event, i) {
         <span v-if="isUnread" class="text-[10px] text-[#8c7e6e]">1</span>
         <span v-if="showTime" class="text-[11px] text-[#8c7e6e]">{{ createdAt }}</span>
       </div>
-      <p class="max-w-[62%] px-3.5 py-2.5 text-sm leading-relaxed border-2 border-ink bg-[#ffe066] text-ink rounded-2xl rounded-br-sm shadow-[2px_2px_0_#1c1712]">
+      <p class="max-w-[62%] break-all px-3.5 py-2.5 text-sm leading-relaxed border-2 border-ink bg-[#ffe066] text-ink rounded-2xl rounded-br-sm shadow-[2px_2px_0_#1c1712]">
         {{ content }}
       </p>
     </template>
 
     <template v-else>
-      <p class="max-w-[62%] px-3.5 py-2.5 text-sm leading-relaxed border-2 border-ink bg-[#a8c8e8] text-ink rounded-2xl rounded-bl-sm shadow-[2px_2px_0_#1c1712]">
+      <p class="max-w-[62%] break-all px-3.5 py-2.5 text-sm leading-relaxed border-2 border-ink bg-[#a8c8e8] text-ink rounded-2xl rounded-bl-sm shadow-[2px_2px_0_#1c1712]">
         {{ content }}
       </p>
       <div v-if="showTime" class="flex flex-col justify-end shrink-0">

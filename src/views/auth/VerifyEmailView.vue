@@ -5,6 +5,7 @@ import { applyActionCode, sendEmailVerification } from 'firebase/auth'
 import {
   ArrowPathIcon,
   ArrowRightOnRectangleIcon,
+  CheckCircleIcon,
   EnvelopeIcon,
 } from '@heroicons/vue/24/outline'
 import { auth } from '@/firebase'
@@ -19,6 +20,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 const isApplyingAction = ref(false)
 const isResending = ref(false)
+const isChecking = ref(false)
 const statusMessage = ref('')
 const isError = ref(false)
 const resendCooldown = ref(0)
@@ -45,8 +47,9 @@ const subtitle = computed(() =>
 )
 const message = computed(() => statusMessage.value || defaultMessage.value)
 const canResend = computed(
-  () => !isApplyingAction.value && !isResending.value && resendCooldown.value === 0,
+  () => !isApplyingAction.value && !isChecking.value && !isResending.value && resendCooldown.value === 0,
 )
+const canCheckVerification = computed(() => !isApplyingAction.value && !isChecking.value)
 const showWaitingActions = computed(() => !isEmailVerificationAction.value || isError.value)
 const isFirebaseAuthenticated = computed(() => Boolean(authStore.firebaseUser))
 
@@ -81,6 +84,41 @@ const syncVerifiedUser = async () => {
   await authStore.verifyEmail()
   await authStore.refreshMe()
   return true
+}
+
+const checkVerificationStatus = async ({ manual = false } = {}) => {
+  if (isChecking.value) return false
+
+  const user = auth.currentUser
+  if (!user) {
+    router.replace('/login')
+    return false
+  }
+
+  isChecking.value = true
+  if (manual) {
+    setMessage('이메일 인증 완료 여부를 확인하고 있습니다.')
+  }
+
+  try {
+    const synced = await syncVerifiedUser()
+    if (synced) {
+      router.replace('/')
+      return true
+    }
+
+    if (manual) {
+      setMessage('아직 이메일 인증이 확인되지 않았습니다. 인증 메일의 링크를 누른 뒤 다시 확인해주세요.')
+    }
+    return false
+  } catch {
+    if (manual) {
+      setMessage('이메일 인증 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.', true)
+    }
+    return false
+  } finally {
+    isChecking.value = false
+  }
 }
 
 const completeEmailAction = async () => {
@@ -147,6 +185,16 @@ const resendVerificationEmail = async () => {
   }
 }
 
+const handleVisibilityCheck = () => {
+  if (document.visibilityState === 'visible') {
+    checkVerificationStatus()
+  }
+}
+
+const handleFocusCheck = () => {
+  checkVerificationStatus()
+}
+
 const goLogin = () => {
   router.replace('/login')
 }
@@ -172,18 +220,17 @@ onMounted(async () => {
     return
   }
 
-  try {
-    const synced = await syncVerifiedUser()
-    if (synced) {
-      router.replace('/')
-    }
-  } catch {
-    setMessage('이메일 인증 상태를 확인하지 못했습니다.', true)
+  const synced = await checkVerificationStatus()
+  if (!synced) {
+    document.addEventListener('visibilitychange', handleVisibilityCheck)
+    window.addEventListener('focus', handleFocusCheck)
   }
 })
 
 onBeforeUnmount(() => {
   clearInterval(cooldownTimer)
+  document.removeEventListener('visibilitychange', handleVisibilityCheck)
+  window.removeEventListener('focus', handleFocusCheck)
 })
 </script>
 
@@ -263,6 +310,17 @@ onBeforeUnmount(() => {
           <button
             v-if="isFirebaseAuthenticated"
             type="button"
+            class="verify-btn primary-btn"
+            :disabled="!canCheckVerification"
+            @click="checkVerificationStatus({ manual: true })"
+          >
+            <CheckCircleIcon class="h-5 w-5" />
+            <span>{{ isChecking ? '확인 중' : '인증 완료 확인' }}</span>
+          </button>
+
+          <button
+            v-if="isFirebaseAuthenticated"
+            type="button"
             class="verify-btn secondary-btn"
             :disabled="!canResend"
             @click="resendVerificationEmail"
@@ -336,6 +394,12 @@ onBeforeUnmount(() => {
   border-color: rgba(28, 23, 18, 0.18);
   color: #1c1712;
   box-shadow: none;
+}
+
+.primary-btn {
+  background: #ffe066;
+  color: #1c1712;
+  box-shadow: 2px 3px 0 rgba(28, 23, 18, 0.45);
 }
 
 .logout-link {

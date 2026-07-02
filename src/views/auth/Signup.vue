@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { createUserWithEmailAndPassword, sendEmailVerification, signInWithPopup } from 'firebase/auth'
+import { createUserWithEmailAndPassword, deleteUser, sendEmailVerification, signInWithPopup } from 'firebase/auth'
 import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 import { auth, googleProvider } from '@/firebase'
 import { useAuthStore } from '@/stores/auth'
@@ -93,6 +93,23 @@ const routeAfterAuth = () => {
   router.push('/')
 }
 
+const buildProfilePayload = () => ({
+  name: signupForm.value.name.trim(),
+  nickname: signupForm.value.nickname.trim(),
+  gender: signupForm.value.gender,
+  cohort: signupForm.value.cohort,
+})
+
+const deleteIncompleteFirebaseUser = async (user) => {
+  try {
+    await deleteUser(user)
+    await authStore.logout()
+  } catch (cleanupError) {
+    console.error('Incomplete signup cleanup failed:', cleanupError)
+    await authStore.refreshMe().catch(() => {})
+  }
+}
+
 const signupHandler = async () => {
   if (isSubmitting.value || isGoogleSubmitting.value) return
 
@@ -129,6 +146,8 @@ const signupHandler = async () => {
 
   formErrorMessage.value = ''
   isSubmitting.value = true
+  let createdFirebaseUser = null
+  let profileCreated = false
 
   try {
     const credential = await createUserWithEmailAndPassword(
@@ -136,13 +155,10 @@ const signupHandler = async () => {
       signupForm.value.email.trim(),
       signupForm.value.password,
     )
+    createdFirebaseUser = credential.user
     await credential.user.getIdToken(true)
-    await authStore.completeProfile({
-      name: signupForm.value.name.trim(),
-      nickname: signupForm.value.nickname.trim(),
-      gender: signupForm.value.gender,
-      cohort: signupForm.value.cohort,
-    })
+    await authStore.completeProfile(buildProfilePayload())
+    profileCreated = true
     try {
       await sendEmailVerification(credential.user)
     } catch {
@@ -150,6 +166,9 @@ const signupHandler = async () => {
     }
     router.push('/verify-email')
   } catch (error) {
+    if (createdFirebaseUser && !profileCreated) {
+      await deleteIncompleteFirebaseUser(createdFirebaseUser)
+    }
     formErrorMessage.value =
       firebaseErrorMessages[error.code] || error.response?.data?.message || '회원가입에 실패했습니다'
   } finally {

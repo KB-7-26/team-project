@@ -11,6 +11,7 @@ import {
   Cog6ToothIcon,
   CubeIcon,
   EnvelopeIcon,
+  HandThumbUpIcon,
   HeartIcon,
   IdentificationIcon,
   PencilSquareIcon,
@@ -193,7 +194,7 @@ const menuSections = [
     items: [
       { id: 'myPosts', label: '내가 쓴 글', icon: PencilSquareIcon },
       { id: 'commentedPosts', label: '댓글 단 글', icon: ChatBubbleOvalLeftIcon },
-      { id: 'likedPosts', label: '좋아요 한 글', icon: HeartIcon },
+      { id: 'likedPosts', label: '추천한 글', icon: HandThumbUpIcon },
     ],
   },
   {
@@ -221,6 +222,7 @@ const saleStatusMap = {
   available: '판매중',
   reserved: '거래중',
   sold: '판매완료',
+  completed: '판매완료',
   hidden: '숨김',
 }
 
@@ -228,12 +230,12 @@ const boardActivityMenuIds = ['myPosts', 'commentedPosts', 'likedPosts']
 const boardActivityDescriptions = {
   myPosts: '내가 작성한 낙서장 글을 모아봅니다',
   commentedPosts: '내가 댓글을 남긴 낙서장 글을 모아봅니다',
-  likedPosts: '내가 좋아요한 낙서장 글을 모아봅니다',
+  likedPosts: '내가 추천한 낙서장 글을 모아봅니다',
 }
 const boardActivityEmptyMessages = {
   myPosts: '아직 작성한 글이 없습니다',
   commentedPosts: '아직 댓글을 남긴 글이 없습니다',
-  likedPosts: '아직 좋아요한 글이 없습니다',
+  likedPosts: '아직 추천한 글이 없습니다',
 }
 const menuItems = computed(() => menuSections.flatMap((section) => section.items))
 const activeMenu = computed(() => menuItems.value.find((item) => item.id === selectedMenu.value) || menuItems.value[0])

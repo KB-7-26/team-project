@@ -8,7 +8,7 @@ import {
   PencilSquareIcon,
   XMarkIcon,
 } from '@heroicons/vue/24/outline'
-import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
+import { HandThumbUpIcon as HandThumbUpSolidIcon } from '@heroicons/vue/24/solid'
 import BoardPostCard from '@/components/board/BoardPostCard.vue'
 import AuthRequiredModal from '@/components/common/AuthRequiredModal.vue'
 import { boardApi } from '@/api/boardApi'
@@ -333,8 +333,8 @@ onMounted(() => {
               </RouterLink>
               <span class="w-16 shrink-0 text-center text-[11px] text-[#8c7e6e]">{{ formatDate(post.createdAt) }}</span>
               <span class="hidden md:block w-12 shrink-0 text-center text-xs text-[#8c7e6e] tabular-nums">{{ post.viewCount }}</span>
-              <span class="w-12 shrink-0 text-xs font-bold text-[#e85d04] inline-flex items-center justify-center gap-1">
-                <HeartSolidIcon class="w-3.5 h-3.5 shrink-0" />
+              <span class="w-12 shrink-0 text-xs font-bold text-[#2d5a48] inline-flex items-center justify-center gap-1">
+                <HandThumbUpSolidIcon class="w-3.5 h-3.5 shrink-0" />
                 <span>{{ post.likeCount ?? 0 }}</span>
               </span>
             </li>

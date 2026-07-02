@@ -12,6 +12,7 @@ import { userProfileApi } from '@/api/userProfileApi'
 import { reportApi } from '@/api/reportApi'
 import TrustBadge from '@/components/user/TrustBadge.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useToastStore } from '@/stores/toast'
 
 const props = defineProps({
   userId: {
@@ -33,6 +34,7 @@ const props = defineProps({
 })
 
 const authStore = useAuthStore()
+const toast = useToastStore()
 const isOpen = ref(false)
 const isLoading = ref(false)
 const errorMessage = ref('')
@@ -100,9 +102,11 @@ const handleReportClick = async () => {
     try {
       await reportApi.createUserReport(props.reportProductId, props.userId)
       reportStatus.value = 'done'
+      toast.show('신고가 접수되었습니다.')
     } catch (error) {
-      reportErrorMessage.value =
-        error.response?.data?.message || '신고를 접수하지 못했습니다. 잠시 후 다시 시도해주세요.'
+      const message = error.response?.data?.message || '신고를 접수하지 못했습니다. 잠시 후 다시 시도해주세요.'
+      reportErrorMessage.value = message
+      toast.show(message, 'error')
     } finally {
       isReporting.value = false
     }

@@ -1,6 +1,6 @@
 <script setup>
 import { PhotoIcon } from '@heroicons/vue/24/outline'
-import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
+import { HandThumbUpIcon as HandThumbUpSolidIcon } from '@heroicons/vue/24/solid'
 import { formatDate } from '@/utils/formatDate'
 
 const props = defineProps({
@@ -48,8 +48,8 @@ function hasPostImage(post) {
     <span class="hidden md:block w-12 shrink-0 text-xs text-center text-[#8c7e6e] tabular-nums">{{ post.viewCount }}</span>
 
     <!-- 추천 -->
-    <span class="hidden md:inline-flex w-12 shrink-0 items-center justify-center gap-1 text-xs font-bold text-[#e85d04] tabular-nums">
-      <HeartSolidIcon class="w-3.5 h-3.5 shrink-0" />
+    <span class="hidden md:inline-flex w-12 shrink-0 items-center justify-center gap-1 text-xs font-bold text-[#2d5a48] tabular-nums">
+      <HandThumbUpSolidIcon class="w-3.5 h-3.5 shrink-0" />
       <span>{{ post.likeCount ?? 0 }}</span>
     </span>
   </RouterLink>

@@ -1,8 +1,8 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { TrashIcon, PencilSquareIcon, ArrowLeftIcon, HeartIcon, FlagIcon, EyeIcon } from '@heroicons/vue/24/outline'
-import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
+import { TrashIcon, PencilSquareIcon, ChevronLeftIcon, HandThumbUpIcon, FlagIcon, EyeIcon } from '@heroicons/vue/24/outline'
+import { HandThumbUpIcon as HandThumbUpSolidIcon } from '@heroicons/vue/24/solid'
 import BoardCommentSection from '@/components/board/BoardCommentSection.vue'
 import ImageViewerModal from '@/components/common/ImageViewerModal.vue'
 import BoardReportModal from '@/components/board/BoardReportModal.vue'
@@ -12,6 +12,7 @@ import { useApiRequest } from '@/composables/useApiRequest'
 import { useAuthRequiredModal } from '@/composables/useAuthRequiredModal'
 import { useToastStore } from '@/stores/toast'
 import { formatDate } from '@/utils/formatDate'
+import { linkify } from '@/utils/linkify'
 
 const route = useRoute()
 const router = useRouter()
@@ -39,6 +40,8 @@ const isReporting = ref(false)
 
 const showImageViewer = ref(false)
 const selectedImageIndex = ref(0)
+
+const linkifiedContent = computed(() => linkify(post.value?.content))
 
 const openImageViewer = (index) => {
   selectedImageIndex.value = index
@@ -114,9 +117,9 @@ const deletePost = async () => {
     <div class="max-w-4xl mx-auto px-6 py-8">
       <button
         @click="router.push(route.query.from === 'mypage' ? '/mypage' : route.query.from ? `/board?mode=${route.query.from}` : '/board')"
-        class="flex items-center gap-1.5 text-sm text-[#8c7e6e] hover:text-ink mb-6 transition-colors cursor-pointer font-medium group"
+        class="mb-6 flex items-center gap-1.5 px-3 py-1.5 bg-white border-2 border-ink rounded-xl text-sm text-ink shadow-[2px_2px_0_#1c1712] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer font-medium"
       >
-        <ArrowLeftIcon class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+        <ChevronLeftIcon class="w-4 h-4" />
         목록으로
       </button>
 
@@ -167,7 +170,7 @@ const deletePost = async () => {
                   <span>{{ post.viewCount }}</span>
                 </span>
             </div>
-            <p class="text-base text-ink leading-relaxed whitespace-pre-line">{{ post.content }}</p>
+            <p class="text-base text-ink leading-relaxed whitespace-pre-line" v-html="linkifiedContent"></p>
 
             <div
               v-if="post.images?.length > 0"
@@ -196,10 +199,10 @@ const deletePost = async () => {
                 :disabled="isLiking"
                 class="flex items-center gap-1.5 text-sm font-bold transition-all cursor-pointer disabled:opacity-50 px-4 py-2 rounded-xl border-2"
                 :class="postLiked
-                  ? 'text-red-500 border-red-300 bg-red-50 hover:bg-red-100'
-                  : 'text-[#8c7e6e] border-[#c8bca8] hover:border-red-300 hover:text-red-400 hover:bg-red-50'"
+                  ? 'text-[#2d5a48] border-[#96d4b4] bg-[#96d4b4]/25 hover:bg-[#96d4b4]/35'
+                  : 'text-[#8c7e6e] border-[#c8bca8] hover:border-[#96d4b4] hover:text-[#2d5a48] hover:bg-[#96d4b4]/15'"
               >
-                <component :is="postLiked ? HeartSolidIcon : HeartIcon" class="w-5 h-5" />
+                <component :is="postLiked ? HandThumbUpSolidIcon : HandThumbUpIcon" class="w-5 h-5" />
                 <span>{{ postLikeCount }}</span>
               </button>
               <button
