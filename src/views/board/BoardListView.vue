@@ -6,6 +6,7 @@ import {
   MagnifyingGlassIcon,
   MegaphoneIcon,
   PencilSquareIcon,
+  PhotoIcon,
   XMarkIcon,
 } from '@heroicons/vue/24/outline'
 import { HandThumbUpIcon as HandThumbUpSolidIcon } from '@heroicons/vue/24/solid'
@@ -48,6 +49,10 @@ const CATEGORIES = [
 
 const popularPosts = ref([])
 const rankingLoading = ref(true)
+
+function hasPostImage(post) {
+  return Boolean(post?.hasImage || post?.imageCount > 0 || post?.images?.length > 0)
+}
 
 async function fetchPosts(page = 0) {
   const categoryFilter = selectedMode.value === 'all' ? null : selectedMode.value
@@ -328,7 +333,10 @@ onMounted(() => {
                 :to="`/board/${post.id}?from=hot`"
                 class="flex-1 min-w-0 px-3 flex items-center gap-1.5"
               >
-                <span class="text-sm text-ink font-medium hover:text-[#2d5a48] truncate transition-colors">{{ post.title }}</span>
+                <span class="text-sm font-bold text-ink hover:text-[#2d5a48] truncate transition-colors">{{ post.title }}</span>
+                <span v-if="hasPostImage(post)" class="shrink-0 inline-flex items-center" title="이미지 포함">
+                  <PhotoIcon class="w-3.5 h-3.5 text-[#8c7e6e]" />
+                </span>
                 <span v-if="post.commentCount > 0" class="shrink-0 text-[11px] font-bold text-[#2d5a48]">[{{ post.commentCount }}]</span>
               </RouterLink>
               <span class="w-16 shrink-0 text-center text-[11px] text-[#8c7e6e]">{{ formatDate(post.createdAt) }}</span>
