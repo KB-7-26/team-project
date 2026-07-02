@@ -230,7 +230,7 @@ const deleteComment = async (commentId) => {
             </li>
           </ul>
 
-          <div v-if="replyingToId === comment.id" class="ml-6 pl-4 border-l-2 border-[#96d4b4] py-3">
+          <div v-if="replyingToId === comment.id" class="pl-4 border-l-2 border-[#96d4b4] py-3">
             <div class="flex gap-2">
               <div class="flex-1 relative">
                 <input
