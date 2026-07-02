@@ -26,7 +26,9 @@ const messageListRef = ref(null)
 const showNewMessageBanner = ref(false)
 const opponentLastReadAt = ref(null)
 const showTradeConfirm = ref(false)
+const showLeaveConfirm = ref(false)
 const isCompleting = ref(false)
+const isLeaving = ref(false)
 const tradeCompleted = ref(false)
 const currentTransactionId = ref(null)
 const isSeller = ref(false)
@@ -61,6 +63,25 @@ async function markAsReadAndUpdate() {
 }
 
 // 탭 전환 시 다시 보이면 읽음 처리
+function resetRoomState() {
+  messages.value = []
+  opponentName.value = ''
+  productInfo.value = {}
+  opponentLastReadAt.value = null
+  showNewMessageBanner.value = false
+  showTradeConfirm.value = false
+  showLeaveConfirm.value = false
+  tradeCompleted.value = false
+  currentTransactionId.value = null
+  isSeller.value = false
+}
+
+function showReviewRequest(transactionId) {
+  if (!transactionId) return
+  currentTransactionId.value = transactionId
+  tradeCompleted.value = true
+  addReviewMessage()
+}
 function handleVisibilityChange() {
   if (document.visibilityState === 'visible') markAsReadAndUpdate()
 }
@@ -70,10 +91,10 @@ watch(
   () => chatStore.pendingReview,
   (val) => {
     if (!val) return
-    currentTransactionId.value = val.transactionId
-    tradeCompleted.value = true
+    if (Number(val.chatRoomId) === chatRoomId.value) {
+      showReviewRequest(val.transactionId)
+    }
     chatStore.clearPendingReview()
-    addReviewMessage()
   },
 )
 
@@ -127,8 +148,7 @@ async function loadMessages() {
     // 이 방에 대기 중인 별점 있으면 메시지 추가
     const pendingTxId = chatStore.pendingReviewByRoom[chatRoomId.value]
     if (pendingTxId) {
-      currentTransactionId.value = pendingTxId
-      addReviewMessage()
+      showReviewRequest(pendingTxId)
     }
   } catch (e) {
     console.error('메시지 불러오기 실패', e)
@@ -137,6 +157,8 @@ async function loadMessages() {
 
 // 채팅방 정보 불러오기 (상대방 이름, 상품 정보)
 async function loadRoomInfo() {
+  tradeCompleted.value = false
+  currentTransactionId.value = null
   try {
     const { data } = await chatApi.getChatRooms()
     const room = data.data.find((r) => r.chatRoomId === chatRoomId.value)
@@ -154,7 +176,9 @@ async function loadRoomInfo() {
 
     // 거래완료 여부 확인
     const txRes = await chatApi.getTransaction(chatRoomId.value).catch(() => null)
-    if (txRes?.data?.data?.status === 'completed') {
+    const tx = txRes?.data?.data
+    if (tx?.status === 'completed') {
+      currentTransactionId.value = tx.transactionId
       tradeCompleted.value = true
     }
   } catch (e) {
@@ -278,7 +302,7 @@ async function completeTrade() {
     showTradeConfirm.value = false
     // 방별 리뷰 상태 저장 (나갔다 들어와도 유지)
     chatStore.pendingReviewByRoom[chatRoomId.value] = data.data.transactionId
-    addReviewMessage()
+    showReviewRequest(data.data.transactionId)
   } catch (e) {
     console.error('거래완료 처리 실패', e)
   } finally {
@@ -286,6 +310,21 @@ async function completeTrade() {
   }
 }
 
+async function leaveRoom() {
+  if (isLeaving.value) return
+  isLeaving.value = true
+  try {
+    await chatApi.leaveChatRoom(chatRoomId.value)
+    chatStore.clearRoomReview(chatRoomId.value)
+    await chatStore.fetchUnreadCount()
+    showLeaveConfirm.value = false
+    router.push('/chats')
+  } catch (e) {
+    console.error('채팅방 나가기 실패', e)
+  } finally {
+    isLeaving.value = false
+  }
+}
 // 별점 제출
 async function handleReviewSubmit(rating) {
   try {
@@ -320,7 +359,7 @@ function handleSend(content) {
 
 // 채팅방 바뀔 때 재연결
 watch(chatRoomId, async () => {
-  currentTransactionId.value = null
+  resetRoomState()
   await loadRoomInfo()
   await loadMessages()
   connectWebSocket()
@@ -345,11 +384,9 @@ onMounted(async () => {
   document.addEventListener('visibilitychange', handleVisibilityChange)
 
   // 채팅방 입장 시 대기 중인 별점 요청 확인
-  if (chatStore.pendingReview) {
-    currentTransactionId.value = chatStore.pendingReview.transactionId
-    tradeCompleted.value = true
+  if (chatStore.pendingReview && Number(chatStore.pendingReview.chatRoomId) === chatRoomId.value) {
+    showReviewRequest(chatStore.pendingReview.transactionId)
     chatStore.clearPendingReview()
-    addReviewMessage()
   }
 })
 
@@ -381,6 +418,7 @@ onUnmounted(() => {
       :tradeCompleted="tradeCompleted"
       :isSeller="isSeller"
       @complete-trade="showTradeConfirm = true"
+      @leave-room="showLeaveConfirm = true"
     />
 
     <!-- 메시지 목록 -->
@@ -445,6 +483,34 @@ onUnmounted(() => {
             class="flex-1 py-2.5 rounded-xl bg-[#ffe066] border-2 border-ink font-bold text-sm text-ink hover:bg-primary/20 transition shadow-[2px_2px_0_#1c1712] disabled:opacity-50"
           >
             {{ isCompleting ? '처리 중...' : '거래완료' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+  <!-- 채팅방 나가기 확인 모달 -->
+  <Teleport to="body">
+    <div
+      v-if="showLeaveConfirm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-ink/40"
+      @click.self="showLeaveConfirm = false"
+    >
+      <div class="bg-white border-2 border-ink rounded-2xl shadow-[6px_6px_0_#1c1712] p-6 w-80 flex flex-col gap-4">
+        <p class="font-bold text-ink text-lg">채팅방을 나가시겠어요?</p>
+        <p class="text-sm text-[#8c7e6e] -mt-2">내 채팅 목록에서만 숨겨지고, 상대방 채팅방은 유지됩니다.</p>
+        <div class="flex gap-3">
+          <button
+            @click="showLeaveConfirm = false"
+            class="flex-1 py-2.5 rounded-xl border-2 border-ink font-bold text-sm text-ink hover:bg-gray-50 transition shadow-[2px_2px_0_#1c1712]"
+          >
+            취소
+          </button>
+          <button
+            @click="leaveRoom"
+            :disabled="isLeaving"
+            class="flex-1 py-2.5 rounded-xl bg-[#ffe066] border-2 border-ink font-bold text-sm text-ink hover:bg-primary/20 transition shadow-[2px_2px_0_#1c1712] disabled:opacity-50"
+          >
+            {{ isLeaving ? '나가는 중...' : '나가기' }}
           </button>
         </div>
       </div>

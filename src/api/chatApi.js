@@ -31,6 +31,10 @@ export const chatApi = {
     return api.patch(`${BASE_URL}/${chatRoomId}/read`)
   },
 
+  leaveChatRoom(chatRoomId) {
+    return api.patch(`${BASE_URL}/${chatRoomId}/leave`)
+  },
+
   getUnreadCount() {
     return api.get(`${BASE_URL}/unread-count`)
   },
