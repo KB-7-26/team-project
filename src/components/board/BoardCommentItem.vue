@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
-import { ChatBubbleOvalLeftIcon, PencilSquareIcon, TrashIcon, HeartIcon, FlagIcon } from '@heroicons/vue/24/outline'
-import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
+import { ChatBubbleOvalLeftIcon, PencilSquareIcon, TrashIcon, HandThumbUpIcon, FlagIcon } from '@heroicons/vue/24/outline'
+import { HandThumbUpIcon as HandThumbUpSolidIcon } from '@heroicons/vue/24/solid'
 import { formatDateWithoutYear } from '@/utils/formatDate'
 
 const props = defineProps({
@@ -111,10 +111,10 @@ const submitEdit = () => {
           @click="emit('like', comment.id)"
           class="flex items-center gap-1 text-xs font-medium transition-all cursor-pointer px-2 py-1 rounded-lg border"
           :class="liked
-            ? 'text-red-400 border-red-200 bg-red-50 hover:bg-red-100'
-            : 'text-[#8c7e6e] border-[#e8e0d4] hover:border-red-200 hover:text-red-400 hover:bg-red-50'"
+            ? 'text-[#2d5a48] border-[#96d4b4] bg-[#96d4b4]/25 hover:bg-[#96d4b4]/35'
+            : 'text-[#8c7e6e] border-[#e8e0d4] hover:border-[#96d4b4] hover:text-[#2d5a48] hover:bg-[#96d4b4]/15'"
         >
-          <component :is="liked ? HeartSolidIcon : HeartIcon" class="w-3.5 h-3.5" />
+          <component :is="liked ? HandThumbUpSolidIcon : HandThumbUpIcon" class="w-3.5 h-3.5" />
           {{ likeCount }}
         </button>
         <button

@@ -7,6 +7,16 @@ import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
 import { useToastStore } from '@/stores/toast'
 import { useAuthStore } from '@/stores/auth'
+import {
+  BOARD_POST_CONTENT_MAX_BYTES,
+  BOARD_POST_TITLE_MAX_LENGTH,
+  countCharacters,
+  countUtf8Bytes,
+  isBlankBoardPostText,
+  normalizeBoardPostText,
+  trimToMaxCharacters,
+  trimToMaxUtf8Bytes,
+} from '@/utils/boardPostLimits'
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
@@ -20,6 +30,8 @@ const title = ref('')
 const content = ref('')
 const titleError = ref(false)
 const contentError = ref(false)
+const titleLimitReached = computed(() => countCharacters(title.value) >= BOARD_POST_TITLE_MAX_LENGTH)
+const contentLimitReached = computed(() => countUtf8Bytes(content.value) >= BOARD_POST_CONTENT_MAX_BYTES)
 
 const { isLoading: isSubmitting, error: submitError, request } = useApiRequest()
 const toast = useToastStore()
@@ -34,6 +46,16 @@ const COMPRESSION_OPTIONS = {
 }
 const MAX_FILE_SIZE = 8 * 1024 * 1024
 const MAX_IMAGES = 5
+
+const handleTitleInput = () => {
+  titleError.value = false
+  title.value = trimToMaxCharacters(title.value, BOARD_POST_TITLE_MAX_LENGTH)
+}
+
+const handleContentInput = () => {
+  contentError.value = false
+  content.value = trimToMaxUtf8Bytes(content.value, BOARD_POST_CONTENT_MAX_BYTES)
+}
 
 const handleFileChange = async (e) => {
   const files = Array.from(e.target.files)
@@ -72,13 +94,16 @@ const removeImage = (index) => {
 }
 
 const submit = async () => {
-  titleError.value = !title.value.trim()
-  contentError.value = !content.value.trim()
+  const normalizedTitle = normalizeBoardPostText(title.value)
+  const normalizedContent = normalizeBoardPostText(content.value)
+
+  titleError.value = isBlankBoardPostText(title.value)
+  contentError.value = isBlankBoardPostText(content.value)
   if (titleError.value || contentError.value || isSubmitting.value) return
 
   const { ok, data } = await request(
     async () => {
-      const post = await boardApi.createPost(title.value.trim(), content.value.trim(), category.value)
+      const post = await boardApi.createPost(normalizedTitle, normalizedContent, category.value)
       const readyImages = images.value.filter((img) => !img.loading)
       if (readyImages.length > 0) {
         const formData = new FormData()
@@ -136,26 +161,28 @@ const submit = async () => {
               <label class="text-sm font-bold text-ink">제목</label>
               <input
                 v-model="title"
-                @input="titleError = false"
+                @input="handleTitleInput"
                 type="text"
                 placeholder="제목을 입력하세요"
                 class="px-4 py-3 border-2 rounded-xl text-sm text-ink outline-none transition-colors placeholder:text-[#8c7e6e]"
-                :class="titleError ? 'border-red-400 focus:border-red-400' : 'border-[#c8bca8] focus:border-ink'"
+                :class="titleError || titleLimitReached ? 'border-red-400 focus:border-red-400' : 'border-[#c8bca8] focus:border-ink'"
               />
               <p v-if="titleError" class="text-xs text-red-400 font-medium">제목을 입력해주세요</p>
+              <p v-else-if="titleLimitReached" class="text-xs text-red-400 font-medium">글자 수 제한에 도달했습니다</p>
             </div>
 
             <div class="flex flex-col gap-1.5">
               <label class="text-sm font-bold text-ink">내용</label>
               <textarea
                 v-model="content"
-                @input="contentError = false"
+                @input="handleContentInput"
                 placeholder="내용을 입력하세요"
                 rows="12"
                 class="px-4 py-3 border-2 rounded-xl text-sm text-ink outline-none transition-colors resize-none placeholder:text-[#8c7e6e]"
-                :class="contentError ? 'border-red-400 focus:border-red-400' : 'border-[#c8bca8] focus:border-ink'"
+                :class="contentError || contentLimitReached ? 'border-red-400 focus:border-red-400' : 'border-[#c8bca8] focus:border-ink'"
               />
               <p v-if="contentError" class="text-xs text-red-400 font-medium">내용을 입력해주세요</p>
+              <p v-else-if="contentLimitReached" class="text-xs text-red-400 font-medium">글자 수 제한에 도달했습니다</p>
             </div>
 
             <div class="flex flex-col gap-1.5">

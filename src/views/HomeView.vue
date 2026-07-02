@@ -17,7 +17,7 @@ import {
   FireIcon,
   PencilSquareIcon,
 } from '@heroicons/vue/24/outline'
-import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
+import { HandThumbUpIcon as HandThumbUpSolidIcon } from '@heroicons/vue/24/solid'
 import { productApi } from '@/api/productApi'
 import { boardApi } from '@/api/boardApi'
 import AuthRequiredModal from '@/components/common/AuthRequiredModal.vue'
@@ -460,8 +460,8 @@ onBeforeUnmount(() => document.removeEventListener('click', handleTypeOutsideCli
                 >[{{ post.commentCount }}]</span
               >
             </RouterLink>
-            <span class="shrink-0 text-xs font-bold text-[#e85d04] tabular-nums inline-flex items-center gap-1">
-              <HeartSolidIcon class="w-3.5 h-3.5 shrink-0" />
+            <span class="shrink-0 text-xs font-bold text-[#2d5a48] tabular-nums inline-flex items-center gap-1">
+              <HandThumbUpSolidIcon class="w-3.5 h-3.5 shrink-0" />
               <span>{{ post.likeCount ?? 0 }}</span>
             </span>
           </li>

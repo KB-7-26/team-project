@@ -73,6 +73,7 @@ async function deleteProduct() {
 }
 
 const conditionMap = { NEW: '새상품', USED: '중고' }
+const isSoldSaleStatus = (saleStatus) => saleStatus === 'sold' || saleStatus === 'completed'
 
 function timeAgo(dateString) {
   if (!dateString) return ''
@@ -146,7 +147,7 @@ async function loadProduct() {
       price: data.price,
       isFree: data.isFree,
       image: data.imageUrls[0],
-      status: data.saleStatus === 'sold' ? '판매완료' : '판매중',
+      status: isSoldSaleStatus(data.saleStatus) ? '판매완료' : '판매중',
       views: data.viewCount ?? 0,
       viewedAt: Date.now(),
     }
@@ -405,7 +406,7 @@ watch(() => route.params.id, () => {
         <div class="bg-white border-2 border-ink rounded-2xl p-6 mb-4 shadow-[4px_4px_0_#1c1712]">
           <div class="flex items-start justify-between mb-3">
             <span class="font-bold text-xs bg-[#ffe066] text-ink border border-ink px-3 py-1 rounded-full">{{ product.categoryName }}</span>
-            <span :class="['font-bold text-xs px-3 py-1 rounded-full border', product.saleStatus === 'sold' ? 'bg-[#c8bca8]/30 border-[#c8bca8] text-[#8c7e6e]' : 'bg-[#96d4b4]/30 border-[#96d4b4] text-[#3a8a64]']">
+            <span :class="['font-bold text-xs px-3 py-1 rounded-full border', isSoldSaleStatus(product.saleStatus) ? 'bg-[#c8bca8]/30 border-[#c8bca8] text-[#8c7e6e]' : 'bg-[#96d4b4]/30 border-[#96d4b4] text-[#3a8a64]']">
               {{ saleStatusMap[product.saleStatus] ?? product.saleStatus }}
             </span>
           </div>

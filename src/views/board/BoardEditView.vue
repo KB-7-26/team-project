@@ -5,6 +5,16 @@ import { ArrowLeftIcon, CameraIcon, PencilSquareIcon, XMarkIcon } from '@heroico
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
 import { useToastStore } from '@/stores/toast'
+import {
+  BOARD_POST_CONTENT_MAX_BYTES,
+  BOARD_POST_TITLE_MAX_LENGTH,
+  countCharacters,
+  countUtf8Bytes,
+  isBlankBoardPostText,
+  normalizeBoardPostText,
+  trimToMaxCharacters,
+  trimToMaxUtf8Bytes,
+} from '@/utils/boardPostLimits'
 const route = useRoute()
 const router = useRouter()
 
@@ -17,6 +27,8 @@ const content = ref('')
 const titleError = ref(false)
 const contentError = ref(false)
 const loading = ref(true)
+const titleLimitReached = computed(() => countCharacters(title.value) >= BOARD_POST_TITLE_MAX_LENGTH)
+const contentLimitReached = computed(() => countUtf8Bytes(content.value) >= BOARD_POST_CONTENT_MAX_BYTES)
 
 const existingImages = ref([])
 const newImages = ref([])
@@ -27,6 +39,16 @@ const totalImageCount = computed(() => existingImages.value.length + newImages.v
 
 const { isLoading: isSubmitting, error: submitError, request } = useApiRequest()
 const toast = useToastStore()
+
+const handleTitleInput = () => {
+  titleError.value = false
+  title.value = trimToMaxCharacters(title.value, BOARD_POST_TITLE_MAX_LENGTH)
+}
+
+const handleContentInput = () => {
+  contentError.value = false
+  content.value = trimToMaxUtf8Bytes(content.value, BOARD_POST_CONTENT_MAX_BYTES)
+}
 
 onMounted(async () => {
   try {
@@ -66,8 +88,11 @@ const removeNew = (index) => {
 }
 
 const submit = async () => {
-  titleError.value = !title.value.trim()
-  contentError.value = !content.value.trim()
+  const normalizedTitle = normalizeBoardPostText(title.value)
+  const normalizedContent = normalizeBoardPostText(content.value)
+
+  titleError.value = isBlankBoardPostText(title.value)
+  contentError.value = isBlankBoardPostText(content.value)
   if (titleError.value || contentError.value || isSubmitting.value) return
 
   const { ok } = await request(
@@ -75,7 +100,7 @@ const submit = async () => {
       if (deletedImageIds.value.length > 0) {
         await Promise.all(deletedImageIds.value.map(imgId => boardApi.deletePostImage(postId, imgId)))
       }
-      const result = await boardApi.updatePost(postId, title.value.trim(), content.value.trim(), category.value)
+      const result = await boardApi.updatePost(postId, normalizedTitle, normalizedContent, category.value)
       if (newImages.value.length > 0) {
         const formData = new FormData()
         newImages.value.forEach(({ file }) => formData.append('images', file))
@@ -137,26 +162,28 @@ const submit = async () => {
               <label class="text-sm font-bold text-ink">제목</label>
               <input
                 v-model="title"
-                @input="titleError = false"
+                @input="handleTitleInput"
                 type="text"
                 placeholder="제목을 입력하세요"
                 class="px-4 py-3 border-2 rounded-xl text-sm text-ink outline-none transition-colors placeholder:text-[#8c7e6e]"
-                :class="titleError ? 'border-red-400 focus:border-red-400' : 'border-[#c8bca8] focus:border-ink'"
+                :class="titleError || titleLimitReached ? 'border-red-400 focus:border-red-400' : 'border-[#c8bca8] focus:border-ink'"
               />
               <p v-if="titleError" class="text-xs text-red-400 font-medium">제목을 입력해주세요</p>
+              <p v-else-if="titleLimitReached" class="text-xs text-red-400 font-medium">제목이 저장 한도에 도달했습니다</p>
             </div>
 
             <div class="flex flex-col gap-1.5">
               <label class="text-sm font-bold text-ink">내용</label>
               <textarea
                 v-model="content"
-                @input="contentError = false"
+                @input="handleContentInput"
                 placeholder="내용을 입력하세요"
                 rows="12"
                 class="px-4 py-3 border-2 rounded-xl text-sm text-ink outline-none transition-colors resize-none placeholder:text-[#8c7e6e]"
-                :class="contentError ? 'border-red-400 focus:border-red-400' : 'border-[#c8bca8] focus:border-ink'"
+                :class="contentError || contentLimitReached ? 'border-red-400 focus:border-red-400' : 'border-[#c8bca8] focus:border-ink'"
               />
               <p v-if="contentError" class="text-xs text-red-400 font-medium">내용을 입력해주세요</p>
+              <p v-else-if="contentLimitReached" class="text-xs text-red-400 font-medium">내용이 DB 저장 한도에 도달했습니다</p>
             </div>
 
             <div class="flex flex-col gap-1.5">

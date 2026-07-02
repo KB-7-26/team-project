@@ -1,8 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { TrashIcon, PencilSquareIcon, ArrowLeftIcon, HeartIcon, FlagIcon, EyeIcon } from '@heroicons/vue/24/outline'
-import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
+import { TrashIcon, PencilSquareIcon, ArrowLeftIcon, HandThumbUpIcon, FlagIcon, EyeIcon } from '@heroicons/vue/24/outline'
+import { HandThumbUpIcon as HandThumbUpSolidIcon } from '@heroicons/vue/24/solid'
 import BoardCommentSection from '@/components/board/BoardCommentSection.vue'
 import ImageViewerModal from '@/components/common/ImageViewerModal.vue'
 import BoardReportModal from '@/components/board/BoardReportModal.vue'
@@ -196,10 +196,10 @@ const deletePost = async () => {
                 :disabled="isLiking"
                 class="flex items-center gap-1.5 text-sm font-bold transition-all cursor-pointer disabled:opacity-50 px-4 py-2 rounded-xl border-2"
                 :class="postLiked
-                  ? 'text-red-500 border-red-300 bg-red-50 hover:bg-red-100'
-                  : 'text-[#8c7e6e] border-[#c8bca8] hover:border-red-300 hover:text-red-400 hover:bg-red-50'"
+                  ? 'text-[#2d5a48] border-[#96d4b4] bg-[#96d4b4]/25 hover:bg-[#96d4b4]/35'
+                  : 'text-[#8c7e6e] border-[#c8bca8] hover:border-[#96d4b4] hover:text-[#2d5a48] hover:bg-[#96d4b4]/15'"
               >
-                <component :is="postLiked ? HeartSolidIcon : HeartIcon" class="w-5 h-5" />
+                <component :is="postLiked ? HandThumbUpSolidIcon : HandThumbUpIcon" class="w-5 h-5" />
                 <span>{{ postLikeCount }}</span>
               </button>
               <button
