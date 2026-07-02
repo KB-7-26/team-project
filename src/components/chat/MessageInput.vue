@@ -1,7 +1,6 @@
 <script setup>
-import { ref, watch, nextTick } from 'vue'
+import { ref, nextTick } from 'vue'
 
-const props = defineProps({ chatRoomId: [Number, String] })
 const emit = defineEmits(['send'])
 const newMessage = ref('')
 const textareaRef = ref(null)
@@ -13,13 +12,6 @@ async function autoResize() {
   textareaRef.value.style.height = 'auto'
   textareaRef.value.style.height = Math.min(textareaRef.value.scrollHeight, 120) + 'px'
 }
-
-// 채팅방 바뀌면 입력란 초기화
-watch(() => props.chatRoomId, async () => {
-  newMessage.value = ''
-  await nextTick()
-  if (textareaRef.value) textareaRef.value.style.height = 'auto'
-})
 
 function sendMessage() {
   if (!newMessage.value.trim()) return

@@ -419,7 +419,7 @@ onUnmounted(() => {
     </div>
 
     <!-- 입력창 -->
-    <MessageInput :chatRoomId="chatRoomId" @send="handleSend" />
+    <MessageInput :key="chatRoomId" @send="handleSend" />
   </div>
 
   <!-- 거래완료 확인 모달 -->
