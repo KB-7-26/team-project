@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { ChatBubbleOvalLeftIcon, PencilSquareIcon, TrashIcon, HeartIcon, FlagIcon } from '@heroicons/vue/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid'
-import { formatDate } from '@/utils/formatDate'
+import { formatDateWithoutYear } from '@/utils/formatDate'
 
 const props = defineProps({
   comment: Object,
@@ -45,12 +45,12 @@ const submitEdit = () => {
 <template>
   <div
     class="py-4 px-2"
-    :class="[isReply ? 'ml-6 pl-4 border-l-2 border-[#96d4b4]' : 'hover:bg-[#fffef5] rounded-xl']"
+    :class="[isReply ? 'pl-4 border-l-2 border-[#96d4b4]' : 'hover:bg-[#fffef5] rounded-xl']"
   >
     <div class="flex items-center gap-2 mb-1.5">
       <span v-if="isReply" class="text-xs text-[#8c7e6e]">↳</span>
       <span class="text-xs font-bold text-[#2d5a48] bg-[#96d4b4]/30 px-2 py-0.5 rounded-full">{{ comment.displayName }}</span>
-      <span class="text-xs text-[#8c7e6e]">{{ formatDate(comment.createdAt) }}</span>
+      <span class="text-xs text-[#8c7e6e]">{{ formatDateWithoutYear(comment.createdAt) }}</span>
       <div v-if="comment.isOwner" class="flex items-center gap-1.5 ml-auto">
         <button
           @click="startEdit"
