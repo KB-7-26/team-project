@@ -5,6 +5,7 @@ import { ChevronLeftIcon, CameraIcon, PencilSquareIcon, XMarkIcon } from '@heroi
 import { boardApi } from '@/api/boardApi'
 import { useApiRequest } from '@/composables/useApiRequest'
 import { useToastStore } from '@/stores/toast'
+import { useAuthStore } from '@/stores/auth'
 import {
   BOARD_POST_CONTENT_MAX_BYTES,
   BOARD_POST_TITLE_MAX_LENGTH,
@@ -17,8 +18,10 @@ import {
 } from '@/utils/boardPostLimits'
 const route = useRoute()
 const router = useRouter()
+const auth = useAuthStore()
 
-const CATEGORIES = ['자유게시판', '공지', '전공', '비전공', '취업']
+const ALL_CATEGORIES = ['자유게시판', '공지', '전공', '비전공', '취업']
+const CATEGORIES = computed(() => auth.isAdmin ? ALL_CATEGORIES : ALL_CATEGORIES.filter(c => c !== '공지'))
 
 const postId = Number(route.params.id)
 const category = ref('자유게시판')
