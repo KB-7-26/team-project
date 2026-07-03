@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   FireIcon,
   MagnifyingGlassIcon,
@@ -16,6 +16,7 @@ import { useAuthRequiredModal } from '@/composables/useAuthRequiredModal'
 import { formatDate } from '@/utils/formatDate'
 
 const route = useRoute()
+const router = useRouter()
 const {
   authRequiredModalOpen,
   authRequiredModalMode,
@@ -74,6 +75,7 @@ function selectMode(mode) {
   selectedMode.value = mode
   keyword.value = ''
   searchInput.value = ''
+  router.replace({ query: mode === 'all' ? {} : { mode } })
   if (mode !== 'hot' && mode !== '공지') fetchPosts(0)
 }
 
