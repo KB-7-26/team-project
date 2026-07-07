@@ -16,6 +16,7 @@ import {
   IdentificationIcon,
   PencilSquareIcon,
   ShoppingBagIcon,
+  StarIcon,
   TrashIcon,
   UserCircleIcon,
   UserIcon,
@@ -72,8 +73,12 @@ const myFavoriteProducts = ref([])
 const favCurrentPage = ref(0)
 const isFavoritesLoading = ref(false)
 const favoritesError = ref('')
+const boardEventStats = ref([])
+const isBoardEventLoading = ref(false)
+const boardEventError = ref('')
 
 const FAV_PAGE_SIZE = 6
+const BOARD_EVENT_DAYS = [7, 8, 9, 10]
 const favTotalPages = computed(() => Math.ceil(myFavoriteProducts.value.length / FAV_PAGE_SIZE))
 const paginatedFavoriteProducts = computed(() => {
   const start = favCurrentPage.value * FAV_PAGE_SIZE
@@ -195,6 +200,7 @@ const menuSections = [
       { id: 'myPosts', label: '내가 쓴 글', icon: PencilSquareIcon },
       { id: 'commentedPosts', label: '댓글 단 글', icon: ChatBubbleOvalLeftIcon },
       { id: 'likedPosts', label: '추천한 글', icon: HandThumbUpIcon },
+      { id: 'events', label: '이벤트', icon: StarIcon },
     ],
   },
   {
@@ -243,6 +249,20 @@ const isBoardActivityMenu = computed(() => boardActivityMenuIds.includes(selecte
 const boardActivityDescription = computed(() => boardActivityDescriptions[selectedMenu.value] || '')
 const boardActivityEmptyMessage = computed(
   () => boardActivityEmptyMessages[selectedMenu.value] || '표시할 글이 없습니다',
+)
+const normalizedBoardEventStats = computed(() =>
+  BOARD_EVENT_DAYS.map((day) => {
+    const stat = boardEventStats.value.find((item) => Number(item.day) === day) || {}
+    const postCount = Number(stat.postCount ?? 0)
+    const commentCount = Number(stat.commentCount ?? 0)
+
+    return {
+      day,
+      label: `7월 ${day}일`,
+      postCount,
+      commentCount,
+    }
+  }),
 )
 const selectMenu = (menuId) => {
   selectedMenu.value = menuId
@@ -545,6 +565,25 @@ const fetchMyFavoriteProducts = async () => {
   }
 }
 
+const fetchBoardEventStats = async () => {
+  if (!authStore.isLoggedIn) return
+
+  isBoardEventLoading.value = true
+  boardEventError.value = ''
+
+  try {
+    boardEventStats.value = await userBoardActivityApi.getBoardEventStats()
+  } catch (error) {
+    if (await redirectIfProfileRequired(error)) return
+
+    boardEventStats.value = []
+    boardEventError.value =
+      error.response?.data?.message || '이벤트 활동을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.'
+  } finally {
+    isBoardEventLoading.value = false
+  }
+}
+
 const openProfileEditModal = () => {
   profileEditForm.value = {
     nickname: profileData.value.nickname,
@@ -670,6 +709,10 @@ watch(selectedMenu, (nextMenu) => {
 
   if (nextMenu === 'favorites') {
     fetchMyFavoriteProducts()
+  }
+
+  if (nextMenu === 'events') {
+    fetchBoardEventStats()
   }
 })
 
@@ -961,6 +1004,74 @@ watch(selectedSaleStatus, () => {
                 >
                   {{ page }}
                 </button>
+              </div>
+            </div>
+          </template>
+
+          <!-- 이벤트 -->
+          <template v-else-if="selectedMenu === 'events'">
+            <div
+              class="relative overflow-hidden rounded-2xl border-2 border-ink bg-white p-6 shadow-[4px_4px_0_#1c1712] md:p-8"
+            >
+              <div class="absolute left-0 top-0 h-full w-1.5 bg-[#ffe066]"></div>
+              <div class="flex items-center gap-3">
+                <div>
+                  <h2 class="text-2xl font-extrabold text-ink">이벤트</h2>
+                  <p class="mt-1 text-sm text-[#8c7e6e]">이 화면을 캡쳐하여 응모해주세요</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-5 rounded-2xl border-2 border-ink bg-white p-4 shadow-[4px_4px_0_#1c1712] md:p-6">
+              <p v-if="isBoardEventLoading" class="py-12 text-center text-sm font-bold text-[#8c7e6e]">
+                이벤트 활동을 불러오는 중입니다
+              </p>
+              <p
+                v-else-if="boardEventError"
+                class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-600"
+              >
+                {{ boardEventError }}
+              </p>
+              <div v-else class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <article
+                  v-for="(stat, index) in normalizedBoardEventStats"
+                  :key="stat.day"
+                  class="relative overflow-hidden rounded-2xl border-2 border-ink bg-[#f9f5ee] p-5 shadow-[3px_3px_0_#1c1712]"
+                >
+                  <div
+                    class="absolute left-1/2 top-2 h-5 w-20 -translate-x-1/2 rounded-sm border border-ink/20 opacity-80"
+                    :class="
+                      index === 0
+                        ? 'bg-[#ffe066]'
+                        : index === 1
+                          ? 'bg-[#b3d4ff]'
+                          : index === 2
+                            ? 'bg-[#96d4b4]'
+                            : 'bg-[#ffb3c6]'
+                      "
+                  ></div>
+                  <div class="pt-5">
+                    <p class="text-xs font-extrabold uppercase tracking-widest text-[#8c7e6e]">DAY {{ index + 1 }}</p>
+                    <p class="mt-1 text-3xl font-extrabold leading-none text-ink">{{ stat.label }}</p>
+
+                    <div class="mt-6 flex flex-col gap-2">
+                      <div class="flex items-center justify-between rounded-xl border-2 border-ink bg-white px-3 py-2">
+                        <span class="flex items-center gap-2 text-sm font-extrabold text-ink">
+                          <PencilSquareIcon class="h-4 w-4" />
+                          게시글
+                        </span>
+                        <span class="text-lg font-extrabold text-ink">{{ stat.postCount }}</span>
+                      </div>
+                      <div class="flex items-center justify-between rounded-xl border-2 border-ink bg-white px-3 py-2">
+                        <span class="flex items-center gap-2 text-sm font-extrabold text-ink">
+                          <ChatBubbleOvalLeftIcon class="h-4 w-4" />
+                          댓글
+                        </span>
+                        <span class="text-lg font-extrabold text-ink">{{ stat.commentCount }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </article>
               </div>
             </div>
           </template>
