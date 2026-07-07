@@ -17,4 +17,9 @@ export const userBoardActivityApi = {
     const response = await api.get('/users/me/liked-board-posts', { params: { page, size } })
     return unwrapData(response)
   },
+
+  async getBoardEventStats() {
+    const response = await api.get('/users/me/board-event-stats')
+    return unwrapData(response)
+  },
 }
